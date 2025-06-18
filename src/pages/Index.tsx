@@ -5,6 +5,7 @@ import { Dashboard } from '../components/Dashboard';
 import { Contacts } from '../components/Contacts';
 import { Tasks } from '../components/Tasks';
 import { Companies } from '../components/Companies';
+import { TaskApprovals } from '../components/TaskApprovals';
 import { Settings } from '../components/Settings';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 
@@ -23,6 +24,8 @@ const Index = () => {
         return <Companies />;
       case 'tasks':
         return <Tasks />;
+      case 'task-approvals':
+        return <TaskApprovals />;
       case 'settings':
         return <Settings />;
       default:
