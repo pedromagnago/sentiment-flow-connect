@@ -1,6 +1,6 @@
 
 import { Building2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { CompanyModal } from './CompanyModal';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,8 @@ import { CompanyHeader } from './companies/CompanyHeader';
 import { CompanyFilters } from './companies/CompanyFilters';
 import { CompanyStats } from './companies/CompanyStats';
 import { CompanyCard } from './companies/CompanyCard';
+import { BulkOperations } from './companies/BulkOperations';
+import { useBulk Operations } from '@/hooks/useBulkOperations';
 
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,8 +17,10 @@ export const Companies = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showBulkOperations, setShowBulkOperations] = useState(false);
   const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompanies();
   const { toast } = useToast();
+  const bulkOps = useBulkOperations();
 
   const filteredCompanies = companies
     .filter(company => {
@@ -80,6 +84,51 @@ export const Companies = () => {
     }
   };
 
+  const handleBulkCreate = async (companiesData) => {
+    try {
+      // Criar empresas uma por uma para melhor controle de erros
+      const results = [];
+      const errors = [];
+      
+      for (let i = 0; i < companiesData.length; i++) {
+        try {
+          const result = await createCompany(companiesData[i]);
+          results.push(result);
+        } catch (error) {
+          errors.push({ index: i + 1, error: error.message });
+        }
+      }
+
+      if (errors.length > 0) {
+        console.warn('Erros na importação:', errors);
+        toast({
+          title: "Importação parcial",
+          description: `${results.length} empresas criadas. ${errors.length} com erro.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Importação concluída",
+          description: `${results.length} empresas foram criadas com sucesso.`,
+        });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleBulkDelete = async (companyIds) => {
+    try {
+      // Excluir empresas uma por uma
+      for (const id of companyIds) {
+        await deleteCompany(id);
+      }
+      bulkOps.clearSelection();
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -125,6 +174,8 @@ export const Companies = () => {
         onRefresh={handleRefresh}
         onAddNew={() => setIsModalOpen(true)}
         refreshing={refreshing}
+        onToggleBulkOperations={() => setShowBulkOperations(!showBulkOperations)}
+        showBulkOperations={showBulkOperations}
       />
 
       <CompanyFilters
@@ -135,6 +186,15 @@ export const Companies = () => {
       />
 
       <CompanyStats companies={filteredCompanies} />
+
+      {/* Operações em Massa */}
+      {showBulkOperations && (
+        <BulkOperations
+          companies={filteredCompanies}
+          onBulkCreate={handleBulkCreate}
+          onBulkDelete={handleBulkDelete}
+        />
+      )}
 
       {/* Lista de Empresas */}
       <div className="space-y-4">
