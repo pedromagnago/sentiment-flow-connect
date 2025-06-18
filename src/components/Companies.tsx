@@ -1,4 +1,3 @@
-
 import { Building2, Plus, Search, Edit, Trash2, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -14,7 +13,6 @@ export const Companies = () => {
   const { toast } = useToast();
 
   const filteredCompanies = companies
-    .filter(company => company.deleted_at === null) // Não mostrar empresas excluídas
     .filter(company => {
       const matchesSearch = company.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            company.cnpj?.includes(searchTerm) ||
@@ -59,12 +57,12 @@ export const Companies = () => {
   };
 
   const handleDeleteCompany = async (company) => {
-    if (window.confirm(`Tem certeza que deseja excluir a empresa "${company.nome}"?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir PERMANENTEMENTE a empresa "${company.nome}"? Esta ação não pode ser desfeita.`)) {
       try {
         await deleteCompany(company.id);
         toast({
           title: "Empresa excluída",
-          description: "A empresa foi excluída com sucesso.",
+          description: "A empresa foi excluída permanentemente do sistema.",
         });
       } catch (error) {
         toast({

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -99,19 +98,18 @@ export const useCompanies = () => {
 
   const deleteCompany = async (id: string) => {
     try {
-      console.log('Deleting company (soft delete):', id);
-      const { data, error } = await supabase
+      console.log('Deleting company (hard delete):', id);
+      const { error } = await supabase
         .from('companies')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id)
-        .select();
+        .delete()
+        .eq('id', id);
 
       if (error) {
         console.error('Error deleting company:', error);
         throw error;
       }
       
-      console.log('Company deleted (soft delete):', data);
+      console.log('Company permanently deleted from database');
       await fetchCompanies(); // Refresh the list
     } catch (err) {
       console.error('Delete company error:', err);
