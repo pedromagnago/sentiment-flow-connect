@@ -1,4 +1,5 @@
 
+
 import { Users, Search, Plus, Phone, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useContacts } from '@/hooks/useContacts';
@@ -9,6 +10,7 @@ export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [filterType, setFilterType] = useState('Todos');
+  const [filterFeedback, setFilterFeedback] = useState('Todos');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const { contacts, loading, error, createContact, updateContact, deleteContact } = useContacts();
@@ -23,7 +25,10 @@ export const Contacts = () => {
     const matchesType = filterType === 'Todos' ||
                        (filterType === 'Grupo' && contact.is_group) ||
                        (filterType === 'Individual' && !contact.is_group);
-    return matchesSearch && matchesStatus && matchesType;
+    const matchesFeedback = filterFeedback === 'Todos' ||
+                           (filterFeedback === 'Ativo' && contact.feedback) ||
+                           (filterFeedback === 'Inativo' && !contact.feedback);
+    return matchesSearch && matchesStatus && matchesType && matchesFeedback;
   });
 
   const handleCreateContact = async (contactData) => {
@@ -154,6 +159,15 @@ export const Contacts = () => {
             <option value="Individual">Individual</option>
             <option value="Grupo">Grupo</option>
           </select>
+          <select
+            value={filterFeedback}
+            onChange={(e) => setFilterFeedback(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="Todos">Todos Feedbacks</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
         </div>
       </div>
 
@@ -211,7 +225,7 @@ export const Contacts = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSentimentColor(contact.feedback)}`}>
-                      {contact.feedback ? 'Positivo' : 'Negativo'}
+                      {contact.feedback ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -270,3 +284,4 @@ export const Contacts = () => {
     </div>
   );
 };
+

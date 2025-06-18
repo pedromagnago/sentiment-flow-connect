@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Contact } from '@/hooks/useContacts';
@@ -140,7 +141,7 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="feedback" className="text-sm font-medium text-gray-700">
-              Feedback positivo
+              Feedback ativo
             </label>
           </div>
 
@@ -177,3 +178,4 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
     </div>
   );
 };
+
