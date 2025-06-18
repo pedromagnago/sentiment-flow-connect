@@ -39,13 +39,24 @@ export const useContacts = () => {
     }
   };
 
-  const createContact = async (contactData: Partial<Contact>) => {
+  const createContact = async (contactData: Omit<Contact, 'data_criacao'>) => {
     try {
       console.log('Creating contact:', contactData);
+      
+      // Garantir que id_contact está presente
+      if (!contactData.id_contact) {
+        throw new Error('ID do contato é obrigatório');
+      }
+
       const { data, error } = await supabase
         .from('contacts')
         .insert([{
-          ...contactData,
+          id_contact: contactData.id_contact,
+          nome: contactData.nome,
+          status: contactData.status,
+          feedback: contactData.feedback,
+          is_group: contactData.is_group,
+          empresa_id: contactData.empresa_id,
           data_criacao: new Date().toISOString()
         }])
         .select()
