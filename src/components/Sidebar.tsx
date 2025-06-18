@@ -8,7 +8,8 @@ import {
   Home,
   Building2,
   ClipboardCheck,
-  FileText
+  FileText,
+  Shield
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
     { id: 'contacts', label: 'Contatos', icon: Users },
     { id: 'companies', label: 'Empresas', icon: Building2 },
     { id: 'reports', label: 'Relatórios', icon: FileText },
+    { id: 'audit-logs', label: 'Logs de Auditoria', icon: Shield },
     { id: 'task-approvals', label: 'Aprovação de Tarefas', icon: ClipboardCheck },
     { id: 'tasks', label: 'Tarefas ClickUp', icon: CheckSquare },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon },
