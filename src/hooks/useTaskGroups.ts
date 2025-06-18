@@ -7,8 +7,8 @@ export interface TaskGroup {
   nome_grupo: string;
   status_clickup: string;
   created_at: string;
-  execution_id: string;
-  workflow_name: string;
+  "execution.id": string;
+  "workflow.name": string;
 }
 
 export const useTaskGroups = () => {

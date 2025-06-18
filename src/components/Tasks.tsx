@@ -142,7 +142,7 @@ export const Tasks = () => {
                 <div className="flex items-center space-x-6 text-sm text-gray-500">
                   <div className="flex items-center">
                     <User className="w-4 h-4 mr-1" />
-                    {task.workflow_name || 'Workflow não definido'}
+                    {task["workflow.name"] || 'Workflow não definido'}
                   </div>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
@@ -150,9 +150,9 @@ export const Tasks = () => {
                   </div>
                 </div>
                 
-                {task.execution_id && (
+                {task["execution.id"] && (
                   <div className="mt-2 text-sm text-gray-500">
-                    Execução: {task.execution_id}
+                    Execução: {task["execution.id"]}
                   </div>
                 )}
               </div>
