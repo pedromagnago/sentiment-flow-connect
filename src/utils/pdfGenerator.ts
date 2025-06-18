@@ -7,6 +7,9 @@ import { Company } from '@/hooks/useCompanies';
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => void;
+    lastAutoTable: {
+      finalY: number;
+    };
   }
 }
 
@@ -51,7 +54,7 @@ export const generateContactsPDF = (contacts: Contact[]) => {
   const groupContacts = contacts.filter(c => c.is_group).length;
   const feedbackEnabled = contacts.filter(c => c.feedback).length;
 
-  const finalY = (doc as any).lastAutoTable.finalY + 20;
+  const finalY = doc.lastAutoTable.finalY + 20;
   
   doc.setFontSize(12);
   doc.text('Estatísticas:', 20, finalY);
@@ -104,7 +107,7 @@ export const generateCompaniesPDF = (companies: Company[]) => {
   const activeCompanies = companies.filter(c => c.status === 'Ativa').length;
   const totalRevenue = companies.reduce((sum, c) => sum + (Number(c.valor_mensalidade) || 0), 0);
 
-  const finalY = (doc as any).lastAutoTable.finalY + 20;
+  const finalY = doc.lastAutoTable.finalY + 20;
   
   doc.setFontSize(12);
   doc.text('Estatísticas:', 20, finalY);
