@@ -20,6 +20,37 @@ export interface Company {
   created_at: string | null;
   updated_at: string | null;
   deleted_at: string | null;
+  // Novos campos adicionados
+  task_id: string | null;
+  task_name: string | null;
+  assignee: string | null;
+  due_date: string | null;
+  priority: string | null;
+  task_status: string | null;
+  date_created: string | null;
+  start_date: string | null;
+  date_closed: string | null;
+  linked_docs: string | null;
+  valor_mensalidade: number | null;
+  prazo_desconto: number | null;
+  endereco: string | null;
+  desconto_percentual: number | null;
+  aceitar_politica_privacidade: boolean | null;
+  nome_contato: string | null;
+  fonte_lead: string | null;
+  cpf_representante: string | null;
+  email_representante: string | null;
+  email_testemunha: string | null;
+  envelope_id: string | null;
+  nome_representante: string | null;
+  nome_testemunha: string | null;
+  tipo_contrato: string | null;
+  cargo: string | null;
+  whatsapp_contato: string | null;
+  email_contato: string | null;
+  client_id: string | null;
+  companies_id: string | null;
+  atividade: string | null;
 }
 
 export const useCompanies = () => {

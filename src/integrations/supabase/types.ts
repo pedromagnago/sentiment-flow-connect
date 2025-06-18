@@ -77,61 +77,151 @@ export type Database = {
       }
       companies: {
         Row: {
+          aceitar_politica_privacidade: boolean | null
+          assignee: string | null
+          atividade: string | null
+          cargo: string | null
           clickup_api_key: string | null
           clickup_integration_status: string | null
           clickup_workspace_id: string | null
+          client_id: string | null
           cnpj: string | null
+          companies_id: string | null
+          cpf_representante: string | null
           created_at: string | null
           data_cadastro: string | null
+          date_closed: string | null
+          date_created: string | null
           deleted_at: string | null
+          desconto_percentual: number | null
+          due_date: string | null
+          email_contato: string | null
+          email_representante: string | null
+          email_testemunha: string | null
+          endereco: string | null
+          envelope_id: string | null
+          fonte_lead: string | null
           id: string
           informacoes_contato: Json | null
+          linked_docs: string | null
           nome: string | null
+          nome_contato: string | null
+          nome_representante: string | null
+          nome_testemunha: string | null
           omie_api_key: string | null
           omie_api_secret: string | null
           omie_company_id: string | null
           omie_integration_status: string | null
+          prazo_desconto: number | null
+          priority: string | null
           segmento: string | null
+          start_date: string | null
           status: string | null
+          task_id: string | null
+          task_name: string | null
+          task_status: string | null
+          tipo_contrato: string | null
           updated_at: string | null
+          valor_mensalidade: number | null
+          whatsapp_contato: string | null
         }
         Insert: {
+          aceitar_politica_privacidade?: boolean | null
+          assignee?: string | null
+          atividade?: string | null
+          cargo?: string | null
           clickup_api_key?: string | null
           clickup_integration_status?: string | null
           clickup_workspace_id?: string | null
+          client_id?: string | null
           cnpj?: string | null
+          companies_id?: string | null
+          cpf_representante?: string | null
           created_at?: string | null
           data_cadastro?: string | null
+          date_closed?: string | null
+          date_created?: string | null
           deleted_at?: string | null
+          desconto_percentual?: number | null
+          due_date?: string | null
+          email_contato?: string | null
+          email_representante?: string | null
+          email_testemunha?: string | null
+          endereco?: string | null
+          envelope_id?: string | null
+          fonte_lead?: string | null
           id?: string
           informacoes_contato?: Json | null
+          linked_docs?: string | null
           nome?: string | null
+          nome_contato?: string | null
+          nome_representante?: string | null
+          nome_testemunha?: string | null
           omie_api_key?: string | null
           omie_api_secret?: string | null
           omie_company_id?: string | null
           omie_integration_status?: string | null
+          prazo_desconto?: number | null
+          priority?: string | null
           segmento?: string | null
+          start_date?: string | null
           status?: string | null
+          task_id?: string | null
+          task_name?: string | null
+          task_status?: string | null
+          tipo_contrato?: string | null
           updated_at?: string | null
+          valor_mensalidade?: number | null
+          whatsapp_contato?: string | null
         }
         Update: {
+          aceitar_politica_privacidade?: boolean | null
+          assignee?: string | null
+          atividade?: string | null
+          cargo?: string | null
           clickup_api_key?: string | null
           clickup_integration_status?: string | null
           clickup_workspace_id?: string | null
+          client_id?: string | null
           cnpj?: string | null
+          companies_id?: string | null
+          cpf_representante?: string | null
           created_at?: string | null
           data_cadastro?: string | null
+          date_closed?: string | null
+          date_created?: string | null
           deleted_at?: string | null
+          desconto_percentual?: number | null
+          due_date?: string | null
+          email_contato?: string | null
+          email_representante?: string | null
+          email_testemunha?: string | null
+          endereco?: string | null
+          envelope_id?: string | null
+          fonte_lead?: string | null
           id?: string
           informacoes_contato?: Json | null
+          linked_docs?: string | null
           nome?: string | null
+          nome_contato?: string | null
+          nome_representante?: string | null
+          nome_testemunha?: string | null
           omie_api_key?: string | null
           omie_api_secret?: string | null
           omie_company_id?: string | null
           omie_integration_status?: string | null
+          prazo_desconto?: number | null
+          priority?: string | null
           segmento?: string | null
+          start_date?: string | null
           status?: string | null
+          task_id?: string | null
+          task_name?: string | null
+          task_status?: string | null
+          tipo_contrato?: string | null
           updated_at?: string | null
+          valor_mensalidade?: number | null
+          whatsapp_contato?: string | null
         }
         Relationships: []
       }
