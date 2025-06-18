@@ -30,14 +30,20 @@ export const useCompanies = () => {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
+      console.log('Fetching companies...');
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching companies:', error);
+        throw error;
+      }
+      console.log('Companies fetched:', data);
       setCompanies(data || []);
     } catch (err) {
+      console.error('Fetch companies error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar empresas');
     } finally {
       setLoading(false);
@@ -46,23 +52,30 @@ export const useCompanies = () => {
 
   const createCompany = async (companyData: Partial<Company>) => {
     try {
+      console.log('Creating company:', companyData);
       const { data, error } = await supabase
         .from('companies')
         .insert([companyData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating company:', error);
+        throw error;
+      }
       
+      console.log('Company created:', data);
       await fetchCompanies(); // Refresh the list
       return data;
     } catch (err) {
+      console.error('Create company error:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao criar empresa');
     }
   };
 
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     try {
+      console.log('Updating company:', id, companyData);
       const { data, error } = await supabase
         .from('companies')
         .update({ ...companyData, updated_at: new Date().toISOString() })
@@ -70,26 +83,38 @@ export const useCompanies = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating company:', error);
+        throw error;
+      }
       
+      console.log('Company updated:', data);
       await fetchCompanies(); // Refresh the list
       return data;
     } catch (err) {
+      console.error('Update company error:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao atualizar empresa');
     }
   };
 
   const deleteCompany = async (id: string) => {
     try {
-      const { error } = await supabase
+      console.log('Deleting company (soft delete):', id);
+      const { data, error } = await supabase
         .from('companies')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting company:', error);
+        throw error;
+      }
       
+      console.log('Company deleted (soft delete):', data);
       await fetchCompanies(); // Refresh the list
     } catch (err) {
+      console.error('Delete company error:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao excluir empresa');
     }
   };
