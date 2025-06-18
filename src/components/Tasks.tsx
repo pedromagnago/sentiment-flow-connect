@@ -1,72 +1,64 @@
 
 import { CheckSquare, Plus, Calendar, User, Clock, Filter } from 'lucide-react';
 import { useState } from 'react';
-
-const tasksData = [
-  {
-    id: 1,
-    title: 'Implementar nova funcionalidade de relatórios',
-    description: 'Desenvolver sistema de relatórios personalizados para análise de sentimentos',
-    status: 'Em Progresso',
-    priority: 'Alta',
-    assignee: 'João Silva',
-    dueDate: '2024-01-15',
-    progress: 60
-  },
-  {
-    id: 2,
-    title: 'Correção de bugs na integração ClickUp',
-    description: 'Resolver problemas de sincronização com a API do ClickUp',
-    status: 'Pendente',
-    priority: 'Média',
-    assignee: 'Maria Santos',
-    dueDate: '2024-01-10',
-    progress: 0
-  },
-  {
-    id: 3,
-    title: 'Otimização da análise de sentimentos',
-    description: 'Melhorar performance dos algoritmos de análise',
-    status: 'Concluída',
-    priority: 'Alta',
-    assignee: 'Pedro Oliveira',
-    dueDate: '2024-01-05',
-    progress: 100
-  }
-];
+import { useTaskGroups } from '@/hooks/useTaskGroups';
 
 export const Tasks = () => {
   const [filterStatus, setFilterStatus] = useState('Todas');
+  const { taskGroups, loading, error } = useTaskGroups();
 
   const filteredTasks = filterStatus === 'Todas' 
-    ? tasksData 
-    : tasksData.filter(task => task.status === filterStatus);
+    ? taskGroups 
+    : taskGroups.filter(task => task.status_clickup === filterStatus);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Concluída':
-        return 'text-green-600 bg-green-100';
-      case 'Em Progresso':
-        return 'text-blue-600 bg-blue-100';
-      case 'Pendente':
-        return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+    if (!status) return 'text-gray-600 bg-gray-100';
+    
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('complet') || statusLower.includes('done')) {
+      return 'text-green-600 bg-green-100';
+    } else if (statusLower.includes('progress') || statusLower.includes('doing')) {
+      return 'text-blue-600 bg-blue-100';
+    } else if (statusLower.includes('pending') || statusLower.includes('todo')) {
+      return 'text-yellow-600 bg-yellow-100';
     }
+    return 'text-gray-600 bg-gray-100';
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Alta':
-        return 'text-red-600 bg-red-100';
-      case 'Média':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'Baixa':
-        return 'text-green-600 bg-green-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
+  const getStatusDisplay = (status: string) => {
+    if (!status) return 'Sem Status';
+    return status;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">Carregando tarefas...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-500">Erro: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const completedTasks = taskGroups.filter(task => 
+    task.status_clickup?.toLowerCase().includes('complet') || 
+    task.status_clickup?.toLowerCase().includes('done')
+  ).length;
+
+  const inProgressTasks = taskGroups.filter(task => 
+    task.status_clickup?.toLowerCase().includes('progress') || 
+    task.status_clickup?.toLowerCase().includes('doing')
+  ).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -92,9 +84,9 @@ export const Tasks = () => {
             className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="Todas">Todas</option>
-            <option value="Pendente">Pendente</option>
-            <option value="Em Progresso">Em Progresso</option>
-            <option value="Concluída">Concluída</option>
+            {Array.from(new Set(taskGroups.map(task => task.status_clickup).filter(Boolean))).map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -105,7 +97,7 @@ export const Tasks = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total de Tarefas</p>
-              <p className="text-3xl font-bold mt-2">{tasksData.length}</p>
+              <p className="text-3xl font-bold mt-2">{taskGroups.length}</p>
             </div>
             <CheckSquare className="w-8 h-8 text-blue-200" />
           </div>
@@ -115,9 +107,7 @@ export const Tasks = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-yellow-100 text-sm font-medium">Em Progresso</p>
-              <p className="text-3xl font-bold mt-2">
-                {tasksData.filter(task => task.status === 'Em Progresso').length}
-              </p>
+              <p className="text-3xl font-bold mt-2">{inProgressTasks}</p>
             </div>
             <Clock className="w-8 h-8 text-yellow-200" />
           </div>
@@ -127,9 +117,7 @@ export const Tasks = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Concluídas</p>
-              <p className="text-3xl font-bold mt-2">
-                {tasksData.filter(task => task.status === 'Concluída').length}
-              </p>
+              <p className="text-3xl font-bold mt-2">{completedTasks}</p>
             </div>
             <CheckSquare className="w-8 h-8 text-green-200" />
           </div>
@@ -143,45 +131,40 @@ export const Tasks = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(task.status)}`}>
-                    {task.status}
-                  </span>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(task.priority)}`}>
-                    {task.priority}
+                  <h3 className="text-lg font-semibold text-gray-900">{task.nome_grupo || 'Grupo sem nome'}</h3>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(task.status_clickup)}`}>
+                    {getStatusDisplay(task.status_clickup)}
                   </span>
                 </div>
                 
-                <p className="text-gray-600 mb-4">{task.description}</p>
+                <p className="text-gray-600 mb-4">ID: {task.id}</p>
                 
                 <div className="flex items-center space-x-6 text-sm text-gray-500">
                   <div className="flex items-center">
                     <User className="w-4 h-4 mr-1" />
-                    {task.assignee}
+                    {task.workflow_name || 'Workflow não definido'}
                   </div>
                   <div className="flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
-                    {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                    {new Date(task.created_at).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
                 
-                {/* Barra de Progresso */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">Progresso</span>
-                    <span className="text-sm text-gray-500">{task.progress}%</span>
+                {task.execution_id && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    Execução: {task.execution_id}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${task.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
         ))}
+        
+        {filteredTasks.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p className="text-gray-500">Nenhuma tarefa encontrada.</p>
+          </div>
+        )}
       </div>
     </div>
   );

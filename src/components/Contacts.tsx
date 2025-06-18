@@ -1,59 +1,44 @@
 
 import { Users, Search, Plus, Phone, Mail, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
-
-const contactsData = [
-  {
-    id: 1,
-    name: 'João Silva',
-    email: 'joao.silva@email.com',
-    phone: '+55 11 99999-9999',
-    status: 'Ativo',
-    lastContact: '2 dias atrás',
-    sentiment: 'Positivo'
-  },
-  {
-    id: 2,
-    name: 'Maria Santos',
-    email: 'maria.santos@email.com',
-    phone: '+55 11 88888-8888',
-    status: 'Ativo',
-    lastContact: '1 semana atrás',
-    sentiment: 'Neutro'
-  },
-  {
-    id: 3,
-    name: 'Pedro Oliveira',
-    email: 'pedro.oliveira@email.com',
-    phone: '+55 11 77777-7777',
-    status: 'Inativo',
-    lastContact: '1 mês atrás',
-    sentiment: 'Negativo'
-  }
-];
+import { useContacts } from '@/hooks/useContacts';
 
 export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { contacts, loading, error } = useContacts();
 
-  const filteredContacts = contactsData.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter(contact =>
+    contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.id_contact?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'Positivo':
-        return 'text-green-600 bg-green-100';
-      case 'Negativo':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
+  const getStatusColor = (status: boolean) => {
+    return status ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100';
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'Ativo' ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100';
+  const getSentimentColor = (feedback: boolean) => {
+    return feedback ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">Carregando contatos...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-500">Erro: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -102,10 +87,13 @@ export const Contacts = () => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sentimento
+                  Feedback
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Último Contato
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Data Criação
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
@@ -114,32 +102,33 @@ export const Contacts = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredContacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-gray-50">
+                <tr key={contact.id_contact} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <Mail className="w-3 h-3 mr-1" />
-                        {contact.email}
+                      <div className="text-sm font-medium text-gray-900">
+                        {contact.nome || 'Nome não informado'}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center">
                         <Phone className="w-3 h-3 mr-1" />
-                        {contact.phone}
+                        {contact.id_contact}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(contact.status)}`}>
-                      {contact.status}
+                      {contact.status ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSentimentColor(contact.sentiment)}`}>
-                      {contact.sentiment}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSentimentColor(contact.feedback)}`}>
+                      {contact.feedback ? 'Positivo' : 'Negativo'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {contact.lastContact}
+                    {contact.is_group ? 'Grupo' : 'Individual'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {contact.data_criacao ? new Date(contact.data_criacao).toLocaleDateString('pt-BR') : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button className="text-gray-400 hover:text-gray-600">
@@ -151,6 +140,12 @@ export const Contacts = () => {
             </tbody>
           </table>
         </div>
+        
+        {filteredContacts.length === 0 && (
+          <div className="p-6 text-center text-gray-500">
+            Nenhum contato encontrado.
+          </div>
+        )}
       </div>
     </div>
   );

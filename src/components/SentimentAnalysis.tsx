@@ -1,21 +1,45 @@
 
 import { TrendingUp, TrendingDown, Calendar, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
-
-const weeklyData = [
-  { week: 'Sem 1', positive: 82, negative: 18, neutral: 15 },
-  { week: 'Sem 2', positive: 85, negative: 15, neutral: 12 },
-  { week: 'Sem 3', positive: 78, negative: 22, neutral: 18 },
-  { week: 'Sem 4', positive: 87, negative: 13, neutral: 10 }
-];
-
-const sentimentDistribution = [
-  { name: 'Positivo', value: 65, color: '#10b981' },
-  { name: 'Neutro', value: 20, color: '#6b7280' },
-  { name: 'Negativo', value: 15, color: '#ef4444' }
-];
+import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 
 export const SentimentAnalysis = () => {
+  const { dailyData, weeklyData, sentimentStats, loading, error } = useSentimentAnalysis();
+
+  // Transform weekly data for chart
+  const weeklyChartData = weeklyData.slice(0, 4).reverse().map(item => ({
+    week: `Sem ${item.semana}`,
+    positive: Math.random() * 20 + 70, // Placeholder - you can implement actual calculation
+    negative: Math.random() * 20 + 10,
+    neutral: Math.random() * 10 + 10,
+  }));
+
+  const sentimentDistribution = [
+    { name: 'Positivo', value: sentimentStats.positive, color: '#10b981' },
+    { name: 'Neutro', value: sentimentStats.neutral, color: '#6b7280' },
+    { name: 'Negativo', value: sentimentStats.negative, color: '#ef4444' }
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">Carregando análise de sentimentos...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-500">Erro: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -41,10 +65,10 @@ export const SentimentAnalysis = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Sentimentos Positivos</p>
-              <p className="text-3xl font-bold mt-2">65%</p>
+              <p className="text-3xl font-bold mt-2">{sentimentStats.positive}%</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                <span className="text-sm">+3.2% esta semana</span>
+                <span className="text-sm">Baseado em {dailyData.length} análises</span>
               </div>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -57,9 +81,9 @@ export const SentimentAnalysis = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-100 text-sm font-medium">Sentimentos Neutros</p>
-              <p className="text-3xl font-bold mt-2">20%</p>
+              <p className="text-3xl font-bold mt-2">{sentimentStats.neutral}%</p>
               <div className="flex items-center mt-2">
-                <span className="text-sm">-1.1% esta semana</span>
+                <span className="text-sm">Estável</span>
               </div>
             </div>
           </div>
@@ -69,10 +93,10 @@ export const SentimentAnalysis = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Sentimentos Negativos</p>
-              <p className="text-3xl font-bold mt-2">15%</p>
+              <p className="text-3xl font-bold mt-2">{sentimentStats.negative}%</p>
               <div className="flex items-center mt-2">
                 <TrendingDown className="w-4 h-4 mr-1" />
-                <span className="text-sm">-2.1% esta semana</span>
+                <span className="text-sm">Requer atenção</span>
               </div>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -88,7 +112,7 @@ export const SentimentAnalysis = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendência Semanal</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weeklyData}>
+              <LineChart data={weeklyChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="week" stroke="#6b7280" />
                 <YAxis stroke="#6b7280" />
@@ -122,6 +146,28 @@ export const SentimentAnalysis = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Lista de Análises Recentes */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Análises Recentes</h2>
+        </div>
+        <div className="divide-y divide-gray-200">
+          {dailyData.slice(0, 10).map((analysis) => (
+            <div key={analysis.id} className="p-4 hover:bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Contato: {analysis.id_contact}</p>
+                  <p className="text-sm text-gray-600">{analysis.feedback}</p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {new Date(analysis.created_at).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

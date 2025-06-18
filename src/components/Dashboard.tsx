@@ -3,8 +3,24 @@ import { TrendingUp, Users, MessageSquare, CheckCircle } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 import { SentimentChart } from './SentimentChart';
 import { RecentContacts } from './RecentContacts';
+import { useContacts } from '@/hooks/useContacts';
+import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
+import { useMessages } from '@/hooks/useMessages';
+import { useTaskGroups } from '@/hooks/useTaskGroups';
 
 export const Dashboard = () => {
+  const { contacts, loading: contactsLoading } = useContacts();
+  const { sentimentStats, loading: sentimentLoading } = useSentimentAnalysis();
+  const { messages, loading: messagesLoading } = useMessages();
+  const { taskGroups, loading: tasksLoading } = useTaskGroups();
+
+  const isLoading = contactsLoading || sentimentLoading || messagesLoading || tasksLoading;
+
+  const completedTasks = taskGroups.filter(task => 
+    task.status_clickup?.toLowerCase().includes('complet') || 
+    task.status_clickup?.toLowerCase().includes('done')
+  ).length;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -21,28 +37,28 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Sentimento Positivo"
-          value="87.3%"
+          value={isLoading ? "..." : `${sentimentStats.positive}%`}
           change="+5.2%"
           icon={TrendingUp}
           color="green"
         />
         <MetricCard
           title="Total de Contatos"
-          value="2,847"
+          value={isLoading ? "..." : contacts.length.toLocaleString()}
           change="+12.5%"
           icon={Users}
           color="blue"
         />
         <MetricCard
           title="Mensagens Processadas"
-          value="15,429"
+          value={isLoading ? "..." : messages.length.toLocaleString()}
           change="+8.1%"
           icon={MessageSquare}
           color="purple"
         />
         <MetricCard
           title="Tarefas Concluídas"
-          value="342"
+          value={isLoading ? "..." : completedTasks.toString()}
           change="+15.3%"
           icon={CheckCircle}
           color="emerald"
