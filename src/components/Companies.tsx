@@ -1,8 +1,13 @@
-import { Building2, Plus, Search, Edit, Trash2, Settings, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+
+import { Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { CompanyModal } from './CompanyModal';
 import { useToast } from '@/hooks/use-toast';
+import { CompanyHeader } from './companies/CompanyHeader';
+import { CompanyFilters } from './companies/CompanyFilters';
+import { CompanyStats } from './companies/CompanyStats';
+import { CompanyCard } from './companies/CompanyCard';
 
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,19 +99,6 @@ export const Companies = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    if (status === 'Ativo') return <CheckCircle className="w-4 h-4 text-green-500" />;
-    if (status === 'Inativo') return <XCircle className="w-4 h-4 text-red-500" />;
-    return <div className="w-4 h-4 bg-gray-300 rounded-full" />;
-  };
-
-  const getIntegrationStatus = (clickupStatus, omieStatus) => {
-    const integrations = [];
-    if (clickupStatus === 'Ativo') integrations.push('ClickUp');
-    if (omieStatus === 'Ativo') integrations.push('Omie');
-    return integrations.length > 0 ? integrations.join(', ') : 'Nenhuma';
-  };
-
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -129,164 +121,33 @@ export const Companies = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestão de Empresas</h1>
-          <p className="text-gray-600 mt-1">Gerencie suas empresas clientes e suas integrações</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-            title="Atualizar lista"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>Atualizar</span>
-          </button>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nova Empresa</span>
-          </button>
-        </div>
-      </div>
+      <CompanyHeader 
+        onRefresh={handleRefresh}
+        onAddNew={() => setIsModalOpen(true)}
+        refreshing={refreshing}
+      />
 
-      {/* Filtros e Busca */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, CNPJ ou segmento..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="Todas">Todas</option>
-            <option value="Ativo">Ativas</option>
-            <option value="Inativo">Inativas</option>
-          </select>
-        </div>
-      </div>
+      <CompanyFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filterStatus={filterStatus}
+        onStatusChange={setFilterStatus}
+      />
 
-      {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total</p>
-              <p className="text-3xl font-bold mt-2">{filteredCompanies.length}</p>
-            </div>
-            <Building2 className="w-8 h-8 text-blue-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Ativas</p>
-              <p className="text-3xl font-bold mt-2">
-                {filteredCompanies.filter(c => c.status === 'Ativo').length}
-              </p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm font-medium">Com ClickUp</p>
-              <p className="text-3xl font-bold mt-2">
-                {filteredCompanies.filter(c => c.clickup_integration_status === 'Ativo').length}
-              </p>
-            </div>
-            <Settings className="w-8 h-8 text-yellow-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Com Omie</p>
-              <p className="text-3xl font-bold mt-2">
-                {filteredCompanies.filter(c => c.omie_integration_status === 'Ativo').length}
-              </p>
-            </div>
-            <Settings className="w-8 h-8 text-purple-200" />
-          </div>
-        </div>
-      </div>
+      <CompanyStats companies={filteredCompanies} />
 
       {/* Lista de Empresas */}
       <div className="space-y-4">
         {filteredCompanies.map((company) => (
-          <div key={company.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {company.nome || 'Empresa sem nome'}
-                  </h3>
-                  {getStatusIcon(company.status)}
-                  <span className="text-sm text-gray-500">
-                    {company.status || 'Status não definido'}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">CNPJ</p>
-                    <p className="font-medium">{company.cnpj || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Segmento</p>
-                    <p className="font-medium">{company.segmento || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Integrações</p>
-                    <p className="font-medium">
-                      {getIntegrationStatus(company.clickup_integration_status, company.omie_integration_status)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-sm text-gray-500">
-                  Criada em: {company.created_at ? new Date(company.created_at).toLocaleDateString('pt-BR') : 'Data não disponível'}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => {
-                    setEditingCompany(company);
-                    setIsModalOpen(true);
-                  }}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="Editar empresa"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteCompany(company)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Excluir empresa"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <CompanyCard
+            key={company.id}
+            company={company}
+            onEdit={(company) => {
+              setEditingCompany(company);
+              setIsModalOpen(true);
+            }}
+            onDelete={handleDeleteCompany}
+          />
         ))}
         
         {filteredCompanies.length === 0 && (
@@ -300,7 +161,6 @@ export const Companies = () => {
         )}
       </div>
 
-      {/* Modal */}
       <CompanyModal
         isOpen={isModalOpen}
         onClose={() => {

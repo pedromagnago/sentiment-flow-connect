@@ -1,16 +1,83 @@
 
-import { Users, Search, Plus, Phone, Mail, MoreVertical } from 'lucide-react';
+import { Users, Search, Plus, Phone, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useContacts } from '@/hooks/useContacts';
+import { ContactModal } from './ContactModal';
+import { useToast } from '@/hooks/use-toast';
 
 export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { contacts, loading, error } = useContacts();
+  const [filterStatus, setFilterStatus] = useState('Todos');
+  const [filterType, setFilterType] = useState('Todos');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState(null);
+  const { contacts, loading, error, createContact, updateContact, deleteContact } = useContacts();
+  const { toast } = useToast();
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.id_contact?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.id_contact?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'Todos' || 
+                         (filterStatus === 'Ativo' && contact.status) ||
+                         (filterStatus === 'Inativo' && !contact.status);
+    const matchesType = filterType === 'Todos' ||
+                       (filterType === 'Grupo' && contact.is_group) ||
+                       (filterType === 'Individual' && !contact.is_group);
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const handleCreateContact = async (contactData) => {
+    try {
+      await createContact(contactData);
+      setIsModalOpen(false);
+      toast({
+        title: "Contato criado",
+        description: "O contato foi criado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditContact = async (contactData) => {
+    try {
+      await updateContact(editingContact.id_contact, contactData);
+      setIsModalOpen(false);
+      setEditingContact(null);
+      toast({
+        title: "Contato atualizado",
+        description: "O contato foi atualizado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteContact = async (contact) => {
+    if (window.confirm(`Tem certeza que deseja excluir o contato "${contact.nome}"? Esta ação não pode ser desfeita.`)) {
+      try {
+        await deleteContact(contact.id_contact);
+        toast({
+          title: "Contato excluído",
+          description: "O contato foi excluído com sucesso.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const getStatusColor = (status: boolean) => {
     return status ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100';
@@ -47,23 +114,46 @@ export const Contacts = () => {
           <h1 className="text-3xl font-bold text-gray-900">Contatos</h1>
           <p className="text-gray-600 mt-1">Gerencie seus contatos e acompanhe interações</p>
         </div>
-        <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           <span>Novo Contato</span>
         </button>
       </div>
 
-      {/* Barra de Pesquisa */}
+      {/* Filtros e Busca */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar contatos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Buscar contatos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="Todos">Todos Status</option>
+            <option value="Ativo">Ativos</option>
+            <option value="Inativo">Inativos</option>
+          </select>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="Todos">Todos Tipos</option>
+            <option value="Individual">Individual</option>
+            <option value="Grupo">Grupo</option>
+          </select>
         </div>
       </div>
 
@@ -131,9 +221,25 @@ export const Contacts = () => {
                     {contact.data_criacao ? new Date(contact.data_criacao).toLocaleDateString('pt-BR') : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingContact(contact);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Editar contato"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteContact(contact)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Excluir contato"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -143,10 +249,24 @@ export const Contacts = () => {
         
         {filteredContacts.length === 0 && (
           <div className="p-6 text-center text-gray-500">
-            Nenhum contato encontrado.
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p>Nenhum contato encontrado.</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {searchTerm ? 'Tente ajustar os filtros de busca.' : 'Comece criando seu primeiro contato.'}
+            </p>
           </div>
         )}
       </div>
+
+      <ContactModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingContact(null);
+        }}
+        onSave={editingContact ? handleEditContact : handleCreateContact}
+        contact={editingContact}
+      />
     </div>
   );
 };

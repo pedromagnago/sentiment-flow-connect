@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,6 +36,56 @@ export const useContacts = () => {
       setError(err instanceof Error ? err.message : 'Erro ao carregar contatos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createContact = async (contactData: Partial<Contact>) => {
+    try {
+      console.log('Creating contact:', contactData);
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert([{
+          ...contactData,
+          data_criacao: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating contact:', error);
+        throw error;
+      }
+      
+      console.log('Contact created:', data);
+      await fetchContacts();
+      return data;
+    } catch (err) {
+      console.error('Create contact error:', err);
+      throw new Error(err instanceof Error ? err.message : 'Erro ao criar contato');
+    }
+  };
+
+  const updateContact = async (id: string, contactData: Partial<Contact>) => {
+    try {
+      console.log('Updating contact:', id, contactData);
+      const { data, error } = await supabase
+        .from('contacts')
+        .update({ ...contactData, updated_at: new Date().toISOString() })
+        .eq('id_contact', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating contact:', error);
+        throw error;
+      }
+      
+      console.log('Contact updated:', data);
+      await fetchContacts();
+      return data;
+    } catch (err) {
+      console.error('Update contact error:', err);
+      throw new Error(err instanceof Error ? err.message : 'Erro ao atualizar contato');
     }
   };
 
@@ -122,6 +171,8 @@ export const useContacts = () => {
     loading, 
     error, 
     refetch: fetchContacts,
+    createContact,
+    updateContact,
     deleteContact
   };
 };
