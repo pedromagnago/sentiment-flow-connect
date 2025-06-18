@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -117,8 +118,30 @@ export const useCompanies = () => {
     }
   };
 
+  // Setup realtime subscription to automatically refresh when data changes
   useEffect(() => {
     fetchCompanies();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('companies-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'companies'
+        },
+        (payload) => {
+          console.log('Companies table changed:', payload);
+          fetchCompanies(); // Refresh data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { 

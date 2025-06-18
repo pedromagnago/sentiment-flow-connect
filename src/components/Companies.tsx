@@ -1,4 +1,4 @@
-import { Building2, Plus, Search, Edit, Trash2, Settings, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, Plus, Search, Edit, Trash2, Settings, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { CompanyModal } from './CompanyModal';
@@ -9,7 +9,8 @@ export const Companies = () => {
   const [filterStatus, setFilterStatus] = useState('Todas');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
-  const { companies, loading, error, createCompany, updateCompany, deleteCompany } = useCompanies();
+  const [refreshing, setRefreshing] = useState(false);
+  const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompanies();
   const { toast } = useToast();
 
   const filteredCompanies = companies
@@ -74,6 +75,25 @@ export const Companies = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Dados atualizados",
+        description: "A lista de empresas foi atualizada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar a lista de empresas.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const getStatusIcon = (status) => {
     if (status === 'Ativo') return <CheckCircle className="w-4 h-4 text-green-500" />;
     if (status === 'Inativo') return <XCircle className="w-4 h-4 text-red-500" />;
@@ -114,13 +134,24 @@ export const Companies = () => {
           <h1 className="text-3xl font-bold text-gray-900">Gestão de Empresas</h1>
           <p className="text-gray-600 mt-1">Gerencie suas empresas clientes e suas integrações</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nova Empresa</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            title="Atualizar lista"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Atualizar</span>
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Empresa</span>
+          </button>
+        </div>
       </div>
 
       {/* Filtros e Busca */}
