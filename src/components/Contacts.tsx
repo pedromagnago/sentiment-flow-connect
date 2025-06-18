@@ -1,10 +1,11 @@
 
-
-import { Users, Search, Plus, Phone, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Users, Search, Plus, Phone, MoreVertical, Edit, Trash2, Database, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useContacts } from '@/hooks/useContacts';
 import { ContactModal } from './ContactModal';
 import { useToast } from '@/hooks/use-toast';
+import { ContactBulkOperations } from './contacts/ContactBulkOperations';
+import { useContactBulkOperations } from '@/hooks/useContactBulkOperations';
 
 export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,8 +14,11 @@ export const Contacts = () => {
   const [filterFeedback, setFilterFeedback] = useState('Todos');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
-  const { contacts, loading, error, createContact, updateContact, deleteContact } = useContacts();
+  const [refreshing, setRefreshing] = useState(false);
+  const [showBulkOperations, setShowBulkOperations] = useState(false);
+  const { contacts, loading, error, createContact, updateContact, deleteContact, refetch } = useContacts();
   const { toast } = useToast();
+  const bulkOps = useContactBulkOperations();
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,6 +88,70 @@ export const Contacts = () => {
     }
   };
 
+  const handleBulkCreate = async (contactsData) => {
+    try {
+      // Criar contatos um por um para melhor controle de erros
+      const results = [];
+      const errors = [];
+      
+      for (let i = 0; i < contactsData.length; i++) {
+        try {
+          const result = await createContact(contactsData[i]);
+          results.push(result);
+        } catch (error) {
+          errors.push({ index: i + 1, error: error.message });
+        }
+      }
+
+      if (errors.length > 0) {
+        console.warn('Erros na importação:', errors);
+        toast({
+          title: "Importação parcial",
+          description: `${results.length} contatos criados. ${errors.length} com erro.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Importação concluída",
+          description: `${results.length} contatos foram criados com sucesso.`,
+        });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleBulkDelete = async (contactIds) => {
+    try {
+      // Excluir contatos um por um
+      for (const id of contactIds) {
+        await deleteContact(id);
+      }
+      bulkOps.clearSelection();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Dados atualizados",
+        description: "A lista de contatos foi atualizada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar a lista de contatos.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const getStatusColor = (status: boolean) => {
     return status ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100';
   };
@@ -119,13 +187,38 @@ export const Contacts = () => {
           <h1 className="text-3xl font-bold text-gray-900">Contatos</h1>
           <p className="text-gray-600 mt-1">Gerencie seus contatos e acompanhe interações</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Contato</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => setShowBulkOperations(!showBulkOperations)}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              showBulkOperations 
+                ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            title="Operações em massa"
+          >
+            <Database className="w-4 h-4" />
+            <span>Operações em Massa</span>
+          </button>
+          
+          <button 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            title="Atualizar lista"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Atualizar</span>
+          </button>
+          
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Contato</span>
+          </button>
+        </div>
       </div>
 
       {/* Filtros e Busca */}
@@ -170,6 +263,15 @@ export const Contacts = () => {
           </select>
         </div>
       </div>
+
+      {/* Operações em Massa */}
+      {showBulkOperations && (
+        <ContactBulkOperations
+          contacts={filteredContacts}
+          onBulkCreate={handleBulkCreate}
+          onBulkDelete={handleBulkDelete}
+        />
+      )}
 
       {/* Lista de Contatos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -284,4 +386,3 @@ export const Contacts = () => {
     </div>
   );
 };
-
