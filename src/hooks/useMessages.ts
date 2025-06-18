@@ -20,24 +20,97 @@ export const useMessages = () => {
   const fetchMessages = async () => {
     try {
       setLoading(true);
+      console.log('Fetching messages...');
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .order('data_hora', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      console.log('Messages fetched:', data?.length, 'messages');
       setMessages(data || []);
     } catch (err) {
+      console.error('Fetch messages error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens');
     } finally {
       setLoading(false);
     }
   };
 
+  const deleteMessage = async (id: string) => {
+    try {
+      console.log('Attempting to delete message:', id);
+      
+      // Check if the message still exists
+      const { data: existingMessage, error: checkError } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingMessage) {
+        console.log('Message does not exist in database, removing from local state');
+        setMessages(prev => prev.filter(message => message.id !== id));
+        return;
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        
+        if (error.code === '23503') {
+          throw new Error('Não é possível excluir esta mensagem pois ela possui dados relacionados no sistema.');
+        }
+        
+        throw error;
+      }
+      
+      console.log('Message deleted successfully');
+      await fetchMessages();
+    } catch (err) {
+      console.error('Delete message error:', err);
+      throw new Error(err instanceof Error ? err.message : 'Erro ao excluir mensagem');
+    }
+  };
+
+  // Setup realtime subscription
   useEffect(() => {
     fetchMessages();
+
+    const channel = supabase
+      .channel('messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Messages table changed:', payload);
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  return { messages, loading, error, refetch: fetchMessages };
+  return { 
+    messages, 
+    loading, 
+    error, 
+    refetch: fetchMessages,
+    deleteMessage
+  };
 };
