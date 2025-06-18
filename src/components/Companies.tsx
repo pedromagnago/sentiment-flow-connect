@@ -1,4 +1,3 @@
-
 import { Building2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -9,7 +8,7 @@ import { CompanyFilters } from './companies/CompanyFilters';
 import { CompanyStats } from './companies/CompanyStats';
 import { CompanyCard } from './companies/CompanyCard';
 import { BulkOperations } from './companies/BulkOperations';
-import { useBulk Operations } from '@/hooks/useBulkOperations';
+import { useBulkOperations } from '@/hooks/useBulkOperations';
 
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
