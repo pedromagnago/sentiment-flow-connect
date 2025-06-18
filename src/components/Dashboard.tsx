@@ -1,25 +1,21 @@
 
-import { TrendingUp, Users, MessageSquare, CheckCircle } from 'lucide-react';
-import { MetricCard } from './MetricCard';
-import { SentimentChart } from './SentimentChart';
-import { RecentContacts } from './RecentContacts';
 import { useContacts } from '@/hooks/useContacts';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useMessages } from '@/hooks/useMessages';
 import { useTaskGroups } from '@/hooks/useTaskGroups';
+import { useCompanies } from '@/hooks/useCompanies';
+import { SentimentChart } from './SentimentChart';
+import { RecentContacts } from './RecentContacts';
+import { DashboardWidgets } from './dashboard/DashboardWidgets';
 
 export const Dashboard = () => {
   const { contacts, loading: contactsLoading } = useContacts();
+  const { companies, loading: companiesLoading } = useCompanies();
   const { sentimentStats, loading: sentimentLoading } = useSentimentAnalysis();
   const { messages, loading: messagesLoading } = useMessages();
   const { taskGroups, loading: tasksLoading } = useTaskGroups();
 
-  const isLoading = contactsLoading || sentimentLoading || messagesLoading || tasksLoading;
-
-  const completedTasks = taskGroups.filter(task => 
-    task.status_clickup?.toLowerCase().includes('complet') || 
-    task.status_clickup?.toLowerCase().includes('done')
-  ).length;
+  const isLoading = contactsLoading || sentimentLoading || messagesLoading || tasksLoading || companiesLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -33,37 +29,22 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Sentimento Positivo"
-          value={isLoading ? "..." : `${sentimentStats.positive}%`}
-          change="+5.2%"
-          icon={TrendingUp}
-          color="green"
+      {/* Widgets do Dashboard */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-gray-200 animate-pulse rounded-xl h-32"></div>
+          ))}
+        </div>
+      ) : (
+        <DashboardWidgets
+          contacts={contacts}
+          companies={companies}
+          sentimentStats={sentimentStats}
+          messages={messages}
+          taskGroups={taskGroups}
         />
-        <MetricCard
-          title="Total de Contatos"
-          value={isLoading ? "..." : contacts.length.toLocaleString()}
-          change="+12.5%"
-          icon={Users}
-          color="blue"
-        />
-        <MetricCard
-          title="Mensagens Processadas"
-          value={isLoading ? "..." : messages.length.toLocaleString()}
-          change="+8.1%"
-          icon={MessageSquare}
-          color="purple"
-        />
-        <MetricCard
-          title="Tarefas Concluídas"
-          value={isLoading ? "..." : completedTasks.toString()}
-          change="+15.3%"
-          icon={CheckCircle}
-          color="emerald"
-        />
-      </div>
+      )}
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

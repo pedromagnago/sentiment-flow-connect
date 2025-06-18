@@ -8,6 +8,7 @@ import { Companies } from '../components/Companies';
 import { TaskApprovals } from '../components/TaskApprovals';
 import { Settings } from '../components/Settings';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
+import { ReportsPage } from '../components/reports/ReportsPage';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -22,6 +23,8 @@ const Index = () => {
         return <Contacts />;
       case 'companies':
         return <Companies />;
+      case 'reports':
+        return <ReportsPage />;
       case 'tasks':
         return <Tasks />;
       case 'task-approvals':

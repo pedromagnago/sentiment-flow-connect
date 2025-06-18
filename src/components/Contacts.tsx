@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useContacts } from '@/hooks/useContacts';
 import { ContactModal } from './ContactModal';
@@ -9,8 +10,10 @@ import { ContactBulkOperations } from './contacts/ContactBulkOperations';
 import { LoadingSpinner } from './common/LoadingSpinner';
 import { ErrorState } from './common/ErrorState';
 import { Breadcrumb } from './common/Breadcrumb';
+import { PaginationControls } from './common/Pagination';
 import { useContactBulkOperations } from '@/hooks/useContactBulkOperations';
 import { useContactHandlers } from '@/hooks/handlers/useContactHandlers';
+import { usePagination } from '@/hooks/usePagination';
 
 export const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +45,16 @@ export const Contacts = () => {
                            (filterFeedback === 'Inativo' && !contact.feedback);
     return matchesSearch && matchesStatus && matchesType && matchesFeedback;
   });
+
+  const pagination = usePagination({
+    data: filteredContacts,
+    itemsPerPage: 15
+  });
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    pagination.resetPagination();
+  }, [searchTerm, filterStatus, filterType, filterFeedback]);
 
   const handleBulkCreate = async (contactsData: any[]) => {
     try {
@@ -130,11 +143,24 @@ export const Contacts = () => {
       {filteredContacts.length === 0 ? (
         <ContactEmptyState hasSearch={!!searchTerm} />
       ) : (
-        <ContactTable
-          contacts={filteredContacts}
-          onEdit={handlers.openEditModal}
-          onDelete={handlers.handleDeleteContact}
-        />
+        <>
+          <ContactTable
+            contacts={pagination.paginatedData}
+            onEdit={handlers.openEditModal}
+            onDelete={handlers.handleDeleteContact}
+          />
+          
+          <PaginationControls
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={pagination.goToPage}
+            hasNext={pagination.hasNext}
+            hasPrevious={pagination.hasPrevious}
+            startIndex={pagination.startIndex}
+            endIndex={pagination.endIndex}
+            totalItems={pagination.totalItems}
+          />
+        </>
       )}
 
       <ContactModal

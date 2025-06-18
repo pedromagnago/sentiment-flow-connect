@@ -10,8 +10,10 @@ import { BulkOperations } from './companies/BulkOperations';
 import { LoadingSpinner } from './common/LoadingSpinner';
 import { ErrorState } from './common/ErrorState';
 import { Breadcrumb } from './common/Breadcrumb';
+import { PaginationControls } from './common/Pagination';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useCompanyHandlers } from '@/hooks/handlers/useCompanyHandlers';
+import { usePagination } from '@/hooks/usePagination';
 
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +36,16 @@ export const Companies = () => {
     const matchesStatus = filterStatus === 'Todas' || company.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const pagination = usePagination({
+    data: filteredCompanies,
+    itemsPerPage: 10
+  });
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    pagination.resetPagination();
+  }, [searchTerm, filterStatus]);
 
   const handleBulkCreate = async (companiesData: any[]) => {
     try {
@@ -118,10 +130,21 @@ export const Companies = () => {
       )}
 
       <CompanyList
-        companies={filteredCompanies}
+        companies={pagination.paginatedData}
         hasSearch={!!searchTerm}
         onEdit={handlers.openEditModal}
         onDelete={handlers.handleDeleteCompany}
+      />
+
+      <PaginationControls
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={pagination.goToPage}
+        hasNext={pagination.hasNext}
+        hasPrevious={pagination.hasPrevious}
+        startIndex={pagination.startIndex}
+        endIndex={pagination.endIndex}
+        totalItems={pagination.totalItems}
       />
 
       <CompanyModal
