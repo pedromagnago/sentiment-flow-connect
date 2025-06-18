@@ -7,7 +7,7 @@ export const useContactsWithAudit = () => {
   const contactsHook = useContacts();
   const { logAction } = useAuditLog();
 
-  const createContact = async (contactData: Partial<Contact>) => {
+  const createContact = async (contactData: Omit<Contact, 'data_criacao'>) => {
     try {
       const result = await contactsHook.createContact(contactData);
       
