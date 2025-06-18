@@ -4,6 +4,7 @@ import { Sidebar } from '../components/Sidebar';
 import { Dashboard } from '../components/Dashboard';
 import { Contacts } from '../components/Contacts';
 import { Tasks } from '../components/Tasks';
+import { Companies } from '../components/Companies';
 import { Settings } from '../components/Settings';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 
@@ -18,6 +19,8 @@ const Index = () => {
         return <SentimentAnalysis />;
       case 'contacts':
         return <Contacts />;
+      case 'companies':
+        return <Companies />;
       case 'tasks':
         return <Tasks />;
       case 'settings':
