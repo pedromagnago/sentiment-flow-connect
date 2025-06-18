@@ -99,7 +99,34 @@ export const useCompanies = () => {
 
   const deleteCompany = async (id: string) => {
     try {
-      console.log('Deleting company (hard delete):', id);
+      console.log('Attempting to delete company:', id);
+      
+      // First, try to check if the company still exists
+      const { data: existingCompany, error: checkError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingCompany) {
+        console.log('Company does not exist in database, removing from local state');
+        // Remove from local state if it doesn't exist in database
+        setCompanies(prev => prev.filter(company => company.id !== id));
+        return;
+      }
+
+      // Try to delete related contacts first to avoid foreign key constraint
+      console.log('Checking for related contacts...');
+      const { error: contactsError } = await supabase
+        .from('contacts')
+        .delete()
+        .eq('empresa_id', id);
+
+      if (contactsError) {
+        console.log('Warning: Could not delete related contacts:', contactsError);
+      }
+
+      // Now delete the company
       const { error } = await supabase
         .from('companies')
         .delete()
@@ -107,10 +134,16 @@ export const useCompanies = () => {
 
       if (error) {
         console.error('Error deleting company:', error);
+        
+        // If it's a foreign key constraint error, provide more specific message
+        if (error.code === '23503') {
+          throw new Error('Não é possível excluir esta empresa pois ela possui dados relacionados no sistema. Entre em contato com o administrador.');
+        }
+        
         throw error;
       }
       
-      console.log('Company permanently deleted from database');
+      console.log('Company deleted successfully');
       await fetchCompanies(); // Refresh the list
     } catch (err) {
       console.error('Delete company error:', err);
