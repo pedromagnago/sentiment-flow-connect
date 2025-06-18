@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Contact } from '@/hooks/useContacts';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -14,13 +14,37 @@ interface ContactModalProps {
 export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalProps) => {
   const { companies } = useCompanies();
   const [formData, setFormData] = useState({
-    nome: contact?.nome || '',
-    id_contact: contact?.id_contact || '',
-    status: contact?.status ?? true,
-    feedback: contact?.feedback ?? true,
-    is_group: contact?.is_group ?? false,
-    empresa_id: contact?.empresa_id || ''
+    nome: '',
+    id_contact: '',
+    status: true,
+    feedback: true,
+    is_group: false,
+    empresa_id: ''
   });
+
+  // Atualizar formData quando o contact prop mudar
+  useEffect(() => {
+    if (contact) {
+      setFormData({
+        nome: contact.nome || '',
+        id_contact: contact.id_contact || '',
+        status: contact.status ?? true,
+        feedback: contact.feedback ?? true,
+        is_group: contact.is_group ?? false,
+        empresa_id: contact.empresa_id || ''
+      });
+    } else {
+      // Reset form para novo contato
+      setFormData({
+        nome: '',
+        id_contact: '',
+        status: true,
+        feedback: true,
+        is_group: false,
+        empresa_id: ''
+      });
+    }
+  }, [contact, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
