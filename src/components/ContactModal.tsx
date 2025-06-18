@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Contact } from '@/hooks/useContacts';
@@ -49,7 +48,14 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Garantir que empresa_id seja tratado corretamente
+    const processedFormData = {
+      ...formData,
+      empresa_id: formData.empresa_id && formData.empresa_id.trim() !== '' ? formData.empresa_id : ''
+    };
+    
+    onSave(processedFormData);
   };
 
   const handleChange = (field: string, value: any) => {
@@ -178,4 +184,3 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
     </div>
   );
 };
-

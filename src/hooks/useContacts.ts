@@ -48,15 +48,21 @@ export const useContacts = () => {
         throw new Error('ID do contato é obrigatório');
       }
 
+      // Tratar empresa_id vazio
+      const processedData = {
+        ...contactData,
+        empresa_id: contactData.empresa_id && contactData.empresa_id.trim() !== '' ? contactData.empresa_id : null
+      };
+
       const { data, error } = await supabase
         .from('contacts')
         .insert([{
-          id_contact: contactData.id_contact,
-          nome: contactData.nome,
-          status: contactData.status,
-          feedback: contactData.feedback,
-          is_group: contactData.is_group,
-          empresa_id: contactData.empresa_id,
+          id_contact: processedData.id_contact,
+          nome: processedData.nome,
+          status: processedData.status,
+          feedback: processedData.feedback,
+          is_group: processedData.is_group,
+          empresa_id: processedData.empresa_id,
           data_criacao: new Date().toISOString()
         }])
         .select()
@@ -79,9 +85,16 @@ export const useContacts = () => {
   const updateContact = async (id: string, contactData: Partial<Contact>) => {
     try {
       console.log('Updating contact:', id, contactData);
+      
+      // Tratar empresa_id vazio
+      const processedData = {
+        ...contactData,
+        empresa_id: contactData.empresa_id && contactData.empresa_id.trim() !== '' ? contactData.empresa_id : null
+      };
+
       const { data, error } = await supabase
         .from('contacts')
-        .update({ ...contactData, updated_at: new Date().toISOString() })
+        .update({ ...processedData, updated_at: new Date().toISOString() })
         .eq('id_contact', id)
         .select()
         .single();
