@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Company } from './useCompanies';
 
 export const useCompaniesWithAudit = () => {
-  const companiesHook = useCompanies();
+  const companiesData = useCompanies();
   const { logAction } = useAuditLog();
 
   const createN8nEvaluationData = async (companyId: string) => {
@@ -53,7 +53,7 @@ export const useCompaniesWithAudit = () => {
 
   const createCompany = async (companyData: Partial<Company>) => {
     try {
-      const result = await companiesHook.createCompany(companyData);
+      const result = await companiesData.createCompany(companyData);
       
       await logAction({
         action: 'CREATE',
@@ -77,9 +77,9 @@ export const useCompaniesWithAudit = () => {
   const updateCompany = async (id: string, updates: Partial<Company>) => {
     try {
       // Buscar dados antigos antes da atualização
-      const oldCompany = companiesHook.companies.find(c => c.id === id);
+      const oldCompany = companiesData.companies.find(c => c.id === id);
       
-      const result = await companiesHook.updateCompany(id, updates);
+      const result = await companiesData.updateCompany(id, updates);
       
       await logAction({
         action: 'UPDATE',
@@ -104,9 +104,9 @@ export const useCompaniesWithAudit = () => {
   const deleteCompany = async (id: string) => {
     try {
       // Buscar dados antes da exclusão
-      const company = companiesHook.companies.find(c => c.id === id);
+      const company = companiesData.companies.find(c => c.id === id);
       
-      await companiesHook.deleteCompany(id);
+      await companiesData.deleteCompany(id);
       
       await logAction({
         action: 'DELETE',
@@ -121,7 +121,10 @@ export const useCompaniesWithAudit = () => {
   };
 
   return {
-    ...companiesHook,
+    companies: companiesData.companies,
+    loading: companiesData.loading,
+    error: companiesData.error,
+    refetch: companiesData.refetch,
     createCompany,
     updateCompany,
     deleteCompany
