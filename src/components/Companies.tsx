@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useCompanies } from '@/hooks/useCompanies';
+import { useCompaniesWithAudit } from '@/hooks/useCompaniesWithAudit';
 import { CompanyModal } from './CompanyModal';
 import { CompanyHeader } from './companies/CompanyHeader';
 import { CompanyFilters } from './companies/CompanyFilters';
@@ -19,7 +19,7 @@ export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Todas');
   const [showBulkOperations, setShowBulkOperations] = useState(false);
-  const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompanies();
+  const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompaniesWithAudit();
   const bulkOps = useBulkOperations();
 
   const handlers = useCompanyHandlers({
