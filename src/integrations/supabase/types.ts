@@ -75,6 +75,48 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           aceitar_politica_privacidade: boolean | null
@@ -227,7 +269,7 @@ export type Database = {
       }
       contacts: {
         Row: {
-          created_at: string | null
+          created_at: string
           data_criacao: string | null
           empresa_id: string | null
           feedback: boolean | null
@@ -235,10 +277,10 @@ export type Database = {
           is_group: boolean | null
           nome: string | null
           status: boolean | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           data_criacao?: string | null
           empresa_id?: string | null
           feedback?: boolean | null
@@ -246,10 +288,10 @@ export type Database = {
           is_group?: boolean | null
           nome?: string | null
           status?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           data_criacao?: string | null
           empresa_id?: string | null
           feedback?: boolean | null
@@ -257,7 +299,7 @@ export type Database = {
           is_group?: boolean | null
           nome?: string | null
           status?: boolean | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -303,6 +345,7 @@ export type Database = {
           resposta_ia: string | null
           tasks_ids: string[] | null
           tem_tarefa: boolean | null
+          updated_at: string | null
           "workflow.id": string | null
           "workflow.name": string | null
         }
@@ -318,6 +361,7 @@ export type Database = {
           resposta_ia?: string | null
           tasks_ids?: string[] | null
           tem_tarefa?: boolean | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
         }
@@ -333,6 +377,7 @@ export type Database = {
           resposta_ia?: string | null
           tasks_ids?: string[] | null
           tem_tarefa?: boolean | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
         }
@@ -387,7 +432,7 @@ export type Database = {
         Row: {
           contact_id: string | null
           conteudo_mensagem: string | null
-          created_at: string | null
+          created_at: string
           data_hora: string | null
           "execution.id": string | null
           fromme: boolean | null
@@ -399,14 +444,14 @@ export type Database = {
           status_processamento: string | null
           telefone_membro: string | null
           tipo_mensagem: string | null
-          updated_at: string | null
+          updated_at: string
           "workflow.id": string | null
           "workflow.name": string | null
         }
         Insert: {
           contact_id?: string | null
           conteudo_mensagem?: string | null
-          created_at?: string | null
+          created_at?: string
           data_hora?: string | null
           "execution.id"?: string | null
           fromme?: boolean | null
@@ -418,14 +463,14 @@ export type Database = {
           status_processamento?: string | null
           telefone_membro?: string | null
           tipo_mensagem?: string | null
-          updated_at?: string | null
+          updated_at?: string
           "workflow.id"?: string | null
           "workflow.name"?: string | null
         }
         Update: {
           contact_id?: string | null
           conteudo_mensagem?: string | null
-          created_at?: string | null
+          created_at?: string
           data_hora?: string | null
           "execution.id"?: string | null
           fromme?: boolean | null
@@ -437,9 +482,27 @@ export type Database = {
           status_processamento?: string | null
           telefone_membro?: string | null
           tipo_mensagem?: string | null
-          updated_at?: string | null
+          updated_at?: string
           "workflow.id"?: string | null
           "workflow.name"?: string | null
+        }
+        Relationships: []
+      }
+      n8n_chat_histories: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
         }
         Relationships: []
       }
@@ -475,6 +538,7 @@ export type Database = {
           message_id: string | null
           status: string | null
           texto_tarefa_formatado: string | null
+          updated_at: string | null
           "workflow.id": string | null
           "workflow.name": string | null
           zaap_id: string | null
@@ -489,6 +553,7 @@ export type Database = {
           message_id?: string | null
           status?: string | null
           texto_tarefa_formatado?: string | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
           zaap_id?: string | null
@@ -503,6 +568,7 @@ export type Database = {
           message_id?: string | null
           status?: string | null
           texto_tarefa_formatado?: string | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
           zaap_id?: string | null
@@ -519,6 +585,7 @@ export type Database = {
           nome_grupo: string | null
           status_clickup: string | null
           task_group_revision_id: string | null
+          updated_at: string | null
           "workflow.id": string | null
           "workflow.name": string | null
         }
@@ -531,6 +598,7 @@ export type Database = {
           nome_grupo?: string | null
           status_clickup?: string | null
           task_group_revision_id?: string | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
         }
@@ -543,6 +611,7 @@ export type Database = {
           nome_grupo?: string | null
           status_clickup?: string | null
           task_group_revision_id?: string | null
+          updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
         }

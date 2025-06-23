@@ -17,8 +17,8 @@ export interface Company {
   omie_company_id: string | null;
   omie_integration_status: string | null;
   data_cadastro: string | null;
-  created_at: string | null;
-  updated_at: string | null;
+  created_at: string;
+  updated_at: string;
   deleted_at: string | null;
   // Novos campos adicionados
   task_id: string | null;
@@ -107,9 +107,12 @@ export const useCompanies = () => {
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     try {
       console.log('Updating company:', id, companyData);
+      // Remove updated_at from the data being sent since trigger will handle it
+      const { updated_at, ...dataToUpdate } = companyData;
+      
       const { data, error } = await supabase
         .from('companies')
-        .update({ ...companyData, updated_at: new Date().toISOString() })
+        .update(dataToUpdate)
         .eq('id', id)
         .select()
         .single();

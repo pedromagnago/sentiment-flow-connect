@@ -10,6 +10,8 @@ export interface Message {
   data_hora: string;
   fromme: boolean;
   status_processamento: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useMessages = () => {
@@ -24,7 +26,7 @@ export const useMessages = () => {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .order('data_hora', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {

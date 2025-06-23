@@ -22,6 +22,20 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
     empresa_id: ''
   });
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
   // Atualizar formData quando o contact prop mudar
   useEffect(() => {
     if (contact) {
@@ -78,6 +92,21 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {contact && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-1 gap-2 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">Data de Cadastro: </span>
+                <span className="text-gray-600">{contact.created_at ? formatDate(contact.created_at) : 'N/A'}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Última Modificação: </span>
+                <span className="text-gray-600">{contact.updated_at ? formatDate(contact.updated_at) : 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

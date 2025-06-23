@@ -18,6 +18,20 @@ export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) 
     return feedback ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="p-6 border-b border-gray-200">
@@ -45,6 +59,9 @@ export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) 
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Data Criação
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Última Modificação
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
@@ -79,7 +96,10 @@ export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) 
                   {contact.is_group ? 'Grupo' : 'Individual'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {contact.data_criacao ? new Date(contact.data_criacao).toLocaleDateString('pt-BR') : 'N/A'}
+                  {contact.created_at ? formatDate(contact.created_at) : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {contact.updated_at ? formatDate(contact.updated_at) : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center space-x-2">

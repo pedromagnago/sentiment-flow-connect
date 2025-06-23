@@ -8,6 +8,8 @@ export interface Contact {
   feedback: boolean;
   is_group: boolean;
   data_criacao: string;
+  created_at: string;
+  updated_at: string;
   empresa_id: string;
 }
 
@@ -23,7 +25,7 @@ export const useContacts = () => {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .order('data_criacao', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching contacts:', error);
@@ -39,7 +41,7 @@ export const useContacts = () => {
     }
   };
 
-  const createContact = async (contactData: Omit<Contact, 'data_criacao'>) => {
+  const createContact = async (contactData: Omit<Contact, 'data_criacao' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Creating contact:', contactData);
       
@@ -56,15 +58,7 @@ export const useContacts = () => {
 
       const { data, error } = await supabase
         .from('contacts')
-        .insert([{
-          id_contact: processedData.id_contact,
-          nome: processedData.nome,
-          status: processedData.status,
-          feedback: processedData.feedback,
-          is_group: processedData.is_group,
-          empresa_id: processedData.empresa_id,
-          data_criacao: new Date().toISOString()
-        }])
+        .insert([processedData])
         .select()
         .single();
 
@@ -86,15 +80,16 @@ export const useContacts = () => {
     try {
       console.log('Updating contact:', id, contactData);
       
-      // Tratar empresa_id vazio
+      // Tratar empresa_id vazio e remover campos automáticos
+      const { updated_at, created_at, ...dataToUpdate } = contactData;
       const processedData = {
-        ...contactData,
+        ...dataToUpdate,
         empresa_id: contactData.empresa_id && contactData.empresa_id.trim() !== '' ? contactData.empresa_id : null
       };
 
       const { data, error } = await supabase
         .from('contacts')
-        .update({ ...processedData, updated_at: new Date().toISOString() })
+        .update(processedData)
         .eq('id_contact', id)
         .select()
         .single();

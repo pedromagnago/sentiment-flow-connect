@@ -22,6 +22,20 @@ export const CompanyCard = ({ company, onEdit, onDelete }: CompanyCardProps) => 
     return integrations.length > 0 ? integrations.join(', ') : 'Nenhuma';
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between">
@@ -53,8 +67,15 @@ export const CompanyCard = ({ company, onEdit, onDelete }: CompanyCardProps) => 
             </div>
           </div>
 
-          <div className="text-sm text-gray-500">
-            Criada em: {company.created_at ? new Date(company.created_at).toLocaleDateString('pt-BR') : 'Data não disponível'}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+            <div>
+              <p className="font-medium text-gray-700">Data de Cadastro</p>
+              <p>{company.created_at ? formatDate(company.created_at) : 'Não disponível'}</p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-700">Última Modificação</p>
+              <p>{company.updated_at ? formatDate(company.updated_at) : 'Não disponível'}</p>
+            </div>
           </div>
         </div>
 
