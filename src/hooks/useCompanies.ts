@@ -64,12 +64,22 @@ export const useCompanies = () => {
       setError(null);
       console.log('useCompanies - Starting to fetch companies...');
       
+      // Primeiro, vamos tentar fazer uma consulta simples para verificar se há dados
+      console.log('useCompanies - Testing basic query...');
+      const { count, error: countError } = await supabase
+        .from('companies')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('useCompanies - Count query result:', { count, countError });
+      
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
 
       console.log('useCompanies - Supabase query result:', { data, error });
+      console.log('useCompanies - Data type:', typeof data);
+      console.log('useCompanies - Data is array:', Array.isArray(data));
 
       if (error) {
         console.error('useCompanies - Error fetching companies:', error);
@@ -77,6 +87,7 @@ export const useCompanies = () => {
       }
       
       console.log('useCompanies - Companies fetched successfully:', data?.length, 'records');
+      console.log('useCompanies - First company:', data?.[0]);
       setCompanies(data || []);
     } catch (err) {
       console.error('useCompanies - Fetch companies error:', err);
