@@ -146,6 +146,7 @@ export type Database = {
           id: string
           informacoes_contato: Json | null
           linked_docs: string | null
+          n8n_integration_active: boolean | null
           nome: string | null
           nome_contato: string | null
           nome_representante: string | null
@@ -195,6 +196,7 @@ export type Database = {
           id?: string
           informacoes_contato?: Json | null
           linked_docs?: string | null
+          n8n_integration_active?: boolean | null
           nome?: string | null
           nome_contato?: string | null
           nome_representante?: string | null
@@ -244,6 +246,7 @@ export type Database = {
           id?: string
           informacoes_contato?: Json | null
           linked_docs?: string | null
+          n8n_integration_active?: boolean | null
           nome?: string | null
           nome_contato?: string | null
           nome_representante?: string | null

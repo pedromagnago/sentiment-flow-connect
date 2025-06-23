@@ -32,9 +32,9 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     start_date: '',
     date_closed: '',
     linked_docs: '',
-    valor_mensalidade: '',
-    prazo_desconto: '',
-    desconto_percentual: '',
+    valor_mensalidade: 0,
+    prazo_desconto: 0,
+    desconto_percentual: 0,
     aceitar_politica_privacidade: false,
     nome_contato: '',
     fonte_lead: '',
@@ -46,8 +46,6 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     nome_testemunha: '',
     tipo_contrato: '',
     cargo: '',
-    whatsapp_contato: '',
-    email_contato: '',
     client_id: '',
     companies_id: '',
     atividade: ''
@@ -77,9 +75,9 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         start_date: company.start_date || '',
         date_closed: company.date_closed || '',
         linked_docs: company.linked_docs || '',
-        valor_mensalidade: company.valor_mensalidade || '',
-        prazo_desconto: company.prazo_desconto || '',
-        desconto_percentual: company.desconto_percentual || '',
+        valor_mensalidade: company.valor_mensalidade || 0,
+        prazo_desconto: company.prazo_desconto || 0,
+        desconto_percentual: company.desconto_percentual || 0,
         aceitar_politica_privacidade: company.aceitar_politica_privacidade || false,
         nome_contato: company.nome_contato || '',
         fonte_lead: company.fonte_lead || '',
@@ -91,8 +89,6 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         nome_testemunha: company.nome_testemunha || '',
         tipo_contrato: company.tipo_contrato || '',
         cargo: company.cargo || '',
-        whatsapp_contato: company.whatsapp_contato || '',
-        email_contato: company.email_contato || '',
         client_id: company.client_id || '',
         companies_id: company.companies_id || '',
         atividade: company.atividade || ''
@@ -120,9 +116,9 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         start_date: '',
         date_closed: '',
         linked_docs: '',
-        valor_mensalidade: '',
-        prazo_desconto: '',
-        desconto_percentual: '',
+        valor_mensalidade: 0,
+        prazo_desconto: 0,
+        desconto_percentual: 0,
         aceitar_politica_privacidade: false,
         nome_contato: '',
         fonte_lead: '',
@@ -134,8 +130,6 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         nome_testemunha: '',
         tipo_contrato: '',
         cargo: '',
-        whatsapp_contato: '',
-        email_contato: '',
         client_id: '',
         companies_id: '',
         atividade: ''
@@ -155,6 +149,11 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
       setFormData(prev => ({
         ...prev,
         [name]: checkbox.checked
+      }));
+    } else if (type === 'number') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? 0 : Number(value)
       }));
     } else {
       setFormData(prev => ({
@@ -738,10 +737,7 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
                       type="checkbox"
                       name="n8n_integration_active"
                       checked={formData.n8n_integration_active}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        n8n_integration_active: e.target.checked
-                      }))}
+                      onChange={handleInputChange}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className="text-sm font-medium text-gray-700">

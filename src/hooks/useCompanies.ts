@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,7 +16,7 @@ export interface Company {
   omie_api_secret: string | null;
   omie_company_id: string | null;
   omie_integration_status: string | null;
-  n8n_integration_active: boolean | null; // Nova flag para integração n8n
+  n8n_integration_active: boolean | null;
   data_cadastro: string | null;
   created_at: string;
   updated_at: string;
