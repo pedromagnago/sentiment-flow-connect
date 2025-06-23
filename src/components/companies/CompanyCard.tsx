@@ -1,5 +1,5 @@
 
-import { Edit, Trash2, CheckCircle, XCircle, Settings } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, XCircle, Settings, Zap } from 'lucide-react';
 import { Company } from '@/hooks/useCompanies';
 
 interface CompanyCardProps {
@@ -15,10 +15,11 @@ export const CompanyCard = ({ company, onEdit, onDelete }: CompanyCardProps) => 
     return <div className="w-4 h-4 bg-gray-300 rounded-full" />;
   };
 
-  const getIntegrationStatus = (clickupStatus: string | null, omieStatus: string | null) => {
+  const getIntegrationStatus = (clickupStatus: string | null, omieStatus: string | null, n8nActive: boolean | null) => {
     const integrations = [];
     if (clickupStatus === 'Ativo') integrations.push('ClickUp');
     if (omieStatus === 'Ativo') integrations.push('Omie');
+    if (n8nActive) integrations.push('N8N');
     return integrations.length > 0 ? integrations.join(', ') : 'Nenhuma';
   };
 
@@ -48,6 +49,12 @@ export const CompanyCard = ({ company, onEdit, onDelete }: CompanyCardProps) => 
             <span className="text-sm text-gray-500">
               {company.status || 'Status não definido'}
             </span>
+            {company.n8n_integration_active && (
+              <div className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                <Zap className="w-3 h-3" />
+                <span className="text-xs font-medium">N8N</span>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -60,9 +67,13 @@ export const CompanyCard = ({ company, onEdit, onDelete }: CompanyCardProps) => 
               <p className="font-medium">{company.segmento || 'Não informado'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Integrações</p>
+              <p className="text-sm text-gray-500">Integrações Ativas</p>
               <p className="font-medium">
-                {getIntegrationStatus(company.clickup_integration_status, company.omie_integration_status)}
+                {getIntegrationStatus(
+                  company.clickup_integration_status, 
+                  company.omie_integration_status,
+                  company.n8n_integration_active
+                )}
               </p>
             </div>
           </div>

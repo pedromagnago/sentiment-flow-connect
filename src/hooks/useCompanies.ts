@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,11 +15,11 @@ export interface Company {
   omie_api_secret: string | null;
   omie_company_id: string | null;
   omie_integration_status: string | null;
+  n8n_integration_active: boolean | null; // Nova flag para integração n8n
   data_cadastro: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  // Novos campos adicionados
   task_id: string | null;
   task_name: string | null;
   assignee: string | null;
@@ -107,6 +106,12 @@ export const useCompanies = () => {
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     try {
       console.log('Updating company:', id, companyData);
+      
+      // Se a integração n8n está sendo desativada, limpar dados relacionados
+      if (companyData.n8n_integration_active === false) {
+        await cleanupN8nData(id);
+      }
+      
       // Remove updated_at from the data being sent since trigger will handle it
       const { updated_at, ...dataToUpdate } = companyData;
       
@@ -128,6 +133,57 @@ export const useCompanies = () => {
     } catch (err) {
       console.error('Update company error:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao atualizar empresa');
+    }
+  };
+
+  const cleanupN8nData = async (companyId: string) => {
+    try {
+      console.log('Cleaning up n8n data for company:', companyId);
+      
+      // Buscar contatos da empresa
+      const { data: contacts } = await supabase
+        .from('contacts')
+        .select('id_contact')
+        .eq('empresa_id', companyId);
+
+      if (contacts && contacts.length > 0) {
+        const contactIds = contacts.map(c => c.id_contact);
+        
+        // Remover dados da tabela grupos_avaliacao_ia
+        const { error: gruposError } = await supabase
+          .from('grupos_avaliacao_ia')
+          .delete()
+          .in('Id do Grupo Original', contactIds);
+
+        if (gruposError) {
+          console.error('Error cleaning grupos_avaliacao_ia:', gruposError);
+        }
+
+        // Remover dados da tabela analise_sentimento_diario
+        const { error: sentimentoError } = await supabase
+          .from('analise_sentimento_diario')
+          .delete()
+          .in('id_contact', contactIds);
+
+        if (sentimentoError) {
+          console.error('Error cleaning analise_sentimento_diario:', sentimentoError);
+        }
+
+        // Remover dados da tabela analise_sentimento_semanal
+        const { error: semanalError } = await supabase
+          .from('analise_sentimento_semanal')
+          .delete()
+          .in('id_contact', contactIds);
+
+        if (semanalError) {
+          console.error('Error cleaning analise_sentimento_semanal:', semanalError);
+        }
+
+        console.log('N8n data cleanup completed for company:', companyId);
+      }
+    } catch (error) {
+      console.error('Error during n8n data cleanup:', error);
+      throw new Error('Erro ao limpar dados da integração n8n');
     }
   };
 
