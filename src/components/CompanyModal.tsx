@@ -139,7 +139,28 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Prepare data for submission, converting empty date strings to null
+    const dataToSubmit = {
+      ...formData,
+      // Convert empty date strings to null
+      due_date: formData.due_date === '' ? null : formData.due_date,
+      date_created: formData.date_created === '' ? null : formData.date_created,
+      start_date: formData.start_date === '' ? null : formData.start_date,
+      date_closed: formData.date_closed === '' ? null : formData.date_closed,
+      // Convert empty strings to null for optional text fields
+      task_id: formData.task_id === '' ? null : formData.task_id,
+      task_name: formData.task_name === '' ? null : formData.task_name,
+      assignee: formData.assignee === '' ? null : formData.assignee,
+      priority: formData.priority === '' ? null : formData.priority,
+      task_status: formData.task_status === '' ? null : formData.task_status,
+      linked_docs: formData.linked_docs === '' ? null : formData.linked_docs,
+      envelope_id: formData.envelope_id === '' ? null : formData.envelope_id,
+      client_id: formData.client_id === '' ? null : formData.client_id,
+      companies_id: formData.companies_id === '' ? null : formData.companies_id
+    };
+    
+    onSave(dataToSubmit);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
