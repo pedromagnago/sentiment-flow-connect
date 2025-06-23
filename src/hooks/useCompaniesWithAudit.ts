@@ -1,4 +1,3 @@
-
 import { useCompanies } from './useCompanies';
 import { useAuditLog } from './useAuditLog';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +6,12 @@ import { Company } from './useCompanies';
 export const useCompaniesWithAudit = () => {
   const companiesData = useCompanies();
   const { logAction } = useAuditLog();
+
+  // Debug logs
+  console.log('useCompaniesWithAudit - companiesData:', companiesData);
+  console.log('useCompaniesWithAudit - companies count:', companiesData.companies?.length);
+  console.log('useCompaniesWithAudit - loading:', companiesData.loading);
+  console.log('useCompaniesWithAudit - error:', companiesData.error);
 
   const createN8nEvaluationData = async (companyId: string) => {
     try {

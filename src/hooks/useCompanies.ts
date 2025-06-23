@@ -61,20 +61,25 @@ export const useCompanies = () => {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      console.log('Fetching companies...');
+      setError(null);
+      console.log('useCompanies - Starting to fetch companies...');
+      
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('useCompanies - Supabase query result:', { data, error });
+
       if (error) {
-        console.error('Error fetching companies:', error);
+        console.error('useCompanies - Error fetching companies:', error);
         throw error;
       }
-      console.log('Companies fetched:', data);
+      
+      console.log('useCompanies - Companies fetched successfully:', data?.length, 'records');
       setCompanies(data || []);
     } catch (err) {
-      console.error('Fetch companies error:', err);
+      console.error('useCompanies - Fetch companies error:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar empresas');
     } finally {
       setLoading(false);
@@ -244,6 +249,7 @@ export const useCompanies = () => {
 
   // Setup realtime subscription to automatically refresh when data changes
   useEffect(() => {
+    console.log('useCompanies - Setting up effect and fetching companies');
     fetchCompanies();
 
     // Subscribe to realtime changes
@@ -257,7 +263,7 @@ export const useCompanies = () => {
           table: 'companies'
         },
         (payload) => {
-          console.log('Companies table changed:', payload);
+          console.log('useCompanies - Companies table changed:', payload);
           fetchCompanies(); // Refresh data when changes occur
         }
       )

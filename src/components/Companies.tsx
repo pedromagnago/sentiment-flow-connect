@@ -22,6 +22,11 @@ export const Companies = () => {
   const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompaniesWithAudit();
   const bulkOps = useBulkOperations();
 
+  // Debug logs
+  console.log('Companies component - companies:', companies);
+  console.log('Companies component - loading:', loading);
+  console.log('Companies component - error:', error);
+
   const handlers = useCompanyHandlers({
     createCompany,
     updateCompany,
