@@ -9,11 +9,17 @@ import { CompanyList } from './companies/CompanyList';
 import { BulkOperations } from './companies/BulkOperations';
 import { LoadingSpinner } from './common/LoadingSpinner';
 import { ErrorState } from './common/ErrorState';
-import { Breadcrumb } from './common/Breadcrumb';
 import { PaginationControls } from './common/Pagination';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useCompanyHandlers } from '@/hooks/handlers/useCompanyHandlers';
 import { usePagination } from '@/hooks/usePagination';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
+import { Home } from 'lucide-react';
 
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,10 +91,6 @@ export const Companies = () => {
     }
   };
 
-  const breadcrumbItems = [
-    { label: 'Gestão de Empresas', active: true }
-  ];
-
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -107,7 +109,16 @@ export const Companies = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Breadcrumb items={breadcrumbItems} />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <Home className="w-4 h-4" />
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Gestão de Empresas</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <CompanyHeader 
         onRefresh={handlers.handleRefresh}
