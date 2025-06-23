@@ -1,39 +1,37 @@
-
 import React, { useState, useRef } from 'react';
 import { ContactBulkActions } from './ContactBulkActions';
 import { useToast } from '@/hooks/use-toast';
 import { Contact } from '@/hooks/useContacts';
+import { useContactBulkOperations } from '@/hooks/useContactBulkOperations';
 import * as XLSX from 'xlsx';
 
 interface ContactBulkOperationsProps {
   contacts: Contact[];
   onBulkCreate: (contactsData: Partial<Contact>[]) => Promise<void>;
   onBulkDelete: (contactIds: string[]) => Promise<void>;
+  updateContact: (id: string, data: Partial<Contact>) => Promise<Contact>;
 }
 
 export const ContactBulkOperations = ({
   contacts,
   onBulkCreate,
-  onBulkDelete
+  onBulkDelete,
+  updateContact
 }: ContactBulkOperationsProps) => {
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const bulkOps = useContactBulkOperations();
 
   const handleSelectContact = (contactId: string) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
-        ? prev.filter(id => id !== contactId)
-        : [...prev, contactId]
-    );
+    bulkOps.selectContact(contactId);
   };
 
   const handleSelectAll = () => {
-    if (selectedContacts.length === contacts.length) {
-      setSelectedContacts([]);
+    if (bulkOps.selectedContacts.length === contacts.length) {
+      bulkOps.clearSelection();
     } else {
-      setSelectedContacts(contacts.map(contact => contact.id_contact));
+      bulkOps.selectAllContacts(contacts.map(contact => contact.id_contact));
     }
   };
 
@@ -117,7 +115,8 @@ export const ContactBulkOperations = ({
       feedback: contact.feedback,
       is_group: contact.is_group,
       empresa_id: contact.empresa_id,
-      data_criacao: contact.data_criacao
+      created_at: contact.created_at,
+      updated_at: contact.updated_at
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -132,21 +131,21 @@ export const ContactBulkOperations = ({
   };
 
   const handleBulkDelete = async () => {
-    if (selectedContacts.length === 0) return;
+    if (bulkOps.selectedContacts.length === 0) return;
 
     const confirmed = window.confirm(
-      `Tem certeza que deseja excluir PERMANENTEMENTE ${selectedContacts.length} contato(s)? Esta ação não pode ser desfeita.`
+      `Tem certeza que deseja excluir PERMANENTEMENTE ${bulkOps.selectedContacts.length} contato(s)? Esta ação não pode ser desfeita.`
     );
 
     if (!confirmed) return;
 
     setIsProcessing(true);
     try {
-      await onBulkDelete(selectedContacts);
-      setSelectedContacts([]);
+      await onBulkDelete(bulkOps.selectedContacts);
+      bulkOps.clearSelection();
       toast({
         title: "Contatos excluídos",
-        description: `${selectedContacts.length} contato(s) foram excluídos permanentemente.`,
+        description: `${bulkOps.selectedContacts.length} contato(s) foram excluídos permanentemente.`,
       });
     } catch (error) {
       console.error('Erro na exclusão em massa:', error);
@@ -160,6 +159,21 @@ export const ContactBulkOperations = ({
     }
   };
 
+  const handleBulkUpdateStatus = async (contactIds: string[], status: boolean) => {
+    await bulkOps.bulkUpdateStatus(contactIds, status, updateContact);
+    bulkOps.clearSelection();
+  };
+
+  const handleBulkUpdateFeedback = async (contactIds: string[], feedback: boolean) => {
+    await bulkOps.bulkUpdateFeedback(contactIds, feedback, updateContact);
+    bulkOps.clearSelection();
+  };
+
+  const handleBulkUpdateIsGroup = async (contactIds: string[], isGroup: boolean) => {
+    await bulkOps.bulkUpdateIsGroup(contactIds, isGroup, updateContact);
+    bulkOps.clearSelection();
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -167,8 +181,12 @@ export const ContactBulkOperations = ({
           Operações em Massa
         </h3>
         <ContactBulkActions
-          selectedCount={selectedContacts.length}
+          selectedCount={bulkOps.selectedContacts.length}
+          selectedContactIds={bulkOps.selectedContacts}
           onBulkDelete={handleBulkDelete}
+          onBulkUpdateStatus={handleBulkUpdateStatus}
+          onBulkUpdateFeedback={handleBulkUpdateFeedback}
+          onBulkUpdateIsGroup={handleBulkUpdateIsGroup}
           onImport={handleImport}
           onExport={handleExport}
           onDownloadTemplate={handleDownloadTemplate}
@@ -189,8 +207,8 @@ export const ContactBulkOperations = ({
           <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
             <input
               type="checkbox"
-              checked={selectedContacts.length === contacts.length}
-              onChange={handleSelectAll}
+              checked={bulkOps.selectedContacts.length === contacts.length}
+              onChange={() => bulkOps.selectAllContacts(contacts.map(c => c.id_contact))}
               className="rounded border-gray-300"
             />
             <span className="text-sm text-gray-600">
@@ -206,8 +224,8 @@ export const ContactBulkOperations = ({
               >
                 <input
                   type="checkbox"
-                  checked={selectedContacts.includes(contact.id_contact)}
-                  onChange={() => handleSelectContact(contact.id_contact)}
+                  checked={bulkOps.isSelected(contact.id_contact)}
+                  onChange={() => bulkOps.selectContact(contact.id_contact)}
                   className="rounded border-gray-300"
                 />
                 <div className="flex-1">

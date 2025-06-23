@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useContacts } from '@/hooks/useContacts';
 import { ContactModal } from './ContactModal';
@@ -11,7 +10,6 @@ import { LoadingSpinner } from './common/LoadingSpinner';
 import { ErrorState } from './common/ErrorState';
 import { Breadcrumb } from './common/Breadcrumb';
 import { PaginationControls } from './common/Pagination';
-import { useContactBulkOperations } from '@/hooks/useContactBulkOperations';
 import { useContactHandlers } from '@/hooks/handlers/useContactHandlers';
 import { usePagination } from '@/hooks/usePagination';
 
@@ -22,7 +20,6 @@ export const Contacts = () => {
   const [filterFeedback, setFilterFeedback] = useState('Todos');
   const [showBulkOperations, setShowBulkOperations] = useState(false);
   const { contacts, loading, error, createContact, updateContact, deleteContact, refetch } = useContacts();
-  const bulkOps = useContactBulkOperations();
 
   const handlers = useContactHandlers({
     createContact,
@@ -51,7 +48,6 @@ export const Contacts = () => {
     itemsPerPage: 15
   });
 
-  // Reset pagination when filters change
   React.useEffect(() => {
     pagination.resetPagination();
   }, [searchTerm, filterStatus, filterType, filterFeedback]);
@@ -83,7 +79,6 @@ export const Contacts = () => {
       for (const id of contactIds) {
         await deleteContact(id);
       }
-      bulkOps.clearSelection();
     } catch (error) {
       throw error;
     }
@@ -137,6 +132,7 @@ export const Contacts = () => {
           contacts={filteredContacts}
           onBulkCreate={handleBulkCreate}
           onBulkDelete={handleBulkDelete}
+          updateContact={updateContact}
         />
       )}
 

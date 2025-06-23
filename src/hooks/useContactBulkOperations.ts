@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { Contact } from '@/hooks/useContacts';
 
 export const useContactBulkOperations = () => {
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
@@ -32,12 +33,45 @@ export const useContactBulkOperations = () => {
     return selectedContacts.length;
   };
 
+  const bulkUpdateStatus = async (contactIds: string[], status: boolean, updateContact: (id: string, data: Partial<Contact>) => Promise<Contact>) => {
+    try {
+      for (const id of contactIds) {
+        await updateContact(id, { status });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const bulkUpdateFeedback = async (contactIds: string[], feedback: boolean, updateContact: (id: string, data: Partial<Contact>) => Promise<Contact>) => {
+    try {
+      for (const id of contactIds) {
+        await updateContact(id, { feedback });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const bulkUpdateIsGroup = async (contactIds: string[], is_group: boolean, updateContact: (id: string, data: Partial<Contact>) => Promise<Contact>) => {
+    try {
+      for (const id of contactIds) {
+        await updateContact(id, { is_group });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     selectedContacts,
     selectContact,
     selectAllContacts,
     clearSelection,
     isSelected,
-    getSelectedCount
+    getSelectedCount,
+    bulkUpdateStatus,
+    bulkUpdateFeedback,
+    bulkUpdateIsGroup
   };
 };
