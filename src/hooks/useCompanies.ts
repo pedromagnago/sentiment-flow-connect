@@ -51,6 +51,17 @@ export interface Company {
   client_id: string | null;
   companies_id: string | null;
   atividade: string | null;
+  // Additional address fields
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cep?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  responsavel?: string | null;
+  cargo_responsavel?: string | null;
 }
 
 export const useCompanies = () => {

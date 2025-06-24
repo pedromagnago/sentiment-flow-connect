@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -17,12 +18,23 @@ interface Company {
   cnpj?: string;
   segmento?: string;
   status?: string;
-  valor_mensalidade?: string;
+  valor_mensalidade?: number;
   n8n_integration_active?: boolean;
   clickup_api_key?: string;
   clickup_workspace_id?: string;
   clickup_integration_status?: string;
-  // Outros campos da empresa
+  // Address fields
+  endereco?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  telefone?: string;
+  email?: string;
+  responsavel?: string;
+  cargo_responsavel?: string;
 }
 
 interface CompanyModalProps {
@@ -40,12 +52,12 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     cnpj: '',
     segmento: '',
     status: 'Ativa',
-    valor_mensalidade: '',
+    valor_mensalidade: 0,
     n8n_integration_active: false,
     clickup_api_key: '',
     clickup_workspace_id: '',
     clickup_integration_status: '',
-    // Outros campos
+    // Address fields
     endereco: '',
     numero: '',
     complemento: '',
@@ -66,12 +78,12 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         cnpj: company.cnpj || '',
         segmento: company.segmento || '',
         status: company.status || 'Ativa',
-        valor_mensalidade: company.valor_mensalidade || '',
+        valor_mensalidade: company.valor_mensalidade || 0,
         n8n_integration_active: company.n8n_integration_active || false,
         clickup_api_key: company.clickup_api_key || '',
         clickup_workspace_id: company.clickup_workspace_id || '',
         clickup_integration_status: company.clickup_integration_status || '',
-        // Outros campos
+        // Address fields
         endereco: company.endereco || '',
         numero: company.numero || '',
         complemento: company.complemento || '',
@@ -91,12 +103,12 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         cnpj: '',
         segmento: '',
         status: 'Ativa',
-        valor_mensalidade: '',
+        valor_mensalidade: 0,
         n8n_integration_active: false,
         clickup_api_key: '',
         clickup_workspace_id: '',
         clickup_integration_status: '',
-        // Outros campos
+        // Address fields
         endereco: '',
         numero: '',
         complemento: '',
@@ -120,11 +132,13 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : 
+              name === 'valor_mensalidade' ? Number(value) || 0 : value
     }));
   };
 
@@ -216,6 +230,8 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
                 <Input
                   id="valor_mensalidade"
                   name="valor_mensalidade"
+                  type="number"
+                  step="0.01"
                   value={formData.valor_mensalidade}
                   onChange={handleInputChange}
                 />

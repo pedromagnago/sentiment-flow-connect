@@ -1,10 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
-import { CalendarRange } from '@/components/ui/calendar';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from 'lucide-react';
+import { Calendar, CalendarIcon } from 'lucide-react';
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 export const AuditLogs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -156,7 +161,53 @@ export const AuditLogs = () => {
 
         <div className="mt-4">
           <Label>Intervalo de Datas</Label>
-          <CalendarRange value={dateRange} onChange={setDateRange} />
+          <div className="flex gap-2 mt-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !dateRange.from && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.from ? format(dateRange.from, "PPP") : <span>Data inicial</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={dateRange.from}
+                  onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !dateRange.to && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.to ? format(dateRange.to, "PPP") : <span>Data final</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={dateRange.to}
+                  onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
