@@ -1,288 +1,192 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { useAuditLog, AuditLog } from '@/hooks/useAuditLog';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { Search, Filter, Download } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { CalendarRange } from '@/components/ui/calendar';
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar } from 'lucide-react';
 
 export const AuditLogs = () => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    tableName: '',
-    action: '',
-    dateFrom: '',
-    dateTo: '',
-    search: ''
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterTable, setFilterTable] = useState('Todas');
+  const [filterAction, setFilterAction] = useState('Todas');
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const { logs, loading, error, refetch } = useAuditLogs();
+
+  // Add better data filtering and error handling
+  const filteredLogs = logs.filter(log => {
+    if (!log) return false;
+    
+    const matchesSearch = !searchTerm || 
+      log.table_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.record_id?.includes(searchTerm) ||
+      log.user_id?.includes(searchTerm);
+    
+    const matchesTable = filterTable === 'Todas' || log.table_name === filterTable;
+    const matchesAction = filterAction === 'Todas' || log.action === filterAction;
+    
+    const logDate = log.created_at ? new Date(log.created_at) : null;
+    const matchesDateRange = !dateRange.from || !logDate || 
+      (logDate >= dateRange.from && (!dateRange.to || logDate <= dateRange.to));
+    
+    return matchesSearch && matchesTable && matchesAction && matchesDateRange;
   });
 
-  const { fetchAuditLogs } = useAuditLog();
-
-  const loadLogs = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchAuditLogs({
-        tableName: filters.tableName || undefined,
-        action: filters.action || undefined,
-        dateFrom: filters.dateFrom || undefined,
-        dateTo: filters.dateTo || undefined,
-        limit: 1000
-      });
-      
-      // Filtrar por busca local se necessário
-      let filteredData = data;
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredData = data.filter(log => 
-          log.table_name.toLowerCase().includes(searchLower) ||
-          log.action.toLowerCase().includes(searchLower) ||
-          (log.record_id && log.record_id.toLowerCase().includes(searchLower)) ||
-          (log.user_agent && log.user_agent.toLowerCase().includes(searchLower))
-        );
-      }
-      
-      setLogs(filteredData);
-    } catch (error) {
-      console.error('Error loading audit logs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadLogs();
-  }, [filters.tableName, filters.action, filters.dateFrom, filters.dateTo]);
-
-  const handleSearch = () => {
-    loadLogs();
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      tableName: '',
-      action: '',
-      dateFrom: '',
-      dateTo: '',
-      search: ''
-    });
-  };
-
-  const getActionBadgeColor = (action: string) => {
-    switch (action) {
-      case 'CREATE':
-        return 'bg-green-100 text-green-800';
-      case 'UPDATE':
-        return 'bg-blue-100 text-blue-800';
-      case 'DELETE':
-        return 'bg-red-100 text-red-800';
-      case 'VIEW':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTableDisplayName = (tableName: string) => {
-    const tableNames: { [key: string]: string } = {
-      'contacts': 'Contatos',
-      'companies': 'Empresas',
-      'messages': 'Mensagens',
-      'taskgroups': 'Grupos de Tarefas',
-      'taskgrouprevisions': 'Revisões de Tarefas'
-    };
-    return tableNames[tableName] || tableName;
-  };
-
-  const exportLogs = () => {
-    const csvContent = [
-      ['Data/Hora', 'Ação', 'Tabela', 'ID Registro', 'Usuário', 'IP'].join(','),
-      ...logs.map(log => [
-        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss'),
-        log.action,
-        getTableDisplayName(log.table_name),
-        log.record_id || '',
-        log.user_id || '',
-        log.ip_address || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `audit_logs_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">Carregando logs de auditoria...</div>
+        </div>
+      </div>
+    );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-500">Erro: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderDataChange = (oldData: any, newData: any) => {
+    if (!oldData && !newData) return <span className="text-gray-500">Sem dados</span>;
+    
+    try {
+      const changes = [];
+      const allKeys = new Set([
+        ...Object.keys(oldData || {}),
+        ...Object.keys(newData || {})
+      ]);
+      
+      for (const key of allKeys) {
+        const oldValue = oldData?.[key];
+        const newValue = newData?.[key];
+        
+        if (oldValue !== newValue) {
+          changes.push(
+            <div key={key} className="text-xs">
+              <span className="font-medium">{key}:</span>
+              {oldValue !== undefined && (
+                <span className="text-red-600 line-through ml-1">{String(oldValue)}</span>
+              )}
+              {newValue !== undefined && (
+                <span className="text-green-600 ml-1">{String(newValue)}</span>
+              )}
+            </div>
+          );
+        }
+      }
+      
+      return changes.length > 0 ? (
+        <div className="space-y-1">{changes}</div>
+      ) : (
+        <span className="text-gray-500">Sem alterações</span>
+      );
+    } catch (error) {
+      console.error('Error rendering data change:', error);
+      return <span className="text-red-500">Erro ao exibir alterações</span>;
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Logs de Auditoria</h1>
-        <p className="text-gray-600">
-          Histórico completo de todas as ações realizadas no sistema
-        </p>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Logs de Auditoria</h1>
+          <p className="text-gray-600 mt-1">Acompanhe as atividades do sistema</p>
+        </div>
+        <button
+          onClick={refetch}
+          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Calendar className="w-4 h-4" />
+          <span>Atualizar</span>
+        </button>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="w-5 h-5" />
-            <span>Filtros</span>
-          </CardTitle>
-          <CardDescription>
-            Filtre os logs por tabela, ação, data ou pesquise por texto
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Tabela</label>
-              <Select value={filters.tableName} onValueChange={(value) => setFilters({...filters, tableName: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as tabelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as tabelas</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="companies">Empresas</SelectItem>
-                  <SelectItem value="messages">Mensagens</SelectItem>
-                  <SelectItem value="taskgroups">Grupos de Tarefas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Ação</label>
-              <Select value={filters.action} onValueChange={(value) => setFilters({...filters, action: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as ações" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as ações</SelectItem>
-                  <SelectItem value="CREATE">Criar</SelectItem>
-                  <SelectItem value="UPDATE">Atualizar</SelectItem>
-                  <SelectItem value="DELETE">Excluir</SelectItem>
-                  <SelectItem value="VIEW">Visualizar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Data De</label>
-              <Input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Data Até</label>
-              <Input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-              />
-            </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="search">Pesquisar</Label>
+            <Input
+              type="text"
+              id="search"
+              placeholder="Pesquisar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Pesquisar nos logs..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({...filters, search: e.target.value})}
-                  className="pl-10"
-                />
+          <div>
+            <Label htmlFor="table">Tabela</Label>
+            <Select onValueChange={setFilterTable}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todas">Todas</SelectItem>
+                {Array.from(new Set(logs.map(log => log.table_name).filter(Boolean))).map(table => (
+                  <SelectItem key={table} value={table}>{table}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="action">Ação</Label>
+            <Select onValueChange={setFilterAction}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todas">Todas</SelectItem>
+                {Array.from(new Set(logs.map(log => log.action).filter(Boolean))).map(action => (
+                  <SelectItem key={action} value={action}>{action}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <Label>Intervalo de Datas</Label>
+          <CalendarRange value={dateRange} onChange={setDateRange} />
+        </div>
+      </div>
+
+      {/* Lista de Logs */}
+      <div className="space-y-4">
+        {filteredLogs.map((log) => (
+          <div key={log.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">{log.table_name}</h3>
+                <p className="text-gray-600">{log.action} - {log.record_id}</p>
+                <p className="text-gray-500 text-sm">
+                  Usuário: {log.user_id} - {new Date(log.created_at).toLocaleDateString()}
+                </p>
+                
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold text-gray-700">Alterações:</h4>
+                  {renderDataChange(log.old_data, log.new_data)}
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSearch} variant="default">
-                <Search className="w-4 h-4 mr-2" />
-                Pesquisar
-              </Button>
-              <Button onClick={clearFilters} variant="outline">
-                Limpar Filtros
-              </Button>
-              <Button onClick={exportLogs} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar CSV
-              </Button>
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        ))}
 
-      {/* Tabela de Logs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Ações ({logs.length} registros)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Ação</TableHead>
-                  <TableHead>Tabela</TableHead>
-                  <TableHead>ID Registro</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Navegador</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      Nenhum log encontrado com os filtros aplicados
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono text-sm">
-                        {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getActionBadgeColor(log.action)}>
-                          {log.action}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{getTableDisplayName(log.table_name)}</TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {log.record_id ? log.record_id.substring(0, 8) + '...' : '-'}
-                      </TableCell>
-                      <TableCell>{log.user_id || 'Anônimo'}</TableCell>
-                      <TableCell className="font-mono text-sm">{log.ip_address || '-'}</TableCell>
-                      <TableCell className="max-w-xs truncate text-sm" title={log.user_agent || ''}>
-                        {log.user_agent ? log.user_agent.substring(0, 50) + '...' : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+        {filteredLogs.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+            <p className="text-gray-500">Nenhum log de auditoria encontrado.</p>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   );
 };

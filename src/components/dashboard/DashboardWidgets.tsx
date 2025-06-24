@@ -65,24 +65,67 @@ interface DashboardStatsProps {
 }
 
 export const DashboardWidgets = ({ 
-  contacts, 
-  companies, 
-  messages, 
-  taskGroups, 
-  sentimentStats 
+  contacts = [], 
+  companies = [], 
+  messages = [], 
+  taskGroups = [], 
+  sentimentStats = {} 
 }: DashboardStatsProps) => {
-  const completedTasks = taskGroups.filter(task => 
-    task.status_clickup?.toLowerCase().includes('complet') || 
-    task.status_clickup?.toLowerCase().includes('done')
-  ).length;
+  // Safe calculations with error handling
+  const safeCalculateCompletedTasks = () => {
+    try {
+      if (!Array.isArray(taskGroups)) return 0;
+      return taskGroups.filter(task => 
+        task?.status_clickup?.toLowerCase().includes('complet') || 
+        task?.status_clickup?.toLowerCase().includes('done')
+      ).length;
+    } catch (error) {
+      console.error('Error calculating completed tasks:', error);
+      return 0;
+    }
+  };
 
-  const activeCompanies = companies.filter(c => c.status === 'Ativa').length;
-  const totalRevenue = companies.reduce((sum, c) => sum + (Number(c.valor_mensalidade) || 0), 0);
+  const safeCalculateActiveCompanies = () => {
+    try {
+      if (!Array.isArray(companies)) return 0;
+      return companies.filter(c => c?.status === 'Ativa').length;
+    } catch (error) {
+      console.error('Error calculating active companies:', error);
+      return 0;
+    }
+  };
+
+  const safeCalculateTotalRevenue = () => {
+    try {
+      if (!Array.isArray(companies)) return 0;
+      return companies.reduce((sum, c) => {
+        const value = Number(c?.valor_mensalidade) || 0;
+        return sum + value;
+      }, 0);
+    } catch (error) {
+      console.error('Error calculating total revenue:', error);
+      return 0;
+    }
+  };
+
+  const safeGetSentimentPositive = () => {
+    try {
+      return sentimentStats?.positive || 0;
+    } catch (error) {
+      console.error('Error getting sentiment positive:', error);
+      return 0;
+    }
+  };
+
+  const completedTasks = safeCalculateCompletedTasks();
+  const activeCompanies = safeCalculateActiveCompanies();
+  const totalRevenue = safeCalculateTotalRevenue();
+  const sentimentPositive = safeGetSentimentPositive();
 
   const widgets = [
     {
       title: "Sentimento Positivo",
-      value: `${sentimentStats.positive}%`,
+      value: `${sentimentPositive}%`,
       change: "+5.2%",
       icon: TrendingUp,
       color: "green" as const,
@@ -90,7 +133,7 @@ export const DashboardWidgets = ({
     },
     {
       title: "Total de Contatos",
-      value: contacts.length.toLocaleString(),
+      value: (contacts?.length || 0).toLocaleString(),
       change: "+12.5%",
       icon: Users,
       color: "blue" as const,
@@ -99,14 +142,14 @@ export const DashboardWidgets = ({
     {
       title: "Empresas Ativas",
       value: activeCompanies.toString(),
-      change: `${companies.length} total`,
+      change: `${companies?.length || 0} total`,
       icon: Building2,
       color: "emerald" as const,
       trend: "neutral" as const
     },
     {
       title: "Mensagens Processadas",
-      value: messages.length.toLocaleString(),
+      value: (messages?.length || 0).toLocaleString(),
       change: "+8.1%",
       icon: MessageSquare,
       color: "purple" as const,
