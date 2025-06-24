@@ -1,63 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
-
-import { ClickUpConfiguration } from './companies/ClickUpConfiguration';
-
-interface Company {
-  id?: string;
-  nome?: string;
-  cnpj?: string;
-  segmento?: string;
-  status?: string;
-  valor_mensalidade?: number;
-  n8n_integration_active?: boolean;
-  clickup_api_key?: string;
-  clickup_workspace_id?: string;
-  clickup_integration_status?: string;
-  // Address fields
-  endereco?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  telefone?: string;
-  email?: string;
-  responsavel?: string;
-  cargo_responsavel?: string;
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Switch } from './ui/switch';
+import { Company } from '@/hooks/useCompanies';
 
 interface CompanyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (companyData: Partial<Company>) => Promise<any>;
+  onSave: (companyData: Partial<Company>) => Promise<void>;
   company?: Company | null;
 }
 
 export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalProps) => {
-  const { toast } = useToast()
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<Company>>({
     nome: '',
     cnpj: '',
-    segmento: '',
-    status: 'Ativa',
-    valor_mensalidade: 0,
-    n8n_integration_active: false,
-    clickup_api_key: '',
-    clickup_workspace_id: '',
-    clickup_integration_status: '',
-    // Address fields
     endereco: '',
     numero: '',
     complemento: '',
@@ -69,21 +30,21 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     email: '',
     responsavel: '',
     cargo_responsavel: '',
+    segmento: '',
+    atividade: '',
+    valor_mensalidade: 0,
+    status: 'Ativo',
+    n8n_integration_active: false,
+    aceitar_politica_privacidade: false,
   });
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (company) {
       setFormData({
         nome: company.nome || '',
         cnpj: company.cnpj || '',
-        segmento: company.segmento || '',
-        status: company.status || 'Ativa',
-        valor_mensalidade: company.valor_mensalidade || 0,
-        n8n_integration_active: company.n8n_integration_active || false,
-        clickup_api_key: company.clickup_api_key || '',
-        clickup_workspace_id: company.clickup_workspace_id || '',
-        clickup_integration_status: company.clickup_integration_status || '',
-        // Address fields
         endereco: company.endereco || '',
         numero: company.numero || '',
         complemento: company.complemento || '',
@@ -95,20 +56,17 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         email: company.email || '',
         responsavel: company.responsavel || '',
         cargo_responsavel: company.cargo_responsavel || '',
+        segmento: company.segmento || '',
+        atividade: company.atividade || '',
+        valor_mensalidade: company.valor_mensalidade || 0,
+        status: company.status || 'Ativo',
+        n8n_integration_active: company.n8n_integration_active || false,
+        aceitar_politica_privacidade: company.aceitar_politica_privacidade || false,
       });
     } else {
-      // Reset form when creating a new company
       setFormData({
         nome: '',
         cnpj: '',
-        segmento: '',
-        status: 'Ativa',
-        valor_mensalidade: 0,
-        n8n_integration_active: false,
-        clickup_api_key: '',
-        clickup_workspace_id: '',
-        clickup_integration_status: '',
-        // Address fields
         endereco: '',
         numero: '',
         complemento: '',
@@ -120,265 +78,235 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
         email: '',
         responsavel: '',
         cargo_responsavel: '',
+        segmento: '',
+        atividade: '',
+        valor_mensalidade: 0,
+        status: 'Ativo',
+        n8n_integration_active: false,
+        aceitar_politica_privacidade: false,
       });
     }
   }, [company]);
 
-  const handleClickUpConfigUpdate = (config: any) => {
-    setFormData(prev => ({
-      ...prev,
-      ...config
-    }));
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : 
-              name === 'valor_mensalidade' ? Number(value) || 0 : value
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    
     try {
       await onSave(formData);
       onClose();
-      toast({
-        title: "Sucesso",
-        description: company ? "Empresa atualizada com sucesso!" : "Empresa criada com sucesso!",
-      })
-    } catch (error: any) {
-      console.error("Error saving company:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: error.message || "Ocorreu um erro ao salvar a empresa.",
-      })
+    } catch (error) {
+      console.error('Error saving company:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSwitchChange = (field: keyof Company) => (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: checked
+    }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{company ? 'Editar Empresa' : 'Nova Empresa'}</DialogTitle>
+          <DialogTitle>
+            {company ? 'Editar Empresa' : 'Nova Empresa'}
+          </DialogTitle>
         </DialogHeader>
-        
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basic">Dados Básicos</TabsTrigger>
-            <TabsTrigger value="contact">Contato</TabsTrigger>
-            <TabsTrigger value="integrations">Integrações</TabsTrigger>
-            <TabsTrigger value="clickup">ClickUp</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="basic" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  name="cnpj"
-                  value={formData.cnpj}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="segmento">Segmento</Label>
+              <Label htmlFor="nome">Nome da Empresa *</Label>
               <Input
-                id="segmento"
-                name="segmento"
-                value={formData.segmento}
-                onChange={handleInputChange}
+                id="nome"
+                value={formData.nome || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                required
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  name="status"
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-                  defaultValue={formData.status}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Ativa">Ativa</SelectItem>
-                    <SelectItem value="Inativa">Inativa</SelectItem>
-                    <SelectItem value="Em negociação">Em negociação</SelectItem>
-                    <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valor_mensalidade">Valor Mensalidade</Label>
-                <Input
-                  id="valor_mensalidade"
-                  name="valor_mensalidade"
-                  type="number"
-                  step="0.01"
-                  value={formData.valor_mensalidade}
-                  onChange={handleInputChange}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <Input
+                id="cnpj"
+                value={formData.cnpj || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+              />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="contact" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Input
-                  id="endereco"
-                  name="endereco"
-                  value={formData.endereco}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="numero">Número</Label>
-                <Input
-                  id="numero"
-                  name="numero"
-                  value={formData.numero}
-                  onChange={handleInputChange}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input
+                id="endereco"
+                value={formData.endereco || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
+              />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numero">Número</Label>
+              <Input
+                id="numero"
+                value={formData.numero || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="complemento">Complemento</Label>
               <Input
                 id="complemento"
-                name="complemento"
-                value={formData.complemento}
-                onChange={handleInputChange}
+                value={formData.complemento || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, complemento: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bairro">Bairro</Label>
-                <Input
-                  id="bairro"
-                  name="bairro"
-                  value={formData.bairro}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input
-                  id="cidade"
-                  name="cidade"
-                  value={formData.cidade}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Input
-                  id="estado"
-                  name="estado"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                value={formData.bairro || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cep">CEP</Label>
-                <Input
-                  id="cep"
-                  name="cep"
-                  value={formData.cep}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input
-                  id="telefone"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleInputChange}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                value={formData.cidade || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
+              />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado</Label>
+              <Input
+                id="estado"
+                value={formData.estado || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, estado: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                value={formData.cep || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, cep: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
+                value={formData.telefone || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="responsavel">Responsável</Label>
-                <Input
-                  id="responsavel"
-                  name="responsavel"
-                  value={formData.responsavel}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cargo_responsavel">Cargo do Responsável</Label>
-                <Input
-                  id="cargo_responsavel"
-                  name="cargo_responsavel"
-                  value={formData.cargo_responsavel}
-                  onChange={handleInputChange}
-                />
-              </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="responsavel">Responsável</Label>
+              <Input
+                id="responsavel"
+                value={formData.responsavel || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
+              />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="integrations" className="space-y-4">
+
+            <div className="space-y-2">
+              <Label htmlFor="cargo_responsavel">Cargo do Responsável</Label>
+              <Input
+                id="cargo_responsavel"
+                value={formData.cargo_responsavel || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, cargo_responsavel: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="segmento">Segmento</Label>
+              <Input
+                id="segmento"
+                value={formData.segmento || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, segmento: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="atividade">Atividade</Label>
+              <Input
+                id="atividade"
+                value={formData.atividade || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, atividade: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="valor_mensalidade">Valor Mensalidade</Label>
+              <Input
+                id="valor_mensalidade"
+                type="number"
+                step="0.01"
+                value={formData.valor_mensalidade || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, valor_mensalidade: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Input
+                id="status"
+                value={formData.status || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Label htmlFor="n8n_integration_active">Integração com N8N</Label>
               <Switch
                 id="n8n_integration_active"
-                name="n8n_integration_active"
-                checked={formData.n8n_integration_active}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, n8n_integration_active: checked }))}
+                checked={formData.n8n_integration_active || false}
+                onCheckedChange={handleSwitchChange('n8n_integration_active')}
               />
+              <Label htmlFor="n8n_integration_active">Integração N8N Ativa</Label>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="clickup" className="space-y-4">
-            <ClickUpConfiguration
-              companyId={company?.id || ''}
-              currentConfig={{
-                clickup_api_key: formData.clickup_api_key,
-                clickup_workspace_id: formData.clickup_workspace_id,
-                clickup_integration_status: formData.clickup_integration_status
-              }}
-              onConfigUpdate={handleClickUpConfigUpdate}
-            />
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>
-            {company ? 'Atualizar' : 'Salvar'}
-          </Button>
-        </DialogFooter>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="aceitar_politica_privacidade"
+                checked={formData.aceitar_politica_privacidade || false}
+                onCheckedChange={handleSwitchChange('aceitar_politica_privacidade')}
+              />
+              <Label htmlFor="aceitar_politica_privacidade">Aceitar Política de Privacidade</Label>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-6">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Salvando...' : company ? 'Atualizar' : 'Salvar'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

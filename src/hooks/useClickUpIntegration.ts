@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -52,34 +52,39 @@ export const useClickUpIntegration = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const syncTasksFromList = async (companyId: string, listId: string) => {
+  const syncTasksFromList = async (systemId: string, listId: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('🔄 Starting ClickUp task sync for company:', companyId, 'list:', listId);
+      console.log('🔄 Starting ClickUp task sync for system:', systemId, 'list:', listId);
 
-      // Get company ClickUp configuration
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('clickup_api_key, clickup_workspace_id, nome')
-        .eq('id', companyId)
-        .single();
+      // Get system ClickUp configuration
+      const { data: settings, error: settingsError } = await supabase
+        .from('settings')
+        .select('*')
+        .in('nome', ['clickup_api_key', 'clickup_workspace_id']);
 
-      if (companyError || !company) {
-        throw new Error('Empresa não encontrada ou sem configuração ClickUp');
+      if (settingsError) {
+        throw new Error('Erro ao buscar configurações do ClickUp');
       }
 
-      if (!company.clickup_api_key) {
-        throw new Error('Token da API do ClickUp não configurado para esta empresa');
+      const settingsMap = settings?.reduce((acc, setting) => {
+        acc[setting.nome] = setting.valor;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
+      const apiKey = settingsMap.clickup_api_key;
+      if (!apiKey) {
+        throw new Error('Token da API do ClickUp não configurado');
       }
 
       // Call edge function to sync tasks
       const { data, error: syncError } = await supabase.functions.invoke('clickup-sync', {
         body: {
-          companyId,
+          companyId: systemId,
           listId,
-          apiKey: company.clickup_api_key
+          apiKey
         }
       });
 
@@ -92,7 +97,7 @@ export const useClickUpIntegration = () => {
       
       toast({
         title: "Sincronização Concluída",
-        description: `Tarefas do ClickUp sincronizadas com sucesso para ${company.nome}`,
+        description: `Tarefas do ClickUp sincronizadas com sucesso`,
       });
 
       return data;
@@ -113,29 +118,36 @@ export const useClickUpIntegration = () => {
     }
   };
 
-  const getClickUpLists = async (companyId: string) => {
+  const getClickUpLists = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('clickup_api_key, clickup_workspace_id')
-        .eq('id', companyId)
-        .single();
+      const { data: settings, error: settingsError } = await supabase
+        .from('settings')
+        .select('*')
+        .in('nome', ['clickup_api_key', 'clickup_workspace_id']);
 
-      if (companyError || !company) {
-        throw new Error('Empresa não encontrada ou sem configuração ClickUp');
+      if (settingsError) {
+        throw new Error('Erro ao buscar configurações do ClickUp');
       }
 
-      if (!company.clickup_api_key || !company.clickup_workspace_id) {
+      const settingsMap = settings?.reduce((acc, setting) => {
+        acc[setting.nome] = setting.valor;
+        return acc;
+      }, {} as Record<string, string>) || {};
+
+      const apiKey = settingsMap.clickup_api_key;
+      const workspaceId = settingsMap.clickup_workspace_id;
+
+      if (!apiKey || !workspaceId) {
         throw new Error('Configuração do ClickUp incompleta');
       }
 
       const { data, error: listsError } = await supabase.functions.invoke('clickup-lists', {
         body: {
-          apiKey: company.clickup_api_key,
-          workspaceId: company.clickup_workspace_id
+          apiKey,
+          workspaceId
         }
       });
 
@@ -145,7 +157,7 @@ export const useClickUpIntegration = () => {
 
       return data.lists || [];
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar listas do ClickUp';
+      const errorMessage = err instanceof Error ? err.message : '//Erro ao buscar listas do ClickUp';
       console.error('💥 ClickUp lists error:', err);
       setError(errorMessage);
       throw err;
