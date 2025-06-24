@@ -1,3 +1,4 @@
+
 import { useCompanies } from './useCompanies';
 import { useAuditLog } from './useAuditLog';
 import { supabase } from '@/integrations/supabase/client';
