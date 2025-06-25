@@ -76,7 +76,7 @@ export const ClickUpConfiguration = ({
     if (!apiKey || !workspaceId) return;
 
     try {
-      const listsData = await getClickUpLists(companyId);
+      const listsData = await getClickUpLists();
       setLists(listsData);
     } catch (err) {
       console.error('Failed to load lists:', err);
