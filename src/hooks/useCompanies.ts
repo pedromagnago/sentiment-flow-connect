@@ -133,15 +133,20 @@ export const useCompanies = () => {
 
   const updateCompany = async (id: string, companyData: Partial<Company>) => {
     try {
-      console.log('Updating company:', id, companyData);
+      console.log('🔄 useCompanies - updateCompany called');
+      console.log('🏢 useCompanies - Company ID:', id);
+      console.log('📋 useCompanies - Company data to update:', companyData);
+      console.log('🔧 useCompanies - N8N integration active in data:', companyData.n8n_integration_active);
       
       // Se a integração n8n está sendo desativada, limpar dados relacionados
       if (companyData.n8n_integration_active === false) {
+        console.log('🧹 useCompanies - N8N being disabled, cleaning up data...');
         await cleanupN8nData(id);
       }
       
       // Remove updated_at from the data being sent since trigger will handle it
       const { updated_at, ...dataToUpdate } = companyData;
+      console.log('📤 useCompanies - Data being sent to Supabase:', dataToUpdate);
       
       const { data, error } = await supabase
         .from('companies')
@@ -150,16 +155,25 @@ export const useCompanies = () => {
         .select()
         .single();
 
+      console.log('📡 useCompanies - Supabase response:', { data, error });
+
       if (error) {
-        console.error('Error updating company:', error);
+        console.error('❌ useCompanies - Error updating company:', error);
+        console.error('❌ useCompanies - Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       
-      console.log('Company updated:', data);
+      console.log('✅ useCompanies - Company updated successfully:', data);
+      console.log('🔧 useCompanies - Updated N8N status:', data.n8n_integration_active);
       await fetchCompanies(); // Refresh the list
       return data;
     } catch (err) {
-      console.error('Update company error:', err);
+      console.error('💥 useCompanies - Update company error:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao atualizar empresa');
     }
   };

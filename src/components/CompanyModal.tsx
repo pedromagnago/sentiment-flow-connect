@@ -92,21 +92,31 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     e.preventDefault();
     setLoading(true);
     
+    console.log('🔄 CompanyModal - handleSubmit called');
+    console.log('📋 CompanyModal - formData:', formData);
+    console.log('🔧 CompanyModal - N8N integration active:', formData.n8n_integration_active);
+    
     try {
       await onSave(formData);
+      console.log('✅ CompanyModal - onSave completed successfully');
       onClose();
     } catch (error) {
-      console.error('Error saving company:', error);
+      console.error('❌ CompanyModal - Error saving company:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSwitchChange = (field: keyof Company) => (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: checked
-    }));
+    console.log(`🔄 CompanyModal - Switch ${field} changed to:`, checked);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: checked
+      };
+      console.log('📋 CompanyModal - Updated formData:', newData);
+      return newData;
+    });
   };
 
   console.log('CompanyModal render:', { isOpen, company: company?.nome });
