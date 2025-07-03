@@ -109,6 +109,8 @@ export const CompanyModal = ({ isOpen, onClose, onSave, company }: CompanyModalP
     }));
   };
 
+  console.log('CompanyModal render:', { isOpen, company: company?.nome });
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
