@@ -65,9 +65,6 @@ verify_jwt = false
 [functions.clickup-test]
 verify_jwt = false
 
-[functions.daily-keepalive]
-verify_jwt = false
-
 [edge-runtime]
 policy = "on_demand"
 inspector_port = 8083
