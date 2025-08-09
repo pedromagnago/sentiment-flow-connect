@@ -67,6 +67,10 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
 
+  // Selection mode: all filtered vs per-page ids
+  const [selectedAllFiltered, setSelectedAllFiltered] = useState(false);
+  const [allFilteredCount, setAllFilteredCount] = useState(0);
+
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
   useEffect(() => {
@@ -213,6 +217,40 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     setSelectedIds(next);
   };
 
+  // Helper to apply current filters to a query
+  const applyQueryFilters = (q: any) => {
+    let query = q.eq("company_id", companyId);
+    if (selectedAccountId !== "all") query = query.eq("bank_account_uuid", selectedAccountId);
+    if (dateFilter.from) query = query.gte("date", dateFilter.from);
+    if (dateFilter.to) query = query.lte("date", dateFilter.to);
+    return query;
+  };
+
+  // Select all matching current filter (across all pages)
+  const selectAllMatching = async () => {
+    if (!companyId) return;
+    setLoading(true);
+    try {
+      let q = supabase.from("bank_transactions").select("id", { count: "exact", head: true });
+      q = applyQueryFilters(q);
+      const { count, error } = await q as any;
+      if (error) throw error;
+      setSelectedAllFiltered(true);
+      setAllFilteredCount(count || 0);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast({ title: "Erro ao selecionar", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedAllFiltered(false);
+    setAllFilteredCount(0);
+    setSelectedIds(new Set());
+  };
+
   // Inline edit handlers
   const startEdit = (row: TxnRow) => {
     setEditingId(row.id);
@@ -239,46 +277,70 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   // Bulk recategorization
   const applyBulk = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
     const newCat = bulkCategory.trim();
     if (!newCat) {
       toast({ title: "Informe a categoria", variant: "destructive" });
       return;
     }
-    const { error } = await supabase
-      .from("bank_transactions")
-      .update({ category: newCat })
-      .in("id", ids);
-    if (error) {
-      toast({ title: "Erro ao recategorizar", description: error.message, variant: "destructive" });
-      return;
+
+    try {
+      if (selectedAllFiltered) {
+        let q = supabase.from("bank_transactions").update({ category: newCat });
+        q = applyQueryFilters(q);
+        const { error } = await q as any;
+        if (error) throw error;
+        await load();
+        clearSelection();
+        setBulkCategory("");
+        toast({ title: "Recategorização aplicada a todos do filtro" });
+      } else {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+        const { error } = await supabase
+          .from("bank_transactions")
+          .update({ category: newCat })
+          .in("id", ids);
+        if (error) throw error;
+        setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, category: newCat } : r)));
+        setSelectedIds(new Set());
+        setBulkCategory("");
+        toast({ title: "Recategorização aplicada" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao recategorizar", description: e?.message || String(e), variant: "destructive" });
     }
-    setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, category: newCat } : r)));
-    setSelectedIds(new Set());
-    setBulkCategory("");
-    toast({ title: "Recategorização aplicada" });
   };
 
   // Bulk delete
   const bulkDelete = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-    const { error } = await supabase
-      .from("bank_transactions")
-      .delete()
-      .in("id", ids);
-    if (error) {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-      return;
+    try {
+      if (selectedAllFiltered) {
+        let q = supabase.from("bank_transactions").delete();
+        q = applyQueryFilters(q);
+        const { error } = await q as any;
+        if (error) throw error;
+        await load();
+        clearSelection();
+        toast({ title: "Lançamentos excluídos (todos do filtro)" });
+      } else {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+        const { error } = await supabase
+          .from("bank_transactions")
+          .delete()
+          .in("id", ids);
+        if (error) throw error;
+        setRows((prev) => {
+          const next = prev.filter((r) => !selectedIds.has(r.id));
+          onSummaryChange?.(computeSummary(next));
+          return next;
+        });
+        setSelectedIds(new Set());
+        toast({ title: "Lançamentos excluídos" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao excluir", description: e?.message || String(e), variant: "destructive" });
     }
-    setRows((prev) => {
-      const next = prev.filter((r) => !selectedIds.has(r.id));
-      onSummaryChange?.(computeSummary(next));
-      return next;
-    });
-    setSelectedIds(new Set());
-    toast({ title: "Lançamentos excluídos" });
   };
 
   return (
@@ -309,26 +371,36 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           </Select>
         </div>
         <Button onClick={load} disabled={loading || !companyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
+        <Button variant="secondary" onClick={selectAllMatching} disabled={loading || !companyId}>
+          Selecionar todos do filtro
+        </Button>
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
       </div>
 
-      {selectedIds.size > 0 && (
+      {(selectedIds.size > 0 || selectedAllFiltered) && (
         <div className="flex flex-wrap items-center gap-3">
-          <div className="text-sm text-muted-foreground">Selecionados: {selectedIds.size}</div>
+          <div className="text-sm text-muted-foreground">
+            Selecionados: {selectedAllFiltered ? allFilteredCount : selectedIds.size}
+            {selectedAllFiltered ? " (todos do filtro)" : ""}
+          </div>
           <Input
             placeholder="Nova categoria"
             value={bulkCategory}
             onChange={(e) => setBulkCategory(e.target.value)}
             className="max-w-xs"
           />
-          <Button onClick={applyBulk}>Aplicar categoria</Button>
+          <Button onClick={applyBulk} disabled={selectedAllFiltered ? allFilteredCount === 0 : selectedIds.size === 0}>
+            Aplicar categoria
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Excluir selecionados</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Excluir {selectedIds.size} lançamentos?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  Excluir {selectedAllFiltered ? allFilteredCount : selectedIds.size} lançamentos?
+                </AlertDialogTitle>
                 <AlertDialogDescription>
                   Esta ação é irreversível. Os lançamentos serão removidos definitivamente.
                 </AlertDialogDescription>
@@ -339,6 +411,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <Button variant="outline" onClick={clearSelection}>Limpar seleção</Button>
         </div>
       )}
 
