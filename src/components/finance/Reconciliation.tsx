@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TransactionsTable } from "./TransactionsTable";
 
 export const Reconciliation: React.FC = () => {
   const { toast } = useToast();
@@ -65,7 +66,7 @@ export const Reconciliation: React.FC = () => {
         <h1 className="text-2xl font-semibold">Reconciliação Financeira (OFX)</h1>
         <p className="text-muted-foreground">Envie seu extrato OFX para importar transações bancárias.</p>
       </header>
-      <main>
+      <main className="space-y-6">
         <section className="flex items-center gap-3">
           <input
             type="file"
@@ -76,6 +77,11 @@ export const Reconciliation: React.FC = () => {
           <Button onClick={handleUpload} disabled={!file || loading}>
             {loading ? "Importando..." : "Importar OFX"}
           </Button>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-medium">Transações importadas</h2>
+          <TransactionsTable />
         </section>
       </main>
     </div>
