@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/common/Pagination";
 
@@ -41,6 +42,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
+
+  // Selection & inline edit
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState("");
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
@@ -90,6 +97,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
       setRows(list);
       onSummaryChange?.(computeSummary(list));
       resetPagination();
+      setSelectedIds(new Set());
     }
     setLoading(false);
   };
@@ -103,14 +111,18 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
 
   const exportCsv = () => {
-    const header = ["Data", "Descrição", "Tipo", "Valor", "FITID"].join(",");
-    const lines = rows.map((r) => [
-      new Date(r.date).toISOString().slice(0, 10),
-      (r.description || r.memo || "").replace(/"/g, '""'),
-      r.type || "",
-      String(r.amount).replace(".", ","),
-      r.fitid || "",
-    ].map((v) => `"${v}"`).join(","));
+    const header = ["Data", "Descrição", "Categoria", "Tipo", "Valor", "FITID"].join(",");
+    const lines = rows
+      .map((r) => [
+        new Date(r.date).toISOString().slice(0, 10),
+        (r.description || r.memo || "").replace(/"/g, '""'),
+        r.category || "",
+        r.type || "",
+        String(r.amount).replace(".", ","),
+        r.fitid || "",
+      ]
+        .map((v) => `"${v}` + `"`)
+        .join(","));
     const csv = [header, ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -120,6 +132,8 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // Pagination derived from full rows (client-side)
   const {
     currentPage,
     totalPages,
@@ -132,6 +146,75 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     totalItems,
     resetPagination,
   } = usePagination({ data: rows, itemsPerPage: 20 });
+
+  // Selection helpers
+  const currentPageIds = useMemo(() => new Set(paginatedData.map((r) => r.id)), [paginatedData]);
+  const allCurrentSelected = useMemo(
+    () => paginatedData.length > 0 && paginatedData.every((r) => selectedIds.has(r.id)),
+    [paginatedData, selectedIds]
+  );
+  const toggleSelectAllCurrent = () => {
+    const next = new Set(selectedIds);
+    if (allCurrentSelected) {
+      paginatedData.forEach((r) => next.delete(r.id));
+    } else {
+      paginatedData.forEach((r) => next.add(r.id));
+    }
+    setSelectedIds(next);
+  };
+  const toggleRow = (id: string, checked: boolean | string) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  // Inline edit handlers
+  const startEdit = (row: TxnRow) => {
+    setEditingId(row.id);
+    setEditingCat(row.category || "");
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingCat("");
+  };
+  const saveEdit = async (id: string) => {
+    const newCat = editingCat.trim();
+    const { error } = await supabase
+      .from("bank_transactions")
+      .update({ category: newCat || null })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+      return;
+    }
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, category: newCat || null } : r)));
+    toast({ title: "Categoria atualizada" });
+    cancelEdit();
+  };
+
+  // Bulk recategorization
+  const applyBulk = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const newCat = bulkCategory.trim();
+    if (!newCat) {
+      toast({ title: "Informe a categoria", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase
+      .from("bank_transactions")
+      .update({ category: newCat })
+      .in("id", ids);
+    if (error) {
+      toast({ title: "Erro ao recategorizar", description: error.message, variant: "destructive" });
+      return;
+    }
+    setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, category: newCat } : r)));
+    setSelectedIds(new Set());
+    setBulkCategory("");
+    toast({ title: "Recategorização aplicada" });
+  };
 
   return (
     <div className="space-y-3">
@@ -148,11 +231,27 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-sm text-muted-foreground">Selecionados: {selectedIds.size}</div>
+          <Input
+            placeholder="Nova categoria"
+            value={bulkCategory}
+            onChange={(e) => setBulkCategory(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button onClick={applyBulk}>Aplicar categoria</Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableCaption>Últimas transações importadas</TableCaption>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox checked={allCurrentSelected} onCheckedChange={toggleSelectAllCurrent} aria-label="Selecionar página" />
+              </TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Categoria</TableHead>
@@ -164,16 +263,46 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           <TableBody>
             {paginatedData.length === 0 && !loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nenhuma transação encontrada.
                 </TableCell>
               </TableRow>
             ) : (
               paginatedData.map((r) => (
                 <TableRow key={r.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(r.id)}
+                      onCheckedChange={(v) => toggleRow(r.id, v)}
+                      aria-label="Selecionar transação"
+                    />
+                  </TableCell>
                   <TableCell>{new Date(r.date).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell>{r.description || r.memo || "—"}</TableCell>
-                  <TableCell>{r.category || "—"}</TableCell>
+                  <TableCell>
+                    {editingId === r.id ? (
+                      <Input
+                        autoFocus
+                        value={editingCat}
+                        onChange={(e) => setEditingCat(e.target.value)}
+                        onBlur={() => saveEdit(r.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit(r.id);
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                        placeholder="Categoria"
+                        className="h-8"
+                      />
+                    ) : (
+                      <button
+                        className="text-left w-full hover:underline"
+                        onClick={() => startEdit(r)}
+                        aria-label="Editar categoria"
+                      >
+                        {r.category || "—"}
+                      </button>
+                    )}
+                  </TableCell>
                   <TableCell>{r.type || "—"}</TableCell>
                   <TableCell className="text-right font-medium">{currency(Number(r.amount))}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.fitid || "—"}</TableCell>
