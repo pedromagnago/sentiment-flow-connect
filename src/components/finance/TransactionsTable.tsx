@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/common/Pagination";
 
 interface TxnRow {
   id: string;
@@ -23,7 +25,13 @@ interface TxnRow {
   fitid: string | null;
 }
 
-export const TransactionsTable: React.FC = () => {
+interface Summary {
+  credit: number;
+  debit: number; // absolute value of negatives
+  net: number;
+}
+
+export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => void }> = ({ onSummaryChange }) => {
   const { toast } = useToast();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [rows, setRows] = useState<TxnRow[]>([]);
@@ -51,6 +59,13 @@ export const TransactionsTable: React.FC = () => {
       });
   }, [toast]);
 
+  const computeSummary = (data: TxnRow[]) => {
+    const credit = data.filter((r) => Number(r.amount) > 0).reduce((s, r) => s + Number(r.amount), 0);
+    const debitAbs = data.filter((r) => Number(r.amount) < 0).reduce((s, r) => s + Math.abs(Number(r.amount)), 0);
+    const net = data.reduce((s, r) => s + Number(r.amount), 0);
+    return { credit, debit: debitAbs, net };
+  };
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
@@ -60,7 +75,7 @@ export const TransactionsTable: React.FC = () => {
       .select("id,date,description,memo,type,amount,fitid")
       .eq("company_id", companyId)
       .order("date", { ascending: false })
-      .limit(200);
+      .limit(500);
 
     if (dateFilter.from) query = query.gte("date", dateFilter.from);
     if (dateFilter.to) query = query.lte("date", dateFilter.to);
@@ -70,7 +85,10 @@ export const TransactionsTable: React.FC = () => {
       setError(error.message);
       toast({ title: "Erro ao carregar transações", description: error.message, variant: "destructive" });
     } else {
-      setRows((data as any[]) as TxnRow[]);
+      const list = (data as any[]) as TxnRow[];
+      setRows(list);
+      onSummaryChange?.(computeSummary(list));
+      resetPagination();
     }
     setLoading(false);
   };
@@ -82,6 +100,37 @@ export const TransactionsTable: React.FC = () => {
 
   const currency = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+
+  const exportCsv = () => {
+    const header = ["Data", "Descrição", "Tipo", "Valor", "FITID"].join(",");
+    const lines = rows.map((r) => [
+      new Date(r.date).toISOString().slice(0, 10),
+      (r.description || r.memo || "").replace(/"/g, '""'),
+      r.type || "",
+      String(r.amount).replace(".", ","),
+      r.fitid || "",
+    ].map((v) => `"${v}"`).join(","));
+    const csv = [header, ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transacoes-ofx-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const {
+    currentPage,
+    totalPages,
+    paginatedData,
+    goToPage,
+    hasNext,
+    hasPrevious,
+    startIndex,
+    endIndex,
+    totalItems,
+    resetPagination,
+  } = usePagination({ data: rows, itemsPerPage: 20 });
 
   return (
     <div className="space-y-3">
@@ -95,6 +144,7 @@ export const TransactionsTable: React.FC = () => {
           <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         <Button onClick={load} disabled={loading || !companyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
+        <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
       </div>
 
       <div className="rounded-md border">
@@ -110,14 +160,14 @@ export const TransactionsTable: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && !loading ? (
+            {paginatedData.length === 0 && !loading ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                   Nenhuma transação encontrada.
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r) => (
+              paginatedData.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{new Date(r.date).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell>{r.description || r.memo || "—"}</TableCell>
@@ -130,6 +180,17 @@ export const TransactionsTable: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNext={hasNext}
+        hasPrevious={hasPrevious}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalItems={totalItems}
+      />
     </div>
   );
 };
