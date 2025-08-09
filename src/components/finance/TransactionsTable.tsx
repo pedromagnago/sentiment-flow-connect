@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/common/Pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface TxnRow {
   id: string;
@@ -25,12 +26,25 @@ interface TxnRow {
   type: string | null;
   amount: number;
   fitid: string | null;
+  bank_account_uuid?: string | null;
+  account_id?: string | null;
+  bank_id?: string | null;
+  branch_id?: string | null;
+  acct_type?: string | null;
 }
 
 interface Summary {
   credit: number;
   debit: number; // absolute value of negatives
   net: number;
+}
+
+interface Account {
+  id: string;
+  display_name: string | null;
+  account_id: string;
+  bank_id: string | null;
+  branch_id: string | null;
 }
 
 export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => void }> = ({ onSummaryChange }) => {
@@ -48,6 +62,10 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const [bulkCategory, setBulkCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState("");
+
+  // Accounts
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
@@ -80,10 +98,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     setError(null);
     let query = supabase
       .from("bank_transactions")
-      .select("id,date,description,memo,category,type,amount,fitid")
+      .select("id,date,description,memo,category,type,amount,fitid,bank_account_uuid,account_id,bank_id,branch_id,acct_type")
       .eq("company_id", companyId)
       .order("date", { ascending: false })
       .limit(500);
+
+    if (selectedAccountId !== "all") query = query.eq("bank_account_uuid", selectedAccountId);
 
     if (dateFilter.from) query = query.gte("date", dateFilter.from);
     if (dateFilter.to) query = query.lte("date", dateFilter.to);
@@ -103,6 +123,20 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   useEffect(() => {
+    if (!companyId) return;
+    supabase
+      .from("bank_accounts")
+      .select("id,display_name,account_id,bank_id,branch_id")
+      .eq("company_id", companyId)
+      .order("display_name", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Erro ao carregar contas:", error);
+        } else {
+          setAccounts((data as any[]) as Account[]);
+        }
+      });
+
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
@@ -110,12 +144,22 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const currency = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
 
+  const formatAccount = (r: TxnRow) => {
+    const acct = r.account_id ? String(r.account_id) : "";
+    const last4 = acct ? acct.slice(-4) : "";
+    const bank = r.bank_id || "";
+    const branch = r.branch_id || "";
+    const label = [bank, branch, last4 ? `••${last4}` : acct].filter(Boolean).join(" / ");
+    return label || "—";
+  };
+
   const exportCsv = () => {
-    const header = ["Data", "Descrição", "Categoria", "Tipo", "Valor", "FITID"].join(",");
+    const header = ["Data", "Descrição", "Conta", "Categoria", "Tipo", "Valor", "FITID"].join(",");
     const lines = rows
       .map((r) => [
         new Date(r.date).toISOString().slice(0, 10),
         (r.description || r.memo || "").replace(/"/g, '""'),
+        formatAccount(r),
         r.category || "",
         r.type || "",
         String(r.amount).replace(".", ","),
@@ -227,6 +271,22 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           <label className="text-sm text-muted-foreground">Até</label>
           <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Conta</label>
+          <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Todas as contas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {accounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.display_name || `${a.bank_id || ""} ${a.branch_id || ""} ${a.account_id}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button onClick={load} disabled={loading || !companyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
       </div>
@@ -254,6 +314,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
               </TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Conta</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Valor</TableHead>
@@ -279,6 +340,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
                   </TableCell>
                   <TableCell>{new Date(r.date).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell>{r.description || r.memo || "—"}</TableCell>
+                  <TableCell>{formatAccount(r)}</TableCell>
                   <TableCell>
                     {editingId === r.id ? (
                       <Input

@@ -3,7 +3,6 @@
 // Logs useful info and returns a summary
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -51,6 +50,19 @@ function parseOfx(ofxText: string) {
   }).filter(t => t.date && !Number.isNaN(t.amount));
 
   return txns;
+}
+
+// Extract account metadata from OFX header/statement sections
+function parseAccountMeta(ofxText: string) {
+  const pick = (tag: string) => {
+    const m = ofxText.match(new RegExp(`<${tag}>([^<\n\r]+)`, 'i'));
+    return m ? m[1].trim() : undefined;
+  };
+  const acctId = pick('ACCTID');
+  const bankId = pick('BANKID');
+  const branchId = pick('BRANCHID');
+  const acctType = pick('ACCTTYPE');
+  return { acctId, bankId, branchId, acctType };
 }
 
 Deno.serve(async (req) => {
@@ -121,6 +133,33 @@ Deno.serve(async (req) => {
     const importId = importRow.id as string;
     const txns = parseOfx(ofxText);
 
+    // Parse account metadata and upsert bank account
+    const acctMeta = parseAccountMeta(ofxText);
+    let accountUuid: string | null = null;
+    if (acctMeta.acctId) {
+      const display = [acctMeta.bankId, acctMeta.branchId, acctMeta.acctId].filter(Boolean).join(" - ");
+      const { data: acc, error: accErr } = await supabase
+        .from("bank_accounts")
+        .upsert(
+          {
+            user_id: userId,
+            company_id: companyId,
+            account_id: acctMeta.acctId,
+            bank_id: acctMeta.bankId,
+            branch_id: acctMeta.branchId,
+            acct_type: acctMeta.acctType,
+            display_name: display || acctMeta.acctId,
+          },
+          { onConflict: "company_id,account_id,bank_id,branch_id" }
+        )
+        .select("id")
+        .single();
+
+      if (!accErr && acc?.id) {
+        accountUuid = acc.id as string;
+      }
+    }
+
     // Load rules for categorization
     const { data: rules } = await supabase
       .from("transaction_rules")
@@ -150,6 +189,12 @@ Deno.serve(async (req) => {
       fitid: t.fitid,
       raw: t.raw,
       category: matchCategory(t.description || t.memo || t.raw),
+      // account linking
+      account_id: acctMeta.acctId,
+      bank_id: acctMeta.bankId,
+      branch_id: acctMeta.branchId,
+      acct_type: acctMeta.acctType,
+      bank_account_uuid: accountUuid,
     }));
 
     let imported = 0;
