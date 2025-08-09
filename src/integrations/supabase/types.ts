@@ -166,6 +166,7 @@ export type Database = {
           account_id: string | null
           acct_type: string | null
           amount: number
+          bank_account_uuid: string | null
           bank_id: string | null
           branch_id: string | null
           category: string | null
@@ -186,6 +187,7 @@ export type Database = {
           account_id?: string | null
           acct_type?: string | null
           amount: number
+          bank_account_uuid?: string | null
           bank_id?: string | null
           branch_id?: string | null
           category?: string | null
@@ -206,6 +208,7 @@ export type Database = {
           account_id?: string | null
           acct_type?: string | null
           amount?: number
+          bank_account_uuid?: string | null
           bank_id?: string | null
           branch_id?: string | null
           category?: string | null
@@ -223,6 +226,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_uuid_fkey"
+            columns: ["bank_account_uuid"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bank_transactions_import_id_fkey"
             columns: ["import_id"]
