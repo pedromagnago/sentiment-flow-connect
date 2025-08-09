@@ -122,9 +122,52 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          account_id: string
+          acct_type: string | null
+          bank_id: string | null
+          branch_id: string | null
+          company_id: string
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          acct_type?: string | null
+          bank_id?: string | null
+          branch_id?: string | null
+          company_id: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          acct_type?: string | null
+          bank_id?: string | null
+          branch_id?: string | null
+          company_id?: string
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bank_transactions: {
         Row: {
+          account_id: string | null
+          acct_type: string | null
           amount: number
+          bank_id: string | null
+          branch_id: string | null
           category: string | null
           company_id: string
           created_at: string
@@ -140,7 +183,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
+          acct_type?: string | null
           amount: number
+          bank_id?: string | null
+          branch_id?: string | null
           category?: string | null
           company_id: string
           created_at?: string
@@ -156,7 +203,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
+          acct_type?: string | null
           amount?: number
+          bank_id?: string | null
+          branch_id?: string | null
           category?: string | null
           company_id?: string
           created_at?: string
