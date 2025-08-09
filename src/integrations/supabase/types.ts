@@ -370,6 +370,88 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_name: string | null
+          file_path: string
+          id: string
+          mime_type: string | null
+          size: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_name?: string | null
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formularios_onboarding: {
+        Row: {
+          answers: Json | null
+          company_id: string
+          created_at: string
+          id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          company_id: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formularios_onboarding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups_message: {
         Row: {
           contact_id: string | null
@@ -544,6 +626,41 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           created_at: string
@@ -660,7 +777,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_company_access: {
+        Args: { _user_id: string; _company_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
