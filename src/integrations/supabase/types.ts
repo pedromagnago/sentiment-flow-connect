@@ -122,6 +122,62 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_transactions: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          date: string
+          description: string | null
+          fitid: string | null
+          id: string
+          import_id: string | null
+          memo: string | null
+          raw: Json | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          date: string
+          description?: string | null
+          fitid?: string | null
+          id?: string
+          import_id?: string | null
+          memo?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          fitid?: string | null
+          id?: string
+          import_id?: string | null
+          memo?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           aceitar_politica_privacidade: boolean | null
@@ -661,6 +717,47 @@ export type Database = {
           },
         ]
       }
+      reconciliation_logs: {
+        Row: {
+          action: string | null
+          company_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          status: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_logs_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           created_at: string
@@ -769,6 +866,45 @@ export type Database = {
           updated_at?: string | null
           "workflow.id"?: string | null
           "workflow.name"?: string | null
+        }
+        Relationships: []
+      }
+      transaction_imports: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_name: string | null
+          id: string
+          imported_transactions: number
+          source: string
+          status: string
+          total_transactions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          imported_transactions?: number
+          source?: string
+          status?: string
+          total_transactions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          imported_transactions?: number
+          source?: string
+          status?: string
+          total_transactions?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
