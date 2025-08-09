@@ -121,6 +121,22 @@ Deno.serve(async (req) => {
     const importId = importRow.id as string;
     const txns = parseOfx(ofxText);
 
+    // Load rules for categorization
+    const { data: rules } = await supabase
+      .from("transaction_rules")
+      .select("pattern,category")
+      .eq("company_id", companyId);
+
+    const matchCategory = (text?: string) => {
+      if (!text || !rules) return undefined;
+      const target = text.toLowerCase();
+      for (const r of rules as any[]) {
+        const p = r?.pattern?.toLowerCase?.() || "";
+        if (p && target.includes(p)) return r?.category;
+      }
+      return undefined;
+    };
+
     // Prepare rows for upsert
     const rows = txns.map((t) => ({
       user_id: userId,
@@ -133,6 +149,7 @@ Deno.serve(async (req) => {
       type: t.type,
       fitid: t.fitid,
       raw: t.raw,
+      category: matchCategory(t.description || t.memo || t.raw),
     }));
 
     let imported = 0;

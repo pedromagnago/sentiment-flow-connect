@@ -20,6 +20,7 @@ interface TxnRow {
   date: string;
   description: string | null;
   memo: string | null;
+  category: string | null;
   type: string | null;
   amount: number;
   fitid: string | null;
@@ -72,7 +73,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     setError(null);
     let query = supabase
       .from("bank_transactions")
-      .select("id,date,description,memo,type,amount,fitid")
+      .select("id,date,description,memo,category,type,amount,fitid")
       .eq("company_id", companyId)
       .order("date", { ascending: false })
       .limit(500);
@@ -154,6 +155,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
             <TableRow>
               <TableHead>Data</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Categoria</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead>FITID</TableHead>
@@ -162,7 +164,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           <TableBody>
             {paginatedData.length === 0 && !loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Nenhuma transação encontrada.
                 </TableCell>
               </TableRow>
@@ -171,6 +173,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
                 <TableRow key={r.id}>
                   <TableCell>{new Date(r.date).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell>{r.description || r.memo || "—"}</TableCell>
+                  <TableCell>{r.category || "—"}</TableCell>
                   <TableCell>{r.type || "—"}</TableCell>
                   <TableCell className="text-right font-medium">{currency(Number(r.amount))}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{r.fitid || "—"}</TableCell>

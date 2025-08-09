@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TransactionsTable } from "./TransactionsTable";
+import { RulesManager } from "./RulesManager";
 import { ArrowDownCircle, ArrowUpCircle, Scale, Upload } from "lucide-react";
 
 export const Reconciliation: React.FC = () => {
@@ -42,6 +43,8 @@ export const Reconciliation: React.FC = () => {
   const currency = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
 
+  // re-load summary and imports after rules change (RulesManager reloads list only).
+  // Users can click "Aplicar filtros" na tabela para recomputar o resumo.
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     if (f && !f.name.toLowerCase().endsWith(".ofx")) {
@@ -134,9 +137,16 @@ export const Reconciliation: React.FC = () => {
           </Button>
         </section>
 
-        <section>
-          <h2 className="text-lg font-medium">Transações importadas</h2>
-          <TransactionsTable onSummaryChange={({ credit, debit, net }) => { setCredit(credit); setDebit(debit); setNet(net); }} />
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-medium">Transações importadas</h2>
+            <TransactionsTable onSummaryChange={({ credit, debit, net }) => { setCredit(credit); setDebit(debit); setNet(net); }} />
+          </div>
+          <div>
+            <h2 className="text-lg font-medium">Regras de categorização</h2>
+            <p className="text-sm text-muted-foreground mb-2">Crie regras simples: se a descrição contém o padrão, atribui a categoria.</p>
+            <RulesManager />
+          </div>
         </section>
       </main>
     </div>
