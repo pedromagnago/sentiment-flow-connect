@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/common/Pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 interface TxnRow {
   id: string;
   date: string;
@@ -260,6 +260,27 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     toast({ title: "Recategorização aplicada" });
   };
 
+  // Bulk delete
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from("bank_transactions")
+      .delete()
+      .in("id", ids);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    setRows((prev) => {
+      const next = prev.filter((r) => !selectedIds.has(r.id));
+      onSummaryChange?.(computeSummary(next));
+      return next;
+    });
+    setSelectedIds(new Set());
+    toast({ title: "Lançamentos excluídos" });
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-3">
@@ -301,6 +322,23 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
             className="max-w-xs"
           />
           <Button onClick={applyBulk}>Aplicar categoria</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">Excluir selecionados</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir {selectedIds.size} lançamentos?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é irreversível. Os lançamentos serão removidos definitivamente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={bulkDelete}>Excluir</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
 
