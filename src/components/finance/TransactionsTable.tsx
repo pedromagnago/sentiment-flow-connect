@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCompanyId } from "@/hooks/useCompanyId";
 import {
   Table,
   TableBody,
@@ -49,7 +50,7 @@ interface Account {
 
 export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => void }> = ({ onSummaryChange }) => {
   const { toast } = useToast();
-  const [companyId, setCompanyId] = useState<string | null>(null);
+  const { companyId } = useCompanyId();
   const [rows, setRows] = useState<TxnRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,21 +80,6 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
-  useEffect(() => {
-    // Resolve company once
-    supabase
-      .from("profiles")
-      .select("company_id")
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) {
-          setError(error.message);
-          toast({ title: "Erro ao carregar perfil", description: error.message, variant: "destructive" });
-        } else if (data?.company_id) {
-          setCompanyId(String(data.company_id));
-        }
-      });
-  }, [toast]);
 
   const computeSummary = (data: TxnRow[]) => {
     const credit = data.filter((r) => Number(r.amount) > 0).reduce((s, r) => s + Number(r.amount), 0);

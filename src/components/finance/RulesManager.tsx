@@ -3,12 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompanyId } from "@/hooks/useCompanyId";
 
 interface Rule { id: string; pattern: string; category: string }
 
 export const RulesManager: React.FC = () => {
   const { toast } = useToast();
-  const [companyId, setCompanyId] = useState<string | null>(null);
+  const { companyId } = useCompanyId();
   const [userId, setUserId] = useState<string | null>(null);
   const [rules, setRules] = useState<Rule[]>([]);
   const [pattern, setPattern] = useState("");
@@ -19,14 +20,16 @@ export const RulesManager: React.FC = () => {
     (async () => {
       const { data: auth } = await supabase.auth.getUser();
       setUserId(auth.user?.id ?? null);
-      const { data: profile } = await supabase.from("profiles").select("company_id").maybeSingle();
-      if (profile?.company_id) {
-        const cid = String(profile.company_id);
-        setCompanyId(cid);
-        loadRules(cid);
-      }
     })();
   }, []);
+
+  useEffect(() => {
+    if (companyId) {
+      loadRules(companyId);
+    } else {
+      setRules([]);
+    }
+  }, [companyId]);
 
   const loadRules = async (cid: string) => {
     const { data, error } = await supabase
