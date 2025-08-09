@@ -10,6 +10,7 @@ import { Settings } from '../components/Settings';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { ReportsPage } from '../components/reports/ReportsPage';
 import { AuditLogs } from '../components/AuditLogs';
+import { Reconciliation } from '../components/finance/Reconciliation';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,8 @@ const Index = () => {
         return <Tasks />;
       case 'task-approvals':
         return <TaskApprovals />;
+      case 'reconciliation':
+        return <Reconciliation />;
       case 'settings':
         return <Settings />;
       default:

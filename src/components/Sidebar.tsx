@@ -9,7 +9,8 @@ import {
   Building2,
   ClipboardCheck,
   FileText,
-  Shield
+  Shield,
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
     { id: 'sentiment', label: 'Análise de Sentimentos', icon: TrendingUp },
     { id: 'contacts', label: 'Contatos', icon: Users },
     { id: 'companies', label: 'Empresas', icon: Building2 },
+    { id: 'reconciliation', label: 'Reconciliação (OFX)', icon: CreditCard },
     { id: 'reports', label: 'Relatórios', icon: FileText },
     { id: 'audit-logs', label: 'Logs de Auditoria', icon: Shield },
     { id: 'task-approvals', label: 'Aprovação de Tarefas', icon: ClipboardCheck },
