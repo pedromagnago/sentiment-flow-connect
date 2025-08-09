@@ -57,6 +57,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
 
+  // Extra filters
+  const [searchText, setSearchText] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+
   // Selection & inline edit
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCategory, setBulkCategory] = useState("");
@@ -103,14 +109,10 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     let query = supabase
       .from("bank_transactions")
       .select("id,date,description,memo,category,type,amount,fitid,bank_account_uuid,account_id,bank_id,branch_id,acct_type")
-      .eq("company_id", companyId)
       .order("date", { ascending: false })
       .limit(500);
 
-    if (selectedAccountId !== "all") query = query.eq("bank_account_uuid", selectedAccountId);
-
-    if (dateFilter.from) query = query.gte("date", dateFilter.from);
-    if (dateFilter.to) query = query.lte("date", dateFilter.to);
+    query = applyQueryFilters(query);
 
     const { data, error } = await query;
     if (error) {
@@ -128,6 +130,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   useEffect(() => {
     if (!companyId) return;
+    // Fetch accounts
     supabase
       .from("bank_accounts")
       .select("id,display_name,account_id,bank_id,branch_id")
@@ -138,6 +141,19 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           console.error("Erro ao carregar contas:", error);
         } else {
           setAccounts((data as any[]) as Account[]);
+        }
+      });
+
+    // Fetch categories (distinct)
+    supabase
+      .from("bank_transactions")
+      .select("category")
+      .eq("company_id", companyId)
+      .not("category", "is", null)
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const cats = Array.from(new Set((data as any[]).map((d: any) => d.category))).filter(Boolean).sort();
+          setCategories(cats as string[]);
         }
       });
 
@@ -223,6 +239,13 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     if (selectedAccountId !== "all") query = query.eq("bank_account_uuid", selectedAccountId);
     if (dateFilter.from) query = query.gte("date", dateFilter.from);
     if (dateFilter.to) query = query.lte("date", dateFilter.to);
+    if (searchText.trim()) {
+      const like = `%${searchText.trim().replace(/%/g, "")}%`;
+      query = query.or(`description.ilike.${like},memo.ilike.${like}`);
+    }
+    if (selectedCategory !== "all") query = query.eq("category", selectedCategory);
+    if (typeFilter === "credit") query = query.gt("amount", 0);
+    if (typeFilter === "debit") query = query.lt("amount", 0);
     return query;
   };
 
@@ -367,6 +390,41 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
                   {a.display_name || `${a.bank_id || ""} ${a.branch_id || ""} ${a.account_id}`}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Descrição</label>
+          <Input
+            placeholder="Descrição contém..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Categoria</label>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Todas as categorias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Tipo</label>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="credit">Crédito</SelectItem>
+              <SelectItem value="debit">Débito</SelectItem>
             </SelectContent>
           </Select>
         </div>
