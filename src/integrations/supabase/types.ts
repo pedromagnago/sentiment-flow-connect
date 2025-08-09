@@ -125,6 +125,7 @@ export type Database = {
       bank_transactions: {
         Row: {
           amount: number
+          category: string | null
           company_id: string
           created_at: string
           date: string
@@ -140,6 +141,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          category?: string | null
           company_id: string
           created_at?: string
           date: string
@@ -155,6 +157,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category?: string | null
           company_id?: string
           created_at?: string
           date?: string
@@ -903,6 +906,36 @@ export type Database = {
           source?: string
           status?: string
           total_transactions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transaction_rules: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          id: string
+          pattern: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          id?: string
+          pattern: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          pattern?: string
           updated_at?: string
           user_id?: string
         }
