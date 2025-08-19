@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 const AuthPage: React.FC = () => {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,12 @@ const AuthPage: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = mode === "login" ? "Entrar • FullBPO" : "Criar conta • FullBPO";
+    const titles = {
+      login: "Entrar • FullBPO",
+      signup: "Criar conta • FullBPO",
+      forgot: "Recuperar senha • FullBPO"
+    };
+    document.title = titles[mode];
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute("content", "Autenticação segura na plataforma FullBPO OptiCore: login e cadastro por email.");
@@ -59,35 +64,76 @@ const AuthPage: React.FC = () => {
     toast({ title: "Verifique seu email", description: "Enviamos um link de confirmação para concluir o cadastro." });
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({ title: "Email obrigatório", description: "Digite seu email para recuperar a senha.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const redirectUrl = `${window.location.origin}/auth`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao enviar email", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Email enviado", description: "Verifique seu email para o link de recuperação de senha." });
+    setMode("login");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{mode === "login" ? "Entrar na plataforma" : "Criar sua conta"}</CardTitle>
+          <CardTitle>
+            {mode === "login" && "Entrar na plataforma"}
+            {mode === "signup" && "Criar sua conta"}
+            {mode === "forgot" && "Recuperar senha"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha" />
-          </div>
-          <Button className="w-full" onClick={mode === "login" ? handleLogin : handleSignup} disabled={loading}>
-            {loading ? "Processando..." : mode === "login" ? "Entrar" : "Cadastrar"}
+          {mode !== "forgot" && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha" />
+            </div>
+          )}
+          <Button 
+            className="w-full" 
+            onClick={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword} 
+            disabled={loading}
+          >
+            {loading ? "Processando..." : mode === "login" ? "Entrar" : mode === "signup" ? "Cadastrar" : "Enviar link de recuperação"}
           </Button>
-          <div className="text-sm text-muted-foreground text-center">
-            {mode === "login" ? (
-              <span>
-                Não tem conta? {" "}
-                <button className="underline" onClick={() => setMode("signup")}>Cadastre-se</button>
-              </span>
-            ) : (
-              <span>
+          <div className="text-sm text-muted-foreground text-center space-y-2">
+            {mode === "login" && (
+              <>
+                <div>
+                  Não tem conta? {" "}
+                  <button className="underline" onClick={() => setMode("signup")}>Cadastre-se</button>
+                </div>
+                <div>
+                  <button className="underline" onClick={() => setMode("forgot")}>Esqueci minha senha</button>
+                </div>
+              </>
+            )}
+            {mode === "signup" && (
+              <div>
                 Já possui conta? {" "}
                 <button className="underline" onClick={() => setMode("login")}>Entrar</button>
-              </span>
+              </div>
+            )}
+            {mode === "forgot" && (
+              <div>
+                Lembrou da senha? {" "}
+                <button className="underline" onClick={() => setMode("login")}>Voltar ao login</button>
+              </div>
             )}
           </div>
           <div className="text-center">
