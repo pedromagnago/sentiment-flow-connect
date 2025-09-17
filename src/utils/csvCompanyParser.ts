@@ -35,46 +35,98 @@ export const parseCompanyCSV = (csvText: string) => {
   const lines = csvText.trim().split('\n');
   const companies = [];
   
+  console.log('🔍 CSV Parser - Total lines:', lines.length);
+  console.log('🔍 CSV Parser - Header:', lines[0]);
+  
   // Skip header line and process data
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i]);
     
-    if (values.length < 30) continue; // Skip incomplete lines
+    console.log(`🔍 Line ${i}: Found ${values.length} values, first few:`, values.slice(0, 5));
+    
+    if (values.length < 30) {
+      console.log(`⚠️ Skipping line ${i} - insufficient columns (${values.length} < 30)`);
+      continue; // Skip incomplete lines
+    }
     
     const company = {
+      // Basic company info
+      nome: values[22] || values[1] || '', // Nome da empresa ou task name como fallback
+      cnpj: values[16] || '',
+      segmento: values[21] || '',
+      status: 'ativo', // Default status
+      
+      // Task/ClickUp related fields
       task_id: values[0] || '',
       task_name: values[1] || '',
-      valor_mensalidade: parseFloat(values[2]) || 0,
       assignee: values[3] || '',
-      due_date: parseDueDate(values[4]),
+      due_date: parseDueDate(values[4]) || null,
       priority: values[5] || 'none',
       task_status: values[6] || 'ativo',
+      
+      // Financial info
+      valor_mensalidade: parseFloat(values[2]) || 0,
       prazo_desconto: parseInt(values[7]) || 0,
-      endereco: values[8] || '',
       desconto_percentual: parseFloat(values[9]) || 0,
       aceitar_politica_privacidade: values[10] === 'true',
+      
+      // Contact info
       nome_contato: values[11] || '',
       fonte_lead: values[12] || '',
       cpf_representante: values[13] || '',
       email_representante: values[14] || '',
-      cnpj: values[16] || '',
       email_testemunha: values[17] || '',
       nome_representante: values[18] || '',
       nome_testemunha: values[19] || '',
-      tipo_contrato: values[20] || '',
-      segmento: values[21] || '',
-      nome: values[22] || '',
       cargo: values[23] || '',
       whatsapp_contato: values[24] || '',
       email_contato: values[25] || '',
+      
+      // Business info
+      tipo_contrato: values[20] || '',
       atividade: values[26] || '',
-      status: 'ativo',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      endereco: values[8] || values[28] || '', // EndereÃ§o field or EndereÃ§o (short text)
+      
+      // Integration settings
+      clickup_integration_status: 'Inativo',
+      omie_integration_status: 'Inativo',
+      n8n_integration_active: false,
+      
+      // Other fields that might be expected
+      informacoes_contato: null,
+      data_cadastro: null,
+      deleted_at: null,
+      date_created: null,
+      start_date: null,
+      date_closed: null,
+      linked_docs: null,
+      envelope_id: null,
+      client_id: null,
+      companies_id: null,
+      clickup_api_key: null,
+      clickup_workspace_id: null,
+      omie_api_key: null,
+      omie_api_secret: null,
+      omie_company_id: null,
+      
+      // Address fields
+      numero: null,
+      complemento: null,
+      bairro: null,
+      cidade: null,
+      estado: null,
+      cep: null,
+      telefone: null,
+      email: null,
+      responsavel: null,
+      cargo_responsavel: null
     };
     
     companies.push(company);
   }
+  
+  console.log(`✅ CSV Parser - Successfully parsed ${companies.length} companies`);
+  console.log('📋 Sample company data:', companies[0]);
   
   return companies;
 };

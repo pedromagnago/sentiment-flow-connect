@@ -64,19 +64,35 @@ export const Companies = () => {
       const results = [];
       const errors = [];
       
+      console.log('🚀 Iniciando importação em lote de', companiesData.length, 'empresas');
+      console.log('📋 Primeiro item de dados:', companiesData[0]);
+      
       for (let i = 0; i < companiesData.length; i++) {
         try {
+          console.log(`📝 Criando empresa ${i + 1}/${companiesData.length}:`, companiesData[i]?.nome || companiesData[i]?.task_name);
           const result = await createCompany(companiesData[i]);
           results.push(result);
+          console.log(`✅ Empresa ${i + 1} criada com sucesso:`, result?.nome);
         } catch (error) {
-          errors.push({ index: i + 1, error: error instanceof Error ? error.message : 'Erro desconhecido' });
+          const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+          console.error(`❌ Erro na empresa ${i + 1}:`, errorMsg);
+          console.error('📋 Dados da empresa que falhou:', companiesData[i]);
+          errors.push({ 
+            index: i + 1, 
+            company: companiesData[i]?.nome || companiesData[i]?.task_name || `Empresa ${i + 1}`,
+            error: errorMsg 
+          });
         }
       }
 
+      console.log(`📊 Resultado final: ${results.length} sucessos, ${errors.length} erros`);
+
       if (errors.length > 0) {
-        console.warn('Erros na importação:', errors);
+        console.error('🚨 Detalhes dos erros:', errors);
+        throw new Error(`Falha na importação: ${errors.length} empresas falharam. Primeiros erros: ${errors.slice(0, 3).map(e => `${e.company}: ${e.error}`).join('; ')}`);
       }
     } catch (error) {
+      console.error('💥 Erro geral na importação:', error);
       throw error;
     }
   };
