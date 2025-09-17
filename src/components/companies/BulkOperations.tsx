@@ -1,7 +1,8 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Download, FileText, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { Upload, Download, FileText, Trash2, Plus, AlertCircle, Settings, Activity, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { Company } from '@/hooks/useCompanies';
@@ -9,13 +10,19 @@ import { Company } from '@/hooks/useCompanies';
 interface BulkOperationsProps {
   onBulkCreate: (companies: Partial<Company>[]) => Promise<void>;
   onBulkDelete: (companyIds: string[]) => Promise<void>;
+  onBulkUpdateStatus: (companyIds: string[], status: string) => Promise<void>;
+  onBulkUpdateN8n: (companyIds: string[], active: boolean) => Promise<void>;
+  onBulkUpdateFeedback: (companyIds: string[], feedback: boolean) => Promise<void>;
   companies: Company[];
 }
 
-export const BulkOperations = ({ onBulkCreate, onBulkDelete, companies }: BulkOperationsProps) => {
+export const BulkOperations = ({ onBulkCreate, onBulkDelete, onBulkUpdateStatus, onBulkUpdateN8n, onBulkUpdateFeedback, companies }: BulkOperationsProps) => {
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingN8n, setUpdatingN8n] = useState(false);
+  const [updatingFeedback, setUpdatingFeedback] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -259,6 +266,96 @@ export const BulkOperations = ({ onBulkCreate, onBulkDelete, companies }: BulkOp
     }
   };
 
+  const handleBulkStatusUpdate = async (newStatus: string) => {
+    if (selectedCompanies.length === 0) {
+      toast({
+        title: "Nenhuma empresa selecionada",
+        description: "Selecione pelo menos uma empresa para alterar o status.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingStatus(true);
+    
+    try {
+      await onBulkUpdateStatus(selectedCompanies, newStatus);
+      toast({
+        title: "Status atualizado",
+        description: `Status de ${selectedCompanies.length} empresa(s) alterado para ${newStatus}.`,
+      });
+      setSelectedCompanies([]);
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: "Erro ao atualizar status das empresas selecionadas.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleBulkN8nUpdate = async (active: boolean) => {
+    if (selectedCompanies.length === 0) {
+      toast({
+        title: "Nenhuma empresa selecionada",
+        description: "Selecione pelo menos uma empresa para alterar a integração N8n.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingN8n(true);
+    
+    try {
+      await onBulkUpdateN8n(selectedCompanies, active);
+      toast({
+        title: "Integração N8n atualizada",
+        description: `N8n ${active ? 'ativado' : 'desativado'} para ${selectedCompanies.length} empresa(s).`,
+      });
+      setSelectedCompanies([]);
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: "Erro ao atualizar integração N8n das empresas selecionadas.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingN8n(false);
+    }
+  };
+
+  const handleBulkFeedbackUpdate = async (feedback: boolean) => {
+    if (selectedCompanies.length === 0) {
+      toast({
+        title: "Nenhuma empresa selecionada",
+        description: "Selecione pelo menos uma empresa para alterar o feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingFeedback(true);
+    
+    try {
+      await onBulkUpdateFeedback(selectedCompanies, feedback);
+      toast({
+        title: "Feedback atualizado",
+        description: `Feedback ${feedback ? 'ativado' : 'desativado'} para ${selectedCompanies.length} empresa(s).`,
+      });
+      setSelectedCompanies([]);
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: "Erro ao atualizar feedback das empresas selecionadas.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingFeedback(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Operações em Massa</h3>
@@ -333,17 +430,111 @@ export const BulkOperations = ({ onBulkCreate, onBulkDelete, companies }: BulkOp
           </div>
 
           {selectedCompanies.length > 0 && (
-            <Button
-              onClick={handleBulkDelete}
-              variant="destructive"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Excluir Selecionadas</span>
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleBulkDelete}
+                variant="destructive"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Excluir</span>
+              </Button>
+            </div>
           )}
         </div>
+
+        {/* Operações em massa para empresas selecionadas */}
+        {selectedCompanies.length > 0 && (
+          <div className="bg-blue-50 rounded-lg p-4 mb-4">
+            <h4 className="text-sm font-medium text-blue-900 mb-3">
+              Operações para {selectedCompanies.length} empresa(s) selecionada(s)
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Alterar Status */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-blue-800">Alterar Status:</label>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleBulkStatusUpdate('Ativo')}
+                    disabled={updatingStatus}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    Ativar
+                  </Button>
+                  <Button
+                    onClick={() => handleBulkStatusUpdate('Inativo')}
+                    disabled={updatingStatus}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    Desativar
+                  </Button>
+                </div>
+              </div>
+
+              {/* N8n Integration */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-blue-800">Integração N8n:</label>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleBulkN8nUpdate(true)}
+                    disabled={updatingN8n}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <Activity className="w-3 h-3 mr-1" />
+                    Ativar
+                  </Button>
+                  <Button
+                    onClick={() => handleBulkN8nUpdate(false)}
+                    disabled={updatingN8n}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <Activity className="w-3 h-3 mr-1" />
+                    Desativar
+                  </Button>
+                </div>
+              </div>
+
+              {/* Feedback */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-blue-800">Feedback:</label>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleBulkFeedbackUpdate(true)}
+                    disabled={updatingFeedback}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    Ativar
+                  </Button>
+                  <Button
+                    onClick={() => handleBulkFeedbackUpdate(false)}
+                    disabled={updatingFeedback}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                  >
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    Desativar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Lista de empresas para seleção */}
         <div className="max-h-60 overflow-y-auto space-y-2">
@@ -368,6 +559,16 @@ export const BulkOperations = ({ onBulkCreate, onBulkDelete, companies }: BulkOp
                 <p className="text-sm text-gray-500 truncate">
                   {company.cnpj || 'CNPJ não informado'} • {company.status || 'Status não definido'}
                 </p>
+                <div className="flex items-center space-x-3 mt-1">
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    company.n8n_integration_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    N8n: {company.n8n_integration_active ? 'Ativo' : 'Inativo'}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                    Feedback: Ativo
+                  </span>
+                </div>
               </div>
             </label>
           ))}

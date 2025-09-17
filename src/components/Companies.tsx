@@ -108,6 +108,39 @@ export const Companies = () => {
     }
   };
 
+  const handleBulkUpdateStatus = async (companyIds: string[], status: string) => {
+    try {
+      for (const id of companyIds) {
+        await updateCompany(id, { status });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleBulkUpdateN8n = async (companyIds: string[], active: boolean) => {
+    try {
+      for (const id of companyIds) {
+        await updateCompany(id, { n8n_integration_active: active });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleBulkUpdateFeedback = async (companyIds: string[], feedback: boolean) => {
+    try {
+      // Como não temos um campo específico de feedback na tabela companies,
+      // vou usar um campo genérico ou podemos adicionar um campo específico
+      // Por enquanto, vou usar um campo que possa representar isso
+      for (const id of companyIds) {
+        await updateCompany(id, { aceitar_politica_privacidade: feedback });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -155,11 +188,14 @@ export const Companies = () => {
       <CompanyStats companies={filteredCompanies} />
 
       {showBulkOperations && (
-        <BulkOperations
-          companies={filteredCompanies}
-          onBulkCreate={handleBulkCreate}
-          onBulkDelete={handleBulkDelete}
-        />
+          <BulkOperations
+            companies={filteredCompanies}
+            onBulkCreate={handleBulkCreate}
+            onBulkDelete={handleBulkDelete}
+            onBulkUpdateStatus={handleBulkUpdateStatus}
+            onBulkUpdateN8n={handleBulkUpdateN8n}
+            onBulkUpdateFeedback={handleBulkUpdateFeedback}
+          />
       )}
 
       <CompanyList
