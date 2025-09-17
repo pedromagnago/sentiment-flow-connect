@@ -36,6 +36,7 @@ export interface Company {
   endereco: string | null;
   desconto_percentual: number | null;
   aceitar_politica_privacidade: boolean | null;
+  feedback_ativo: boolean | null;
   nome_contato: string | null;
   fonte_lead: string | null;
   cpf_representante: string | null;

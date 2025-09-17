@@ -130,11 +130,8 @@ export const Companies = () => {
 
   const handleBulkUpdateFeedback = async (companyIds: string[], feedback: boolean) => {
     try {
-      // Como não temos um campo específico de feedback na tabela companies,
-      // vou usar um campo genérico ou podemos adicionar um campo específico
-      // Por enquanto, vou usar um campo que possa representar isso
       for (const id of companyIds) {
-        await updateCompany(id, { aceitar_politica_privacidade: feedback });
+        await updateCompany(id, { feedback_ativo: feedback });
       }
     } catch (error) {
       throw error;

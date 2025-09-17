@@ -565,8 +565,10 @@ export const BulkOperations = ({ onBulkCreate, onBulkDelete, onBulkUpdateStatus,
                   }`}>
                     N8n: {company.n8n_integration_active ? 'Ativo' : 'Inativo'}
                   </span>
-                  <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
-                    Feedback: Ativo
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    company.feedback_ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    Feedback: {company.feedback_ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
               </div>

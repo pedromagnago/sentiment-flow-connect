@@ -274,6 +274,7 @@ export type Database = {
           endereco: string | null
           envelope_id: string | null
           estado: string | null
+          feedback_ativo: boolean | null
           fonte_lead: string | null
           id: string
           informacoes_contato: Json | null
@@ -334,6 +335,7 @@ export type Database = {
           endereco?: string | null
           envelope_id?: string | null
           estado?: string | null
+          feedback_ativo?: boolean | null
           fonte_lead?: string | null
           id?: string
           informacoes_contato?: Json | null
@@ -394,6 +396,7 @@ export type Database = {
           endereco?: string | null
           envelope_id?: string | null
           estado?: string | null
+          feedback_ativo?: boolean | null
           fonte_lead?: string | null
           id?: string
           informacoes_contato?: Json | null
