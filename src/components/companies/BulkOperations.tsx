@@ -14,9 +14,10 @@ interface BulkOperationsProps {
   onBulkUpdateN8n: (companyIds: string[], active: boolean) => Promise<void>;
   onBulkUpdateFeedback: (companyIds: string[], feedback: boolean) => Promise<void>;
   companies: Company[];
+  loading?: boolean;
 }
 
-export const BulkOperations = ({ onBulkCreate, onBulkDelete, onBulkUpdateStatus, onBulkUpdateN8n, onBulkUpdateFeedback, companies }: BulkOperationsProps) => {
+export const BulkOperations = ({ onBulkCreate, onBulkDelete, onBulkUpdateStatus, onBulkUpdateN8n, onBulkUpdateFeedback, companies, loading = false }: BulkOperationsProps) => {
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -358,7 +359,15 @@ export const BulkOperations = ({ onBulkCreate, onBulkDelete, onBulkUpdateStatus,
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Operações em Massa</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        Operações em Massa
+        {(loading || importing || exporting || updatingStatus || updatingN8n || updatingFeedback) && (
+          <span className="ml-2 text-sm text-blue-600 flex items-center">
+            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+            Processando...
+          </span>
+        )}
+      </h3>
       
       {/* Importação/Exportação */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

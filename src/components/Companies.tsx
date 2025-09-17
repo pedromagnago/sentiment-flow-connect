@@ -25,7 +25,10 @@ import { Home } from 'lucide-react';
 export const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Todas');
+  const [filterN8n, setFilterN8n] = useState('Todos');
+  const [filterFeedback, setFilterFeedback] = useState('Todos');
   const [showBulkOperations, setShowBulkOperations] = useState(false);
+  const [bulkOperationLoading, setBulkOperationLoading] = useState(false);
   const { companies, loading, error, createCompany, updateCompany, deleteCompany, refetch } = useCompaniesWithAudit();
   const bulkOps = useBulkOperations();
 
@@ -46,7 +49,13 @@ export const Companies = () => {
                          company.cnpj?.includes(searchTerm) ||
                          company.segmento?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'Todas' || company.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesN8n = filterN8n === 'Todos' || 
+                      (filterN8n === 'Ativo' && company.n8n_integration_active) ||
+                      (filterN8n === 'Inativo' && !company.n8n_integration_active);
+    const matchesFeedback = filterFeedback === 'Todos' || 
+                           (filterFeedback === 'Ativo' && company.feedback_ativo) ||
+                           (filterFeedback === 'Inativo' && !company.feedback_ativo);
+    return matchesSearch && matchesStatus && matchesN8n && matchesFeedback;
   });
 
   const pagination = usePagination({
@@ -57,9 +66,10 @@ export const Companies = () => {
   // Reset pagination when filters change
   React.useEffect(() => {
     pagination.resetPagination();
-  }, [searchTerm, filterStatus]);
+  }, [searchTerm, filterStatus, filterN8n, filterFeedback]);
 
   const handleBulkCreate = async (companiesData: any[]) => {
+    setBulkOperationLoading(true);
     try {
       const results = [];
       const errors = [];
@@ -94,10 +104,13 @@ export const Companies = () => {
     } catch (error) {
       console.error('💥 Erro geral na importação:', error);
       throw error;
+    } finally {
+      setBulkOperationLoading(false);
     }
   };
 
   const handleBulkDelete = async (companyIds: string[]) => {
+    setBulkOperationLoading(true);
     try {
       for (const id of companyIds) {
         await deleteCompany(id);
@@ -105,36 +118,47 @@ export const Companies = () => {
       bulkOps.clearSelection();
     } catch (error) {
       throw error;
+    } finally {
+      setBulkOperationLoading(false);
     }
   };
 
   const handleBulkUpdateStatus = async (companyIds: string[], status: string) => {
+    setBulkOperationLoading(true);
     try {
       for (const id of companyIds) {
         await updateCompany(id, { status });
       }
     } catch (error) {
       throw error;
+    } finally {
+      setBulkOperationLoading(false);
     }
   };
 
   const handleBulkUpdateN8n = async (companyIds: string[], active: boolean) => {
+    setBulkOperationLoading(true);
     try {
       for (const id of companyIds) {
         await updateCompany(id, { n8n_integration_active: active });
       }
     } catch (error) {
       throw error;
+    } finally {
+      setBulkOperationLoading(false);
     }
   };
 
   const handleBulkUpdateFeedback = async (companyIds: string[], feedback: boolean) => {
+    setBulkOperationLoading(true);
     try {
       for (const id of companyIds) {
         await updateCompany(id, { feedback_ativo: feedback });
       }
     } catch (error) {
       throw error;
+    } finally {
+      setBulkOperationLoading(false);
     }
   };
 
@@ -180,6 +204,10 @@ export const Companies = () => {
         onSearchChange={setSearchTerm}
         filterStatus={filterStatus}
         onStatusChange={setFilterStatus}
+        filterN8n={filterN8n}
+        onN8nChange={setFilterN8n}
+        filterFeedback={filterFeedback}
+        onFeedbackChange={setFilterFeedback}
       />
 
       <CompanyStats companies={filteredCompanies} />
@@ -192,6 +220,7 @@ export const Companies = () => {
             onBulkUpdateStatus={handleBulkUpdateStatus}
             onBulkUpdateN8n={handleBulkUpdateN8n}
             onBulkUpdateFeedback={handleBulkUpdateFeedback}
+            loading={bulkOperationLoading}
           />
       )}
 
