@@ -7,7 +7,7 @@ import { CompanyFilters } from './companies/CompanyFilters';
 import { CompanyStats } from './companies/CompanyStats';
 import { CompanyList } from './companies/CompanyList';
 import { BulkOperations } from './companies/BulkOperations';
-import { CompanyBulkImporter } from './companies/CompanyBulkImporter';
+
 import { LoadingSpinner } from './common/LoadingSpinner';
 import { ErrorState } from './common/ErrorState';
 import { PaginationControls } from './common/Pagination';
@@ -155,14 +155,11 @@ export const Companies = () => {
       <CompanyStats companies={filteredCompanies} />
 
       {showBulkOperations && (
-        <>
-          <CompanyBulkImporter onBulkCreate={handleBulkCreate} />
-          <BulkOperations
-            companies={filteredCompanies}
-            onBulkCreate={handleBulkCreate}
-            onBulkDelete={handleBulkDelete}
-          />
-        </>
+        <BulkOperations
+          companies={filteredCompanies}
+          onBulkCreate={handleBulkCreate}
+          onBulkDelete={handleBulkDelete}
+        />
       )}
 
       <CompanyList
