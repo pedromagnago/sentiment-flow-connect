@@ -19,6 +19,8 @@ export const Contacts = () => {
   const [filterType, setFilterType] = useState('Todos');
   const [filterFeedback, setFilterFeedback] = useState('Todos');
   const [showBulkOperations, setShowBulkOperations] = useState(false);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { contacts, loading, error, createContact, updateContact, deleteContact, refetch } = useContacts();
 
   const handlers = useContactHandlers({
@@ -28,29 +30,82 @@ export const Contacts = () => {
     refetch
   });
 
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.id_contact?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'Todos' || 
-                         (filterStatus === 'Ativo' && contact.status) ||
-                         (filterStatus === 'Inativo' && !contact.status);
-    const matchesType = filterType === 'Todos' ||
-                       (filterType === 'Grupo' && contact.is_group) ||
-                       (filterType === 'Individual' && !contact.is_group);
-    const matchesFeedback = filterFeedback === 'Todos' ||
-                           (filterFeedback === 'Ativo' && contact.feedback) ||
-                           (filterFeedback === 'Inativo' && !contact.feedback);
-    return matchesSearch && matchesStatus && matchesType && matchesFeedback;
-  });
+  const filteredAndSortedContacts = React.useMemo(() => {
+    let filtered = contacts.filter(contact => {
+      const matchesSearch = contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           contact.id_contact?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === 'Todos' || 
+                           (filterStatus === 'Ativo' && contact.status) ||
+                           (filterStatus === 'Inativo' && !contact.status);
+      const matchesType = filterType === 'Todos' ||
+                         (filterType === 'Grupo' && contact.is_group) ||
+                         (filterType === 'Individual' && !contact.is_group);
+      const matchesFeedback = filterFeedback === 'Todos' ||
+                             (filterFeedback === 'Ativo' && contact.feedback) ||
+                             (filterFeedback === 'Inativo' && !contact.feedback);
+      return matchesSearch && matchesStatus && matchesType && matchesFeedback;
+    });
+
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any = '';
+        let bValue: any = '';
+
+        switch (sortField) {
+          case 'nome':
+            aValue = a.nome || '';
+            bValue = b.nome || '';
+            break;
+          case 'status':
+            aValue = a.status ? 1 : 0;
+            bValue = b.status ? 1 : 0;
+            break;
+          case 'feedback':
+            aValue = a.feedback ? 1 : 0;
+            bValue = b.feedback ? 1 : 0;
+            break;
+          case 'is_group':
+            aValue = a.is_group ? 1 : 0;
+            bValue = b.is_group ? 1 : 0;
+            break;
+          case 'created_at':
+            aValue = new Date(a.created_at || 0);
+            bValue = new Date(b.created_at || 0);
+            break;
+          case 'updated_at':
+            aValue = new Date(a.updated_at || 0);
+            bValue = new Date(b.updated_at || 0);
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [contacts, searchTerm, filterStatus, filterType, filterFeedback, sortField, sortDirection]);
 
   const pagination = usePagination({
-    data: filteredContacts,
+    data: filteredAndSortedContacts,
     itemsPerPage: 15
   });
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   React.useEffect(() => {
     pagination.resetPagination();
-  }, [searchTerm, filterStatus, filterType, filterFeedback]);
+  }, [searchTerm, filterStatus, filterType, filterFeedback, sortField, sortDirection]);
 
   const handleBulkCreate = async (contactsData: any[]) => {
     try {
@@ -129,14 +184,14 @@ export const Contacts = () => {
 
       {showBulkOperations && (
         <ContactBulkOperations
-          contacts={filteredContacts}
+          contacts={filteredAndSortedContacts}
           onBulkCreate={handleBulkCreate}
           onBulkDelete={handleBulkDelete}
           updateContact={updateContact}
         />
       )}
 
-      {filteredContacts.length === 0 ? (
+      {filteredAndSortedContacts.length === 0 ? (
         <ContactEmptyState hasSearch={!!searchTerm} />
       ) : (
         <>
@@ -144,6 +199,9 @@ export const Contacts = () => {
             contacts={pagination.paginatedData}
             onEdit={handlers.openEditModal}
             onDelete={handlers.handleDeleteContact}
+            onSort={handleSort}
+            sortField={sortField}
+            sortDirection={sortDirection}
           />
           
           <PaginationControls

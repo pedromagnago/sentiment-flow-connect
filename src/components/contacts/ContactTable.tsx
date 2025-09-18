@@ -1,15 +1,18 @@
 
 import React from 'react';
-import { Users, Phone, Edit, Trash2 } from 'lucide-react';
+import { Users, Phone, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Contact } from '@/hooks/useContacts';
 
 interface ContactTableProps {
   contacts: Contact[];
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
+  onSort: (field: string) => void;
+  sortField: string;
+  sortDirection: 'asc' | 'desc';
 }
 
-export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) => {
+export const ContactTable = ({ contacts, onEdit, onDelete, onSort, sortField, sortDirection }: ContactTableProps) => {
   const getStatusColor = (status: boolean) => {
     return status ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100';
   };
@@ -32,6 +35,22 @@ export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) 
     }
   };
 
+  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
+    <th 
+      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => onSort(field)}
+    >
+      <div className="flex items-center space-x-1">
+        <span>{children}</span>
+        {sortField === field && (
+          sortDirection === 'asc' ? 
+            <ChevronUp className="w-3 h-3" /> : 
+            <ChevronDown className="w-3 h-3" />
+        )}
+      </div>
+    </th>
+  );
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="p-6 border-b border-gray-200">
@@ -45,24 +64,12 @@ export const ContactTable = ({ contacts, onEdit, onDelete }: ContactTableProps) 
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contato
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Feedback
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Data Criação
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Última Modificação
-              </th>
+              <SortableHeader field="nome">Contato</SortableHeader>
+              <SortableHeader field="status">Status</SortableHeader>
+              <SortableHeader field="feedback">Feedback</SortableHeader>
+              <SortableHeader field="is_group">Tipo</SortableHeader>
+              <SortableHeader field="created_at">Data Criação</SortableHeader>
+              <SortableHeader field="updated_at">Última Modificação</SortableHeader>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
