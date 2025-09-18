@@ -32,6 +32,7 @@ interface TxnRow {
   bank_id?: string | null;
   branch_id?: string | null;
   acct_type?: string | null;
+  raw?: any;
 }
 
 interface Summary {
@@ -77,6 +78,9 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   // Selection mode: all filtered vs per-page ids
   const [selectedAllFiltered, setSelectedAllFiltered] = useState(false);
   const [allFilteredCount, setAllFilteredCount] = useState(0);
+
+  // AI Classification for empty items
+  const [isClassifyingAI, setIsClassifyingAI] = useState(false);
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
@@ -352,6 +356,71 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     }
   };
 
+  // AI Classification for empty items
+  const classifyEmptyWithAI = async () => {
+    if (!companyId) return;
+    setIsClassifyingAI(true);
+    try {
+      const emptyTransactions = rows.filter(r => !r.category || r.category.trim() === '');
+      if (emptyTransactions.length === 0) {
+        toast({ title: "Nenhuma transação sem categoria encontrada", variant: "default" });
+        return;
+      }
+
+      let classified = 0;
+      for (const transaction of emptyTransactions) {
+        try {
+          const { data, error } = await supabase.functions.invoke('classify-transaction', {
+            body: {
+              description: transaction.description,
+              amount: transaction.amount,
+              memo: transaction.memo
+            }
+          });
+
+          if (error) throw error;
+
+          if (data?.success && data?.classification) {
+            const { categoria } = data.classification;
+            if (categoria) {
+              const { error: updateError } = await supabase
+                .from("bank_transactions")
+                .update({ 
+                  category: categoria,
+                  raw: { 
+                    ...transaction.raw, 
+                    ai_classified: true 
+                  }
+                })
+                .eq("id", transaction.id);
+
+              if (!updateError) {
+                classified++;
+                // Update local state
+                setRows(prev => prev.map(r => 
+                  r.id === transaction.id 
+                    ? { ...r, category: categoria, raw: { ...r.raw, ai_classified: true } }
+                    : r
+                ));
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error classifying transaction:', e);
+        }
+      }
+
+      toast({ 
+        title: `${classified} transações classificadas pela IA`,
+        description: `De ${emptyTransactions.length} transações sem categoria`
+      });
+    } catch (e: any) {
+      toast({ title: "Erro na classificação por IA", description: e?.message || String(e), variant: "destructive" });
+    } finally {
+      setIsClassifyingAI(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-3">
@@ -419,6 +488,13 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
           Selecionar todos do filtro
         </Button>
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
+        <Button 
+          variant="outline" 
+          onClick={classifyEmptyWithAI} 
+          disabled={isClassifyingAI || !companyId || rows.filter(r => !r.category || r.category.trim() === '').length === 0}
+        >
+          {isClassifyingAI ? "Classificando..." : "🤖 Classificar Vazios com IA"}
+        </Button>
       </div>
 
       {(selectedIds.size > 0 || selectedAllFiltered) && (
