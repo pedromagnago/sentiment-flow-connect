@@ -176,25 +176,74 @@ Deno.serve(async (req) => {
       return undefined;
     };
 
-    // Prepare rows for upsert
-    const rows = txns.map((t) => ({
-      user_id: userId,
-      company_id: companyId,
-      import_id: importId,
-      date: t.date,
-      amount: t.amount,
-      memo: t.memo,
-      description: t.description,
-      type: t.type,
-      fitid: t.fitid,
-      raw: t.raw,
-      category: matchCategory(t.description || t.memo || t.raw),
-      // account linking
-      account_id: acctMeta.acctId,
-      bank_id: acctMeta.bankId,
-      branch_id: acctMeta.branchId,
-      acct_type: acctMeta.acctType,
-      bank_account_uuid: accountUuid,
+    // Apply rules and AI classification to categorize transactions
+    const rows = await Promise.all(txns.map(async (t) => {
+      let category = matchCategory(t.description || t.memo || t.raw);
+      let aiClassified = false;
+      
+      // If no rule matched, try AI classification
+      if (!category && (t.description || t.memo)) {
+        try {
+          console.log(`Attempting AI classification for transaction: ${t.description || t.memo}`);
+          
+          const classificationResponse = await supabase.functions.invoke('classify-transaction', {
+            body: {
+              description: t.description,
+              amount: t.amount,
+              memo: t.memo
+            }
+          });
+          
+          if (classificationResponse.data?.success && classificationResponse.data.classification) {
+            const classification = classificationResponse.data.classification;
+            category = classification.categoria;
+            aiClassified = true;
+            
+            console.log(`AI classified transaction "${t.description}" as "${category}" with confidence: ${classification.confianca}`);
+            
+            // Create a new rule if confidence is high and we have a good pattern
+            if (classification.confianca === 'alto' && (t.description || t.memo)) {
+              const pattern = (t.description || t.memo).substring(0, 20).trim();
+              if (pattern.length > 3) {
+                try {
+                  await supabase.from('transaction_rules').insert({
+                    company_id: companyId,
+                    user_id: userId,
+                    pattern: pattern,
+                    category: classification.categoria
+                  });
+                  console.log(`Created new rule: "${pattern}" -> "${classification.categoria}"`);
+                } catch (ruleError) {
+                  console.error('Error creating rule from AI classification:', ruleError);
+                }
+              }
+            }
+          }
+        } catch (aiError) {
+          console.error('Error with AI classification:', aiError);
+          // Continue without AI classification
+        }
+      }
+      
+      return {
+        user_id: userId,
+        company_id: companyId,
+        import_id: importId,
+        date: t.date,
+        amount: t.amount,
+        memo: t.memo,
+        description: t.description,
+        type: t.type,
+        fitid: t.fitid,
+        raw: { ...t.raw, ai_classified: aiClassified },
+        category: category,
+        // account linking
+        account_id: acctMeta.acctId,
+        bank_id: acctMeta.bankId,
+        branch_id: acctMeta.branchId,
+        acct_type: acctMeta.acctType,
+        bank_account_uuid: accountUuid,
+      };
     }));
 
     let imported = 0;

@@ -516,7 +516,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
                         onClick={() => startEdit(r)}
                         aria-label="Editar categoria"
                       >
-                        {r.category || "—"}
+                        <div className="flex items-center gap-2">
+                          <span>{r.category || "—"}</span>
+                          {r.raw?.ai_classified && (
+                            <span className="text-xs text-blue-600 bg-blue-100 px-1 rounded">🤖 IA</span>
+                          )}
+                        </div>
                       </button>
                     )}
                   </TableCell>

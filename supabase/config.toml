@@ -68,6 +68,9 @@ verify_jwt = false
 [functions.ingest-ofx]
 verify_jwt = true
 
+[functions.classify-transaction]
+verify_jwt = true
+
 [edge-runtime]
 policy = "on_demand"
 inspector_port = 8083
