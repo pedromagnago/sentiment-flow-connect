@@ -27,22 +27,32 @@ serve(async (req) => {
     const amountValue = parseFloat(amount) || 0;
     const isCredit = amountValue > 0;
 
-    const prompt = `Analise esta transação bancária e classifique-a em uma categoria apropriada.
+    const prompt = `Analise esta transação bancária e classifique-a em uma categoria precisa.
 
 Transação: "${transactionText}"
 Valor: ${amountValue} (${isCredit ? 'Entrada' : 'Saída'})
 
-Com base na descrição da transação e no valor, determine:
-1. A categoria mais apropriada (exemplos: Alimentação, Transporte, Salário, Vendas, Fornecedores, Impostos, Marketing, Tecnologia, etc.)
-2. Se é uma entrada ou saída de dinheiro
-3. Um nível de confiança na classificação (baixo, médio, alto)
+IMPORTANTE: Responda APENAS com JSON válido, sem formatação markdown ou blocos de código.
 
-Responda APENAS em formato JSON com esta estrutura:
+Categorias específicas disponíveis:
+- Receitas: Vendas, Serviços, Consultorias, Royalties, Juros Recebidos
+- Despesas Operacionais: Fornecedores, Serviços Terceirizados, Marketing, Publicidade
+- Despesas Administrativas: Contabilidade, Jurídico, Seguros, Taxas Bancárias
+- Tecnologia: Software, Hardware, Hospedagem, Domínios, SaaS
+- Recursos Humanos: Salários, Benefícios, Treinamentos, Consultorias RH
+- Infraestrutura: Aluguel, Energia, Internet, Telefone, Manutenção
+- Transportes: Combustível, Manutenção Veículos, Uber, Passagens
+- Alimentação: Refeições, Coffee Break, Alimentação Equipe
+- Saúde: Planos de Saúde, Consultas, Medicamentos, Exames
+- Impostos: IRPJ, CSLL, ISS, PIS, COFINS, Simples Nacional
+- Financeiro: Juros Pagos, Taxas, Empréstimos, Financiamentos
+
+Retorne JSON puro:
 {
-  "categoria": "nome_da_categoria",
-  "tipo": "entrada" ou "saida",
+  "categoria": "categoria_especifica",
+  "tipo": "entrada" ou "saida",  
   "confianca": "baixo" ou "medio" ou "alto",
-  "razao": "breve explicacao da classificacao"
+  "razao": "explicacao baseada na descricao da empresa/transacao"
 }`;
 
     console.log('Sending classification request to OpenAI for:', transactionText);
@@ -81,18 +91,45 @@ Responda APENAS em formato JSON com esta estrutura:
     
     console.log('OpenAI response:', aiResponse);
 
-    // Parse JSON response
+    // Smart JSON parsing with markdown fallback
     let classification;
     try {
       classification = JSON.parse(aiResponse);
     } catch (e) {
-      console.error('Failed to parse AI response as JSON:', aiResponse);
-      // Fallback classification
+      console.log('First JSON parse failed, trying markdown extraction');
+      
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        try {
+          classification = JSON.parse(jsonMatch[1]);
+          console.log('Successfully extracted JSON from markdown');
+        } catch (e2) {
+          console.error('Failed to parse extracted JSON:', jsonMatch[1]);
+          classification = null;
+        }
+      }
+      
+      // Final fallback if all parsing fails
+      if (!classification) {
+        console.error('All JSON parsing attempts failed for:', aiResponse);
+        classification = {
+          categoria: isCredit ? 'Receitas' : 'Despesas Operacionais',
+          tipo: isCredit ? 'entrada' : 'saida',
+          confianca: 'baixo',
+          razao: 'Classificação automática - erro no parsing da resposta da IA'
+        };
+      }
+    }
+
+    // Validate required fields
+    if (!classification.categoria || !classification.tipo || !classification.confianca) {
+      console.error('Invalid classification structure:', classification);
       classification = {
-        categoria: isCredit ? 'Receita' : 'Despesa',
+        categoria: isCredit ? 'Receitas' : 'Despesas Operacionais',
         tipo: isCredit ? 'entrada' : 'saida',
         confianca: 'baixo',
-        razao: 'Classificação automática baseada no valor'
+        razao: 'Classificação automática - estrutura inválida da IA'
       };
     }
 
