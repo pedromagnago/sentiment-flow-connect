@@ -53,6 +53,7 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
                         activeSection === 'tasks' ||
                         activeSection === 'task-approvals';
   const isAIActive = location.pathname.startsWith('/suggested-actions') ||
+                     location.pathname.startsWith('/reports') ||
                      location.pathname.startsWith('/analysis');
 
   // Auto-expansão inteligente
@@ -88,6 +89,7 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
   // Submenu IA & Análise
   const aiSubmenu = [
     { id: 'suggested-actions', label: 'Ações Sugeridas', icon: Lightbulb, path: '/suggested-actions' },
+    { id: 'reports', label: 'Relatórios de IA', icon: BarChart3, path: '/reports' },
     { id: 'document-analysis', label: 'Análise de Documentos', icon: FileSearch, path: '/analysis' },
   ];
 
@@ -100,7 +102,6 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
 
   // Menu items finais
   const bottomMenuItems = [
-    { id: 'reports', label: 'Relatórios', icon: FileText, section: 'reports' },
     { id: 'audit-logs', label: 'Logs de Auditoria', icon: Shield, section: 'audit-logs' },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon, section: 'settings' },
   ];
