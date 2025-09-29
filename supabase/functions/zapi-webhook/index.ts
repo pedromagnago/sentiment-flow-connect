@@ -92,6 +92,7 @@ serve(async (req) => {
     }
 
     // Preparar dados da mensagem
+    // Z-API sends timestamp in milliseconds already, no need to multiply
     const messageData = {
       message_id: zapMessage.messageId,
       contact_id: zapMessage.phone,
@@ -99,7 +100,7 @@ serve(async (req) => {
       telefone_membro: zapMessage.phone,
       conteudo_mensagem: extractMessageContent(zapMessage),
       tipo_mensagem: zapMessage.type,
-      data_hora: new Date(zapMessage.momment * 1000).toISOString(),
+      data_hora: new Date(zapMessage.momment).toISOString(),
       fromme: false,
       status_processamento: 'pendente',
       nome_grupo: zapMessage.isGroup ? zapMessage.chatName : null,
