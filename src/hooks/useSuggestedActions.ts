@@ -130,18 +130,39 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
       // Atualizar status para processing
       await updateActionMutation.mutateAsync({ id, status: 'processing' });
 
-      // TODO: Chamar edge function específica baseada no action_type
-      // Por enquanto, apenas marca como completed
-      const { error } = await supabase
-        .from('suggested_actions')
-        .update({ 
-          status: 'completed',
-          executed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+      // Chamar edge function específica baseada no action_type
+      if (action_type === 'payment') {
+        // Get action details for contact_id and message_id
+        const { data: action } = await supabase
+          .from('suggested_actions')
+          .select('contact_id, message_id')
+          .eq('id', id)
+          .single();
 
-      if (error) throw error;
+        // Call create-payment edge function
+        const { error: functionError } = await supabase.functions.invoke('create-payment', {
+          body: {
+            suggested_action_id: id,
+            extracted_data,
+            contact_id: action?.contact_id,
+            message_id: action?.message_id,
+          }
+        });
+
+        if (functionError) throw functionError;
+      } else {
+        // Para outros tipos, apenas marca como completed
+        const { error } = await supabase
+          .from('suggested_actions')
+          .update({ 
+            status: 'completed',
+            executed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suggested-actions'] });

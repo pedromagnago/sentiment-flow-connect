@@ -493,6 +493,87 @@ export type Database = {
         }
         Relationships: []
       }
+      contas_pagar: {
+        Row: {
+          beneficiario: string
+          categoria: string | null
+          company_id: string
+          comprovante_url: string | null
+          contact_id: string | null
+          created_at: string
+          descricao: string | null
+          forma_pagamento: string | null
+          id: string
+          message_id: string | null
+          observacoes: string | null
+          pago_em: string | null
+          status: string
+          suggested_action_id: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          beneficiario: string
+          categoria?: string | null
+          company_id: string
+          comprovante_url?: string | null
+          contact_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          message_id?: string | null
+          observacoes?: string | null
+          pago_em?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          beneficiario?: string
+          categoria?: string | null
+          company_id?: string
+          comprovante_url?: string | null
+          contact_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          message_id?: string | null
+          observacoes?: string | null
+          pago_em?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_pagar_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_pagar_suggested_action_id_fkey"
+            columns: ["suggested_action_id"]
+            isOneToOne: false
+            referencedRelation: "suggested_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_assignments: {
         Row: {
           assigned_at: string | null

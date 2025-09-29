@@ -2,7 +2,7 @@
 // Parses OFX text and stores transactions with proper RLS
 // Logs useful info and returns a summary
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
             
             // Create a new rule if confidence is high and we have a good pattern
             if (classification.confianca === 'alto' && (t.description || t.memo)) {
-              const pattern = (t.description || t.memo).substring(0, 20).trim();
+              const pattern = ((t.description || t.memo) || '').substring(0, 20).trim();
               if (pattern.length > 3) {
                 try {
                   await supabase.from('transaction_rules').insert({
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
         description: t.description,
         type: t.type,
         fitid: t.fitid,
-        raw: { ...t.raw, ai_classified: aiClassified },
+        raw: { ofx_data: t.raw, ai_classified: aiClassified },
         category: category,
         // account linking
         account_id: acctMeta.acctId,
