@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSendMessage = () => {
   const [isSending, setIsSending] = useState(false);
@@ -17,6 +18,8 @@ export const useSendMessage = () => {
         message: message
       };
 
+      console.log('Sending message via ZAPI:', { phone, message });
+
       // Send message via ZAPI
       const zapiResponse = await fetch(zapiUrl, {
         method: 'POST',
@@ -31,6 +34,28 @@ export const useSendMessage = () => {
 
       if (!zapiResponse.ok) {
         throw new Error(`ZAPI Error: ${zapiResult.message || 'Failed to send message'}`);
+      }
+
+      // Save message to database
+      const { data: messageData, error: dbError } = await supabase
+        .from('messages')
+        .insert({
+          contact_id: phone,
+          conteudo_mensagem: message,
+          fromme: true,
+          status_processamento: 'enviado',
+          data_hora: new Date().toISOString(),
+          nome_membro: 'Você',
+          message_id: zapiResult.messageId || null
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Error saving message to database:', dbError);
+        // Don't throw - message was sent successfully via ZAPI
+      } else {
+        console.log('Message saved to database:', messageData);
       }
 
       toast({

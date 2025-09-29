@@ -24,15 +24,15 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
     
     switch (message.status_processamento) {
       case 'enviado':
-        return <Check className="w-3 h-3 text-muted-foreground" />;
+        return <Check className="w-3 h-3" />;
       case 'entregue':
-        return <CheckCheck className="w-3 h-3 text-muted-foreground" />;
+        return <CheckCheck className="w-3 h-3" />;
       case 'lido':
-        return <CheckCheck className="w-3 h-3 text-primary" />;
+        return <CheckCheck className="w-3 h-3 text-green-400" />;
       case 'erro':
-        return <AlertCircle className="w-3 h-3 text-destructive" />;
+        return <AlertCircle className="w-3 h-3 text-red-400" />;
       default:
-        return <Clock className="w-3 h-3 text-muted-foreground" />;
+        return <Clock className="w-3 h-3 opacity-50" />;
     }
   };
 
