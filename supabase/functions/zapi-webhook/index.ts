@@ -198,6 +198,33 @@ serve(async (req) => {
 
     // Chamar analyze-message de forma assíncrona (não bloqueia resposta)
     if (insertedMessage?.id) {
+      // Detectar tipo de mídia
+      let mediaType: 'image' | 'audio' | 'document' | 'video' | undefined;
+      let mediaUrl: string | undefined;
+      let mediaMimeType: string | undefined;
+      let mediaCaption: string | undefined;
+
+      if (zapMessage.image) {
+        mediaType = 'image';
+        mediaUrl = zapMessage.image.imageUrl;
+        mediaMimeType = zapMessage.image.mimeType;
+        mediaCaption = zapMessage.image.caption;
+      } else if (zapMessage.audio) {
+        mediaType = 'audio';
+        mediaUrl = zapMessage.audio.audioUrl;
+        mediaMimeType = zapMessage.audio.mimeType;
+      } else if (zapMessage.document) {
+        mediaType = 'document';
+        mediaUrl = zapMessage.document.documentUrl;
+        mediaMimeType = zapMessage.document.mimeType;
+        mediaCaption = zapMessage.document.title;
+      } else if (zapMessage.video) {
+        mediaType = 'video';
+        mediaUrl = zapMessage.video.videoUrl;
+        mediaMimeType = zapMessage.video.mimeType;
+        mediaCaption = zapMessage.video.caption;
+      }
+
       fetch(`${supabaseUrl}/functions/v1/analyze-message`, {
         method: 'POST',
         headers: {
@@ -209,6 +236,11 @@ serve(async (req) => {
           contact_id: zapMessage.phone,
           content: messageContent,
           sender_name: zapMessage.senderName || zapMessage.chatName,
+          has_media: !!mediaUrl,
+          media_type: mediaType,
+          media_url: mediaUrl,
+          media_mime_type: mediaMimeType,
+          media_caption: mediaCaption,
         }),
       }).catch(err => {
         console.error('Error calling analyze-message (async):', err);

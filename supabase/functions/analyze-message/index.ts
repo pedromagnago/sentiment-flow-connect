@@ -12,6 +12,11 @@ interface AnalyzeMessageRequest {
   contact_id: string;
   content: string;
   sender_name?: string;
+  has_media?: boolean;
+  media_type?: 'image' | 'audio' | 'document' | 'video';
+  media_url?: string;
+  media_mime_type?: string;
+  media_caption?: string;
 }
 
 serve(async (req) => {
@@ -29,9 +34,113 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { message_id, contact_id, content, sender_name } = await req.json() as AnalyzeMessageRequest;
+    const requestData = await req.json() as AnalyzeMessageRequest;
+    const { 
+      message_id, 
+      contact_id, 
+      content, 
+      sender_name,
+      has_media,
+      media_type,
+      media_url,
+      media_mime_type,
+      media_caption
+    } = requestData;
 
-    console.log('Analyzing message:', { message_id, contact_id, content: content.substring(0, 100) });
+    console.log('Analyzing message:', { 
+      message_id, 
+      contact_id, 
+      content: content?.substring(0, 100),
+      has_media,
+      media_type,
+      media_url
+    });
+
+    // Check if auto-processing is enabled for documents
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('valor')
+      .eq('nome', 'auto_process_documents')
+      .maybeSingle();
+
+    const autoProcessEnabled = settings?.valor === 'true';
+
+    // If there's media attached, create a document_analysis action
+    if (has_media && media_url && ['image', 'audio', 'document'].includes(media_type || '')) {
+      console.log('Media detected, creating document_analysis action');
+
+      const extractedData = {
+        file_url: media_url,
+        file_type: media_type,
+        file_name: `${media_type}_${Date.now()}`,
+        mime_type: media_mime_type,
+        caption: media_caption || content,
+      };
+
+      const { data: docAction, error: docError } = await supabase
+        .from('suggested_actions')
+        .insert({
+          message_id,
+          contact_id,
+          action_type: 'document_analysis',
+          extracted_data: extractedData,
+          ai_confidence: 0.95,
+          status: autoProcessEnabled ? 'processing' : 'pending',
+          priority: 'normal',
+          ai_suggestion: `Análise de ${media_type === 'image' ? 'imagem' : media_type === 'audio' ? 'áudio' : 'documento'}: ${media_caption || 'sem legenda'}`,
+        })
+        .select()
+        .single();
+
+      if (docError) {
+        console.error('Error creating document_analysis action:', docError);
+      } else {
+        console.log('Document analysis action created:', docAction.id);
+
+        // If auto-processing is enabled, trigger processing
+        if (autoProcessEnabled && docAction) {
+          console.log('Auto-processing enabled, triggering process-document');
+          
+          // Call process-document edge function
+          const { error: processError } = await supabase.functions.invoke('process-document', {
+            body: {
+              file_url: media_url,
+              file_type: media_type,
+              file_name: extractedData.file_name,
+              suggested_action_id: docAction.id,
+              contact_id,
+              message_id,
+            }
+          });
+
+          if (processError) {
+            console.error('Error auto-processing document:', processError);
+            // Update action status to failed
+            await supabase
+              .from('suggested_actions')
+              .update({ status: 'failed', notes: `Auto-processing error: ${processError.message}` })
+              .eq('id', docAction.id);
+          }
+        }
+      }
+
+      // Return early if we only have media without meaningful text
+      if (!content || content.trim().length < 10) {
+        return new Response(
+          JSON.stringify({ success: true, created: true, action_type: 'document_analysis' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Continue with regular text analysis if there's content
+    if (!content || content.trim().length < 10) {
+      console.log('No meaningful content to analyze');
+      return new Response(
+        JSON.stringify({ success: true, created: false, reason: 'no_content' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Chamar OpenAI GPT-5 para análise
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -73,7 +182,6 @@ Responda APENAS em JSON válido no formato:
             content: `Remetente: ${sender_name || 'Cliente'}\n\nMensagem:\n${content}`
           }
         ],
-        temperature: 0.3,
         max_completion_tokens: 500,
       }),
     });
