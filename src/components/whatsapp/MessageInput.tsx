@@ -53,15 +53,16 @@ export const MessageInput = ({ onSendMessage, contactId, isLoading = false }: Me
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-end gap-2">
+    <div className="p-4 bg-card">
+      <div className="flex items-end gap-3">
         {/* Botões de ação */}
         <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleFileUpload}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            disabled={isSending || isLoading}
           >
             <Paperclip className="w-4 h-4" />
           </Button>
@@ -69,7 +70,8 @@ export const MessageInput = ({ onSendMessage, contactId, isLoading = false }: Me
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            disabled={isSending || isLoading}
           >
             <Smile className="w-4 h-4" />
           </Button>
@@ -82,8 +84,9 @@ export const MessageInput = ({ onSendMessage, contactId, isLoading = false }: Me
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
-            className="min-h-[40px] max-h-32 resize-none pr-12"
+            className="min-h-[44px] max-h-32 resize-none pr-12 bg-background border-border focus:ring-primary"
             rows={1}
+            disabled={isSending || isLoading}
           />
         </div>
 
@@ -92,29 +95,43 @@ export const MessageInput = ({ onSendMessage, contactId, isLoading = false }: Me
           <Button 
             onClick={handleSend} 
             size="sm" 
-            className="shrink-0"
+            className="shrink-0 h-11 px-4 bg-primary hover:bg-primary/90 transition-colors"
             disabled={isSending || isLoading}
           >
-            <Send className="w-4 h-4" />
+            {isSending || isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         ) : (
           <Button
             variant={isRecording ? "destructive" : "secondary"}
             size="sm"
             onClick={handleVoiceRecord}
-            className="shrink-0"
+            className="shrink-0 h-11 px-4 transition-colors"
+            disabled={isSending || isLoading}
           >
-            <Mic className="w-4 h-4" />
+            <Mic className={`w-4 h-4 ${isRecording ? 'animate-pulse' : ''}`} />
           </Button>
         )}
       </div>
       
-      {/* Contador de caracteres */}
-      {message.length > 100 && (
-        <div className="text-xs text-muted-foreground mt-1 text-right">
-          {message.length}/4096
-        </div>
-      )}
+      {/* Contador de caracteres e status */}
+      <div className="flex items-center justify-between mt-2">
+        {message.length > 100 && (
+          <div className="text-xs text-muted-foreground">
+            {message.length}/4096 caracteres
+          </div>
+        )}
+        
+        {(isSending || isLoading) && (
+          <div className="text-xs text-primary flex items-center gap-1">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            Enviando...
+          </div>
+        )}
+      </div>
     </div>
   );
 };

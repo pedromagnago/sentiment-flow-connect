@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { Button } from '@/components/ui/button';
-import { Phone, Video, MoreVertical, User } from 'lucide-react';
+import { Phone, Video, MoreVertical, User, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import type { Conversation, Message } from './WhatsAppInterface';
@@ -38,19 +38,22 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Header do Chat */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
             <User className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-medium">
+            <h3 className="font-semibold text-foreground">
               {conversation.contact.nome || conversation.contact.id_contact}
             </h3>
             <div className="flex items-center gap-2">
-              <Badge className={`text-xs ${getStatusColor(conversation.status)}`}>
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${getStatusColor(conversation.status)}`}
+              >
                 {conversation.status.replace('_', ' ')}
               </Badge>
               {conversation.contact.is_group && (
@@ -58,31 +61,38 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
                   Grupo
                 </Badge>
               )}
+              <span className="text-xs text-muted-foreground">
+                {conversation.contact.id_contact}
+              </span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             <Phone className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             <Video className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             <MoreVertical className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* Área de Mensagens */}
-      <div className="flex-1 overflow-y-auto p-4 bg-muted/20">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/20 to-muted/10">
         {sortedMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p>Nenhuma mensagem ainda</p>
+            <div className="text-center p-8">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="font-medium mb-2">Nenhuma mensagem ainda</h3>
+              <p className="text-sm">Seja o primeiro a enviar uma mensagem nesta conversa</p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="p-4 space-y-4">
             {sortedMessages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}

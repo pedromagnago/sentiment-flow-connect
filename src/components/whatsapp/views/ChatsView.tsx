@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { ConversationsList } from '../ConversationsList';
 import { ChatWindow } from '../ChatWindow';
 import { ContactInfo } from '../ContactInfo';
@@ -36,9 +37,9 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
   const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-background">
       {/* Lista de Conversações */}
-      <div className="w-80 border-r border-border bg-card">
+      <div className="w-80 border-r border-border bg-card shadow-sm">
         <ConversationsList
           conversations={filteredConversations}
           activeConversation={activeConversation}
@@ -59,10 +60,18 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
               messages={activeContactMessages}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                <h3 className="text-lg font-medium mb-2">Selecione uma conversa</h3>
-                <p>Escolha uma conversa na lista para começar a atender</p>
+            <div className="flex items-center justify-center h-full bg-muted/10">
+              <div className="text-center p-8">
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="w-12 h-12 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Selecione uma conversa</h3>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Escolha uma conversa na lista ao lado para começar a atender seus clientes
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  <p>💡 Dica: Use os filtros para encontrar conversas específicas</p>
+                </div>
               </div>
             </div>
           )}
@@ -70,7 +79,7 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
 
         {/* Painel de Informações do Contato */}
         {activeConversationData && (
-          <div className="w-80 border-l border-border bg-card">
+          <div className="w-80 border-l border-border bg-card shadow-sm">
             <ContactInfo
               contact={activeConversationData.contact}
               conversation={activeConversationData}
