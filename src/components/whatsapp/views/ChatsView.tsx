@@ -35,6 +35,10 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
 
   const activeConversationData = conversations.find(c => c.contact.id_contact === activeConversation);
   const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
+  
+  console.log('ChatsView - Active conversation:', activeConversation);
+  console.log('ChatsView - Messages for active contact:', activeContactMessages.length);
+  console.log('ChatsView - Total messages available:', messages.length);
 
   // Se não encontrou a conversa, mas temos um contato ativo, cria uma conversa temporária
   const conversationToDisplay = activeConversationData || (activeConversation ? {

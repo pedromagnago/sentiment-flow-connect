@@ -52,14 +52,22 @@ export const WhatsAppInterface = () => {
 
   // Processar mensagens e contatos para criar conversações
   useEffect(() => {
-    if (!messages.length || !contacts.length) return;
+    if (!messages.length || !contacts.length) {
+      console.log('Waiting for data:', { messagesCount: messages.length, contactsCount: contacts.length });
+      return;
+    }
 
+    console.log('Processing conversations from', messages.length, 'messages and', contacts.length, 'contacts');
     const conversationsMap = new Map<string, Conversation>();
 
     // Agrupar mensagens por contato (só contatos da empresa do usuário)
+    let messagesWithoutContact = 0;
     messages.forEach(message => {
       const contact = contacts.find(c => c.id_contact === message.contact_id);
-      if (!contact) return;
+      if (!contact) {
+        messagesWithoutContact++;
+        return;
+      }
 
       const existing = conversationsMap.get(message.contact_id);
       
@@ -88,6 +96,10 @@ export const WhatsAppInterface = () => {
     const conversationsArray = Array.from(conversationsMap.values())
       .sort((a, b) => new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime());
 
+    console.log('Conversations created:', conversationsArray.length);
+    if (messagesWithoutContact > 0) {
+      console.warn('Messages without matching contact:', messagesWithoutContact);
+    }
     setConversations(conversationsArray);
   }, [messages, contacts]);
 
