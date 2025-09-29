@@ -61,14 +61,14 @@ const STATUS_CONFIG = {
 };
 
 export default function InvoicesPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [numeroNota, setNumeroNota] = useState<string>('');
 
   const { invoices, isLoading, updateInvoice, markAsIssued, deleteInvoice } = useInvoices({
-    status: statusFilter || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
   });
@@ -167,7 +167,7 @@ export default function InvoicesPage() {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="emitida">Emitida</SelectItem>
                 <SelectItem value="enviada">Enviada</SelectItem>

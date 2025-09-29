@@ -56,7 +56,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PayablesPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedPayable, setSelectedPayable] = useState<any>(null);
@@ -65,7 +65,7 @@ export default function PayablesPage() {
   );
 
   const { payables, isLoading, updatePayable, markAsPaid, deletePayable } = usePayables({
-    status: statusFilter || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
   });
@@ -163,7 +163,7 @@ export default function PayablesPage() {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="aprovado">Aprovado</SelectItem>
                 <SelectItem value="pago">Pago</SelectItem>
