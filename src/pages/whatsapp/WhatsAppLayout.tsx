@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { MessageCircle, ListTodo, Users } from 'lucide-react';
 import { WhatsAppProvider, useWhatsApp } from '@/contexts/WhatsAppContext';
@@ -6,15 +6,16 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
 import { Sidebar } from '@/components/Sidebar';
+import { useSidebarContext } from '@/contexts/SidebarContext';
 
 const WhatsAppLayoutContent = () => {
   const { unreadCount, queueCount, loading, error } = useWhatsApp();
-  const [activeSection, setActiveSection] = useState('whatsapp');
+  const { isCollapsed } = useSidebarContext();
 
   if (loading) return (
     <div className="flex min-h-screen">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-      <div className="flex-1 ml-64">
+      <Sidebar />
+      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <LoadingSpinner />
       </div>
     </div>
@@ -22,8 +23,8 @@ const WhatsAppLayoutContent = () => {
   
   if (error) return (
     <div className="flex min-h-screen">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-      <div className="flex-1 ml-64">
+      <Sidebar />
+      <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <ErrorState message={error} />
       </div>
     </div>
@@ -31,9 +32,9 @@ const WhatsAppLayoutContent = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+      <Sidebar />
       
-      <div className="flex-1 ml-64 flex flex-col h-screen">
+      <div className={`flex-1 flex flex-col h-screen transition-all duration-300 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         <header className="border-b bg-card">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between mb-4">

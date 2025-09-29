@@ -16,7 +16,9 @@ import AnalysisPage from "./pages/AnalysisPage";
 import SuggestedActionsPage from "./pages/SuggestedActionsPage";
 import ReportsPage from "./pages/ReportsPage";
 import { AuthProvider } from "./contexts/AuthContext";
+import { SidebarProvider } from "./contexts/SidebarContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
+import { MainLayout } from "./components/layout/MainLayout";
 import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
 import { ChatsPage } from "./pages/whatsapp/ChatsPage";
 import { QueuePage } from "./pages/whatsapp/QueuePage";
@@ -31,24 +33,31 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
-            <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
-            <Route path="/payables" element={<PrivateRoute><PayablesPage /></PrivateRoute>} />
-            <Route path="/invoices" element={<PrivateRoute><InvoicesPage /></PrivateRoute>} />
-            <Route path="/tasks" element={<PrivateRoute><TasksPage /></PrivateRoute>} />
-            <Route path="/analysis" element={<PrivateRoute><AnalysisPage /></PrivateRoute>} />
-            <Route path="/suggested-actions" element={<PrivateRoute><SuggestedActionsPage /></PrivateRoute>} />
-            <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
-            <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
-              <Route path="chats" element={<ChatsPage />} />
-              <Route path="fila" element={<QueuePage />} />
-              <Route path="contatos" element={<ContactsPage />} />
-            </Route>
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <SidebarProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
+              
+              {/* Main routes with layout */}
+              <Route path="/" element={<PrivateRoute><MainLayout><Index /></MainLayout></PrivateRoute>} />
+              <Route path="/payables" element={<PrivateRoute><MainLayout><PayablesPage /></MainLayout></PrivateRoute>} />
+              <Route path="/invoices" element={<PrivateRoute><MainLayout><InvoicesPage /></MainLayout></PrivateRoute>} />
+              <Route path="/tasks" element={<PrivateRoute><MainLayout><TasksPage /></MainLayout></PrivateRoute>} />
+              <Route path="/analysis" element={<PrivateRoute><MainLayout><AnalysisPage /></MainLayout></PrivateRoute>} />
+              <Route path="/suggested-actions" element={<PrivateRoute><MainLayout><SuggestedActionsPage /></MainLayout></PrivateRoute>} />
+              <Route path="/reports" element={<PrivateRoute><MainLayout><ReportsPage /></MainLayout></PrivateRoute>} />
+              
+              {/* WhatsApp routes */}
+              <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
+                <Route path="chats" element={<ChatsPage />} />
+                <Route path="fila" element={<QueuePage />} />
+                <Route path="contatos" element={<ContactsPage />} />
+              </Route>
+              
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SidebarProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
