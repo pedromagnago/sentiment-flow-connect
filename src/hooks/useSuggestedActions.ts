@@ -182,6 +182,30 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
         });
 
         if (functionError) throw functionError;
+      } else if (action_type === 'document_analysis') {
+        const { data: action } = await supabase
+          .from('suggested_actions')
+          .select('contact_id, message_id, extracted_data')
+          .eq('id', id)
+          .single();
+
+        const actionData = action?.extracted_data as any;
+        const file_url = extracted_data?.file_url || actionData?.file_url;
+        const file_type = extracted_data?.file_type || actionData?.file_type || 'image';
+        const file_name = extracted_data?.file_name || actionData?.file_name || 'document';
+
+        const { error: functionError } = await supabase.functions.invoke('process-document', {
+          body: {
+            file_url,
+            file_type,
+            file_name,
+            suggested_action_id: id,
+            contact_id: action?.contact_id,
+            message_id: action?.message_id,
+          }
+        });
+
+        if (functionError) throw functionError;
       } else {
         // Para outros tipos, apenas marca como completed
         const { error } = await supabase

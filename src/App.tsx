@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding";
 import PayablesPage from "./pages/PayablesPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import TasksPage from "./pages/TasksPage";
+import AnalysisPage from "./pages/AnalysisPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
 import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/payables" element={<PrivateRoute><PayablesPage /></PrivateRoute>} />
             <Route path="/invoices" element={<PrivateRoute><InvoicesPage /></PrivateRoute>} />
             <Route path="/tasks" element={<PrivateRoute><TasksPage /></PrivateRoute>} />
+            <Route path="/analysis" element={<PrivateRoute><AnalysisPage /></PrivateRoute>} />
             <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
               <Route path="chats" element={<ChatsPage />} />
               <Route path="fila" element={<QueuePage />} />

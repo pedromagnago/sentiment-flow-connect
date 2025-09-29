@@ -621,6 +621,75 @@ export type Database = {
           },
         ]
       }
+      document_analysis: {
+        Row: {
+          analysis_result: Json
+          company_id: string
+          contact_id: string | null
+          created_at: string
+          extracted_text: string | null
+          file_name: string
+          file_type: string
+          file_url: string | null
+          id: string
+          message_id: string | null
+          status: string
+          suggested_action_id: string | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_result: Json
+          company_id: string
+          contact_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name: string
+          file_type: string
+          file_url?: string | null
+          id?: string
+          message_id?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_result?: Json
+          company_id?: string
+          contact_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string | null
+          id?: string
+          message_id?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analysis_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_analysis_suggested_action_id_fkey"
+            columns: ["suggested_action_id"]
+            isOneToOne: false
+            referencedRelation: "suggested_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string | null
