@@ -21,10 +21,11 @@ serve(async (req) => {
     // Get ZAPI credentials from environment
     const zapiInstanceId = Deno.env.get('ZAPI_INSTANCE_ID');
     const zapiToken = Deno.env.get('ZAPI_TOKEN');
+    const zapiClientToken = Deno.env.get('ZAPI_CLIENT_TOKEN');
 
-    if (!zapiInstanceId || !zapiToken) {
+    if (!zapiInstanceId || !zapiToken || !zapiClientToken) {
       console.error('ZAPI credentials not configured');
-      throw new Error('ZAPI credentials not configured. Please add ZAPI_INSTANCE_ID and ZAPI_TOKEN secrets.');
+      throw new Error('ZAPI credentials not configured. Please add ZAPI_INSTANCE_ID, ZAPI_TOKEN and ZAPI_CLIENT_TOKEN secrets.');
     }
 
     // Send message via ZAPI
@@ -36,6 +37,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Client-Token': zapiClientToken,
       },
       body: JSON.stringify({
         phone: phone,
@@ -44,10 +46,18 @@ serve(async (req) => {
     });
 
     const zapiResult = await zapiResponse.json();
+    console.log('ZAPI response status:', zapiResponse.status);
     console.log('ZAPI response:', zapiResult);
 
-    if (!zapiResponse.ok || zapiResult.error) {
-      throw new Error(zapiResult.error || zapiResult.message || 'Failed to send message via ZAPI');
+    if (!zapiResponse.ok) {
+      const errorMsg = zapiResult.error || zapiResult.message || `ZAPI returned status ${zapiResponse.status}`;
+      console.error('ZAPI error:', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    if (zapiResult.error) {
+      console.error('ZAPI error in response:', zapiResult.error);
+      throw new Error(zapiResult.error);
     }
 
     // Save message to database
