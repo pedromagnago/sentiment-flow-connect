@@ -5,25 +5,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 interface MessageInputProps {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string) => Promise<void>;
   contactId: string;
+  isLoading?: boolean;
 }
 
-export const MessageInput = ({ onSendMessage, contactId }: MessageInputProps) => {
+export const MessageInput = ({ onSendMessage, contactId, isLoading = false }: MessageInputProps) => {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = async () => {
+    if (!message.trim() || isSending || isLoading) return;
     
-    onSendMessage(message.trim());
-    setMessage('');
-    
-    toast({
-      title: 'Mensagem enviada',
-      description: 'Sua mensagem foi enviada com sucesso',
-    });
+    setIsSending(true);
+    try {
+      await onSendMessage(message.trim());
+      setMessage('');
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -85,7 +89,12 @@ export const MessageInput = ({ onSendMessage, contactId }: MessageInputProps) =>
 
         {/* Botão de envio ou gravação */}
         {message.trim() ? (
-          <Button onClick={handleSend} size="sm" className="shrink-0">
+          <Button 
+            onClick={handleSend} 
+            size="sm" 
+            className="shrink-0"
+            disabled={isSending || isLoading}
+          >
             <Send className="w-4 h-4" />
           </Button>
         ) : (

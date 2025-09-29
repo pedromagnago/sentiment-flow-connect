@@ -4,6 +4,7 @@ import { MessageInput } from './MessageInput';
 import { Button } from '@/components/ui/button';
 import { Phone, Video, MoreVertical, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useSendMessage } from '@/hooks/useSendMessage';
 import type { Conversation, Message } from './WhatsAppInterface';
 
 interface ChatWindowProps {
@@ -13,6 +14,7 @@ interface ChatWindowProps {
 
 export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { sendMessage, isSending } = useSendMessage();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,11 +94,11 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
       {/* Input de Mensagem */}
       <div className="border-t border-border bg-card">
         <MessageInput
-          onSendMessage={(content) => {
-            // TODO: Implementar envio de mensagem
-            console.log('Enviando mensagem:', content);
+          onSendMessage={async (content) => {
+            await sendMessage(conversation.contact.id_contact, content);
           }}
           contactId={conversation.contact.id_contact}
+          isLoading={isSending}
         />
       </div>
     </div>
