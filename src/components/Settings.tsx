@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Database, Link, Shield, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Database, Link, Shield, Bell, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClickUpSettings } from './settings/ClickUpSettings';
+import { UserProfile } from './settings/UserProfile';
 
 export const Settings = () => {
   return (
@@ -15,8 +15,12 @@ export const Settings = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="integrations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="profile" className="flex items-center space-x-2">
+            <User className="w-4 h-4" />
+            <span>Perfil</span>
+          </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center space-x-2">
             <Link className="w-4 h-4" />
             <span>Integrações</span>
@@ -35,10 +39,28 @@ export const Settings = () => {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="profile" className="space-y-6">
+          <UserProfile />
+        </TabsContent>
+
         <TabsContent value="integrations" className="space-y-6">
           <div className="grid gap-6">
             <ClickUpSettings />
             
+            <Card>
+              <CardHeader>
+                <CardTitle>ZAPI Integration</CardTitle>
+                <CardDescription>
+                  Configure a integração com ZAPI para WhatsApp
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Webhook ZAPI configurado em: <code>/functions/v1/zapi-webhook</code>
+                </p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>N8N Integration</CardTitle>

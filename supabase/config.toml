@@ -56,6 +56,9 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+[functions.zapi-webhook]
+verify_jwt = false
+
 [functions.clickup-sync]
 verify_jwt = false
 
