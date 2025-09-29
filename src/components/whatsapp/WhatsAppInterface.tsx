@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ConversationsList } from './ConversationsList';
-import { ChatWindow } from './ChatWindow';
-import { ContactInfo } from './ContactInfo';
+import { TabNavigation } from './TabNavigation';
+import { ChatsView } from './views/ChatsView';
+import { QueueView } from './views/QueueView';
+import { ContactsView } from './views/ContactsView';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -37,8 +38,8 @@ export interface Conversation {
   contact: Contact;
   lastMessage: Message;
   unreadCount: number;
-  status: 'aguardando' | 'em_atendimento' | 'finalizado';
-  priority: 'baixa' | 'media' | 'alta';
+  status: 'aguardando' | 'em_atendimento' | 'finalizado' | 'aguardando_retorno';
+  priority: 'baixa' | 'media' | 'alta' | 'urgente';
   tags: string[];
 }
 
@@ -47,8 +48,7 @@ export const WhatsAppInterface = () => {
   const { contacts, loading: contactsLoading, error: contactsError } = useContacts();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'aguardando' | 'em_atendimento' | 'finalizado'>('todos');
+  const [activeTab, setActiveTab] = useState<'chats' | 'fila' | 'contatos'>('chats');
 
   // Processar mensagens e contatos para criar conversações
   useEffect(() => {
@@ -87,19 +87,6 @@ export const WhatsAppInterface = () => {
     setConversations(conversationsArray);
   }, [messages, contacts]);
 
-  // Filtrar conversações
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = !searchTerm || 
-      conv.contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.lastMessage.conteudo_mensagem?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'todos' || conv.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const activeConversationData = conversations.find(c => c.contact.id_contact === activeConversation);
-  const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
 
   if (messagesLoading || contactsLoading) {
     return <LoadingSpinner />;
@@ -109,48 +96,50 @@ export const WhatsAppInterface = () => {
     return <ErrorState message={messagesError || contactsError || 'Erro ao carregar dados'} />;
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'chats':
+        return (
+          <ChatsView
+            conversations={conversations}
+            activeConversation={activeConversation}
+            onSelectConversation={setActiveConversation}
+          />
+        );
+      case 'fila':
+        return (
+          <QueueView
+            conversations={conversations}
+            onSelectConversation={setActiveConversation}
+          />
+        );
+      case 'contatos':
+        return (
+          <ContactsView
+            onSelectContact={(contact) => {
+              setActiveConversation(contact.id_contact);
+              setActiveTab('chats');
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const unreadCount = conversations.reduce((acc, conv) => acc + conv.unreadCount, 0);
+  const queueCount = conversations.filter(conv => conv.status === 'aguardando').length;
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Lista de Conversações */}
-      <div className="w-80 border-r border-border bg-card">
-        <ConversationsList
-          conversations={filteredConversations}
-          activeConversation={activeConversation}
-          onSelectConversation={setActiveConversation}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-        />
-      </div>
-
-      {/* Área Principal de Chat */}
-      <div className="flex-1 flex">
-        <div className="flex-1">
-          {activeConversation ? (
-            <ChatWindow
-              conversation={activeConversationData!}
-              messages={activeContactMessages}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="text-center">
-                <h3 className="text-lg font-medium mb-2">Selecione uma conversa</h3>
-                <p>Escolha uma conversa na lista para começar a atender</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Painel de Informações do Contato */}
-        {activeConversationData && (
-          <div className="w-80 border-l border-border bg-card">
-            <ContactInfo
-              contact={activeConversationData.contact}
-              conversation={activeConversationData}
-            />
-          </div>
-        )}
+    <div className="flex flex-col h-screen bg-background">
+      <TabNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        unreadCount={unreadCount}
+        queueCount={queueCount}
+      />
+      <div className="flex-1 overflow-hidden">
+        {renderTabContent()}
       </div>
     </div>
   );

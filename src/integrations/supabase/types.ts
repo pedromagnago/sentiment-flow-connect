@@ -493,6 +493,53 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_assignments: {
+        Row: {
+          assigned_at: string | null
+          contact_id: string
+          created_at: string | null
+          id: string
+          priority: string
+          sla_deadline: string | null
+          status: string
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          contact_id: string
+          created_at?: string | null
+          id?: string
+          priority?: string
+          sla_deadline?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          contact_id?: string
+          created_at?: string | null
+          id?: string
+          priority?: string
+          sla_deadline?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string | null
@@ -739,26 +786,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ativo: boolean | null
+          cargo: string | null
           company_id: string | null
           created_at: string
           display_name: string | null
+          especialidade: string[] | null
+          horario_atendimento: Json | null
           id: string
+          max_atendimentos_simultaneos: number | null
           role: string | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean | null
+          cargo?: string | null
           company_id?: string | null
           created_at?: string
           display_name?: string | null
+          especialidade?: string[] | null
+          horario_atendimento?: Json | null
           id: string
+          max_atendimentos_simultaneos?: number | null
           role?: string | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean | null
+          cargo?: string | null
           company_id?: string | null
           created_at?: string
           display_name?: string | null
+          especialidade?: string[] | null
+          horario_atendimento?: Json | null
           id?: string
+          max_atendimentos_simultaneos?: number | null
           role?: string | null
           updated_at?: string
         }
