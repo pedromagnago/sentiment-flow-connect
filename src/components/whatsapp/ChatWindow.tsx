@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useSuggestedActions } from '@/hooks/useSuggestedActions';
 import { SuggestedActionCard } from './SuggestedActionCard';
+import { ActionHistoryPanel } from './ActionHistoryPanel';
 import type { Conversation, Message } from './WhatsAppInterface';
 
 interface ChatWindowProps {
@@ -17,7 +18,8 @@ interface ChatWindowProps {
 export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { sendMessage, isSending } = useSendMessage();
-  const { actions, processAction, ignoreAction, updateAction } = useSuggestedActions(conversation.contact.id_contact);
+  const { actions, processAction, ignoreAction, updateAction, isProcessing } = useSuggestedActions(conversation.contact.id_contact);
+  const [processingActionId, setProcessingActionId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -97,10 +99,13 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
           </div>
         ) : (
           <div className="p-4 space-y-4">
+            {/* Action History Panel */}
+            <ActionHistoryPanel actions={actions} />
+
             {sortedMessages.map((message) => {
-              // Buscar ações sugeridas para esta mensagem
+              // Buscar ações sugeridas para esta mensagem (pending, processing, completed, ignored)
               const messageActions = actions.filter(
-                action => action.message_id === message.id && action.status === 'pending'
+                action => action.message_id === message.id
               );
 
               return (
@@ -110,9 +115,15 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
                     <SuggestedActionCard
                       key={action.id}
                       action={action}
-                      onProcess={(id, data) => processAction({ id, action_type: action.action_type, extracted_data: data })}
-                      onIgnore={ignoreAction}
+                      onProcess={(id, data) => {
+                        setProcessingActionId(id);
+                        processAction({ id, action_type: action.action_type, extracted_data: data });
+                      }}
+                      onIgnore={(id) => {
+                        ignoreAction(id);
+                      }}
                       onUpdate={(id, data) => updateAction({ id, status: 'pending', extracted_data: data })}
+                      isProcessing={processingActionId === action.id}
                     />
                   ))}
                 </div>

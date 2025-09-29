@@ -243,5 +243,6 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
     updateAction: updateActionMutation.mutate,
     ignoreAction: ignoreAction.mutate,
     processAction: processAction.mutate,
+    isProcessing: processAction.isPending || updateActionMutation.isPending,
   };
 };
