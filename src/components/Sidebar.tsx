@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   BarChart3, 
   Users, 
@@ -53,8 +54,8 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
   const isWhatsAppActive = location.pathname.startsWith('/whatsapp');
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-xl border-r border-gray-200 z-10">
-      <div className="p-6">
+    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-xl border-r border-gray-200 z-10 flex flex-col">
+      <div className="p-6 flex-shrink-0">
         <div className="flex items-center space-x-3 mb-8">
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <BarChart3 className="w-6 h-6 text-white" />
@@ -64,8 +65,10 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
             <p className="text-sm text-gray-500">Analytics Platform</p>
           </div>
         </div>
-        
-        <nav className="space-y-2">
+      </div>
+      
+      <ScrollArea className="flex-1 px-6">
+        <nav className="space-y-2 pb-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -129,7 +132,7 @@ export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
             )}
           </div>
         </nav>
-      </div>
+      </ScrollArea>
     </div>
   );
 };
