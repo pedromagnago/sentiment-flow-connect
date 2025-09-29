@@ -35,6 +35,10 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
 
   const activeConversationData = conversations.find(c => c.contact.id_contact === activeConversation);
   const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
+  
+  console.log('ChatsView - Active conversation:', activeConversation);
+  console.log('ChatsView - Messages for active contact:', activeContactMessages.length);
+  console.log('ChatsView - Total messages available:', messages.length);
 
   // Se não encontrou a conversa, mas temos um contato ativo, cria uma conversa temporária
   const conversationToDisplay = activeConversationData || (activeConversation ? {
@@ -67,9 +71,9 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
   } : null);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-full bg-background">
       {/* Lista de Conversações */}
-      <div className="w-80 border-r border-border bg-card shadow-sm flex flex-col">
+      <div className="w-80 border-r border-border bg-card shadow-sm">
         <ConversationsList
           conversations={filteredConversations}
           activeConversation={activeConversation}
@@ -82,8 +86,8 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
       </div>
 
       {/* Área Principal de Chat */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex">
+        <div className="flex-1">
           {activeConversation && conversationToDisplay ? (
             <ChatWindow
               conversation={conversationToDisplay}
@@ -109,10 +113,12 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
 
         {/* Painel de Informações do Contato */}
         {conversationToDisplay && (
-          <ContactInfo
-            contact={conversationToDisplay.contact}
-            conversation={conversationToDisplay}
-          />
+          <div className="w-80 border-l border-border bg-card shadow-sm">
+            <ContactInfo
+              contact={conversationToDisplay.contact}
+              conversation={conversationToDisplay}
+            />
+          </div>
         )}
       </div>
     </div>

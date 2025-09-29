@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Phone, Mail, Building2, Tag, Clock, Star, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Phone, Mail, Building2, Tag, Clock, Star, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,6 @@ interface ContactInfoProps {
 
 export const ContactInfo = ({ contact, conversation }: ContactInfoProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [editedContact, setEditedContact] = useState(contact);
   const [newTag, setNewTag] = useState('');
   const { toast } = useToast();
@@ -64,91 +63,72 @@ export const ContactInfo = ({ contact, conversation }: ContactInfoProps) => {
   };
 
   return (
-    <div className={`flex flex-col h-full border-l border-border bg-card shadow-sm transition-all duration-300 ${
-      isCollapsed ? 'w-12' : 'w-80'
-    }`}>
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          {!isCollapsed && <h3 className="font-semibold">Informações do Contato</h3>}
-          <div className="flex gap-1 ml-auto">
-            {!isCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              title={isCollapsed ? 'Expandir' : 'Minimizar'}
-            >
-              {isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </Button>
+          <h3 className="font-semibold">Informações do Contato</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Avatar e nome */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+            <User className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h4 className="font-medium">
+              {contact.nome || contact.id_contact}
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              ID: {contact.id_contact}
+            </p>
           </div>
         </div>
 
-        {!isCollapsed && (
-          <>
-            {/* Avatar e nome */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-medium">
-                  {contact.nome || contact.id_contact}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  ID: {contact.id_contact}
-                </p>
-              </div>
-            </div>
+        {/* Status e Prioridade */}
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs text-muted-foreground">Status</Label>
+            {isEditing ? (
+              <Select defaultValue={conversation.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="aguardando">Aguardando</SelectItem>
+                  <SelectItem value="em_atendimento">Em atendimento</SelectItem>
+                  <SelectItem value="finalizado">Finalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge className={`text-xs ${getStatusColor(conversation.status)}`}>
+                {conversation.status.replace('_', ' ')}
+              </Badge>
+            )}
+          </div>
 
-            {/* Status e Prioridade */}
-            <div className="space-y-2">
-              <div>
-                <Label className="text-xs text-muted-foreground">Status</Label>
-                {isEditing ? (
-                  <Select defaultValue={conversation.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="aguardando">Aguardando</SelectItem>
-                      <SelectItem value="em_atendimento">Em atendimento</SelectItem>
-                      <SelectItem value="finalizado">Finalizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={`text-xs ${getStatusColor(conversation.status)}`}>
-                    {conversation.status.replace('_', ' ')}
-                  </Badge>
-                )}
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground">Prioridade</Label>
-                <div className="flex items-center gap-1">
-                  <Star className={`w-4 h-4 ${
-                    conversation.priority === 'alta' ? 'text-red-500' : 
-                    conversation.priority === 'media' ? 'text-yellow-500' : 'text-gray-400'
-                  }`} />
-                  <span className="text-sm capitalize">{conversation.priority}</span>
-                </div>
-              </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Prioridade</Label>
+            <div className="flex items-center gap-1">
+              <Star className={`w-4 h-4 ${
+                conversation.priority === 'alta' ? 'text-red-500' : 
+                conversation.priority === 'media' ? 'text-yellow-500' : 'text-gray-400'
+              }`} />
+              <span className="text-sm capitalize">{conversation.priority}</span>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
       {/* Conteúdo principal */}
-      {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Informações básicas */}
         <div>
           <h5 className="font-medium mb-2 flex items-center gap-2">
@@ -261,11 +241,10 @@ export const ContactInfo = ({ contact, conversation }: ContactInfoProps) => {
             </div>
           </>
         )}
-        </div>
-      )}
+      </div>
 
       {/* Ações */}
-      {!isCollapsed && isEditing && (
+      {isEditing && (
         <div className="p-4 border-t border-border">
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
