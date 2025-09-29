@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import { Clock, AlertTriangle, User, MessageCircle } from 'lucide-react';
+import { Clock, AlertTriangle, User, MessageCircle, Building } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,14 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
               </div>
             </div>
 
+            {/* Company badge */}
+            {conversation.contact.empresa_id && (
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                <Building className="h-3 w-3" />
+                {conversation.contact.empresa_id.slice(0, 8)}...
+              </Badge>
+            )}
+
             {assignment?.priority && (
               <Badge variant="outline" className={`text-xs ${getPriorityColor(assignment.priority)}`}>
                 {assignment.priority}
@@ -96,12 +104,11 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
             <p className="text-xs text-muted-foreground line-clamp-2">
               {conversation.lastMessage.conteudo_mensagem}
             </p>
-            {conversation.contact.empresa_id && (
-              <p className="text-xs text-muted-foreground mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {conversation.contact.empresa_id}
-                </Badge>
-              </p>
+            {assignment?.user_id && (
+              <Badge variant="outline" className="text-xs mt-1">
+                <User className="h-3 w-3 mr-1" />
+                Atribuído
+              </Badge>
             )}
           </div>
 

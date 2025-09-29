@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCompanyId } from './useCompanyId';
+import { useUserProfile } from './useUserProfile';
 
 export interface Contact {
   id_contact: string;
@@ -18,21 +18,25 @@ export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { companyId, loading: companyLoading } = useCompanyId();
+  const { profile, loading: profileLoading, isAdmin } = useUserProfile();
 
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching contacts for company:', companyId);
+      const companyId = profile?.company_id;
+      console.log('Fetching contacts for user role:', profile?.role, 'company:', companyId);
       
       let query = supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter by company if user has a company_id
-      if (companyId) {
+      // ADMs/Owners see all conversations, regular users see only their company's
+      if (!isAdmin && companyId) {
         query = query.eq('empresa_id', companyId);
+        console.log('Regular user - filtering by company:', companyId);
+      } else if (isAdmin) {
+        console.log('Admin user - showing all conversations');
       }
 
       const { data, error } = await query;
@@ -41,7 +45,7 @@ export const useContacts = () => {
         console.error('Error fetching contacts:', error);
         throw error;
       }
-      console.log('Contacts fetched:', data?.length, 'for company', companyId);
+      console.log('Contacts fetched:', data?.length, 'role:', profile?.role, 'isAdmin:', isAdmin);
       setContacts(data || []);
     } catch (err) {
       console.error('Fetch contacts error:', err);
@@ -172,7 +176,7 @@ export const useContacts = () => {
 
   // Setup realtime subscription
   useEffect(() => {
-    if (companyLoading) return;
+    if (profileLoading) return;
     fetchContacts();
 
     const channel = supabase
@@ -194,11 +198,11 @@ export const useContacts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [companyId, companyLoading]);
+  }, [profile?.company_id, profileLoading, isAdmin]);
 
   return { 
     contacts, 
-    loading: loading || companyLoading, 
+    loading: loading || profileLoading, 
     error, 
     refetch: fetchContacts,
     createContact,

@@ -4,7 +4,7 @@ import { KanbanColumn } from '../kanban/KanbanColumn';
 import { ConversationCard } from '../kanban/ConversationCard';
 import { ConversationStats } from '../ConversationStats';
 import { useConversationAssignments } from '@/hooks/useConversationAssignments';
-import { useCompanyId } from '@/hooks/useCompanyId';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/ErrorState';
 import type { Conversation } from '../WhatsAppInterface';
@@ -27,7 +27,7 @@ export const QueueView: React.FC<QueueViewProps> = ({
   onSelectConversation
 }) => {
   const { assignments, loading, error, updateAssignment, createAssignment } = useConversationAssignments();
-  const { companyId } = useCompanyId();
+  const { profile, isAdmin } = useUserProfile();
 
   const handleDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -103,7 +103,8 @@ export const QueueView: React.FC<QueueViewProps> = ({
       <ConversationStats 
         conversations={conversations}
         assignments={assignments}
-        companyId={companyId}
+        profile={profile}
+        isAdmin={isAdmin}
       />
       <div className="flex-1 p-4">
         <DragDropContext onDragEnd={handleDragEnd}>
