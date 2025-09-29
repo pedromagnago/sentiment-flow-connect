@@ -653,6 +653,99 @@ export type Database = {
           },
         ]
       }
+      faturas: {
+        Row: {
+          cfop: string | null
+          company_id: string
+          contact_id: string | null
+          created_at: string
+          data_emissao: string | null
+          data_vencimento: string | null
+          descricao: string
+          destinatario: string
+          emitida_em: string | null
+          id: string
+          message_id: string | null
+          natureza_operacao: string | null
+          numero_nota: string | null
+          observacoes: string | null
+          pdf_url: string | null
+          status: string
+          suggested_action_id: string | null
+          tags: string[] | null
+          tipo_nota: string | null
+          updated_at: string
+          user_id: string
+          valor: number
+          xml_url: string | null
+        }
+        Insert: {
+          cfop?: string | null
+          company_id: string
+          contact_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_vencimento?: string | null
+          descricao: string
+          destinatario: string
+          emitida_em?: string | null
+          id?: string
+          message_id?: string | null
+          natureza_operacao?: string | null
+          numero_nota?: string | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          tipo_nota?: string | null
+          updated_at?: string
+          user_id: string
+          valor: number
+          xml_url?: string | null
+        }
+        Update: {
+          cfop?: string | null
+          company_id?: string
+          contact_id?: string | null
+          created_at?: string
+          data_emissao?: string | null
+          data_vencimento?: string | null
+          descricao?: string
+          destinatario?: string
+          emitida_em?: string | null
+          id?: string
+          message_id?: string | null
+          natureza_operacao?: string | null
+          numero_nota?: string | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          tipo_nota?: string | null
+          updated_at?: string
+          user_id?: string
+          valor?: number
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_suggested_action_id_fkey"
+            columns: ["suggested_action_id"]
+            isOneToOne: false
+            referencedRelation: "suggested_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formularios_onboarding: {
         Row: {
           answers: Json | null

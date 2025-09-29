@@ -83,6 +83,9 @@ verify_jwt = false
 [functions.create-payment]
 verify_jwt = true
 
+[functions.create-invoice]
+verify_jwt = true
+
 [edge-runtime]
 policy = "on_demand"
 inspector_port = 8083

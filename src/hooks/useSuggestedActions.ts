@@ -150,6 +150,25 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
         });
 
         if (functionError) throw functionError;
+      } else if (action_type === 'invoice') {
+        // Get action details for contact_id and message_id
+        const { data: action } = await supabase
+          .from('suggested_actions')
+          .select('contact_id, message_id')
+          .eq('id', id)
+          .single();
+
+        // Call create-invoice edge function
+        const { error: functionError } = await supabase.functions.invoke('create-invoice', {
+          body: {
+            suggested_action_id: id,
+            extracted_data,
+            contact_id: action?.contact_id,
+            message_id: action?.message_id,
+          }
+        });
+
+        if (functionError) throw functionError;
       } else {
         // Para outros tipos, apenas marca como completed
         const { error } = await supabase
