@@ -1229,6 +1229,88 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          contact_id: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          message_id: string | null
+          observacoes: string | null
+          prazo: string | null
+          prioridade: string
+          responsavel_id: string | null
+          status: string
+          suggested_action_id: string | null
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          message_id?: string | null
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          message_id?: string | null
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_suggested_action_id_fkey"
+            columns: ["suggested_action_id"]
+            isOneToOne: false
+            referencedRelation: "suggested_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_imports: {
         Row: {
           company_id: string
