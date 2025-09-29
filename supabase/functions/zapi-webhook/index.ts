@@ -21,6 +21,9 @@ interface ZAPIMessage {
   photo?: string;
   broadcast?: boolean;
   type: string;
+  notification?: string;
+  isEdit?: boolean;
+  editMessageId?: string;
   text?: {
     message: string;
   };
@@ -82,6 +85,15 @@ serve(async (req) => {
     
     console.log('Received ZAPI webhook:', JSON.stringify(zapMessage, null, 2));
 
+    // Ignorar notificações de grupo (participantes adicionados/removidos, etc)
+    if (zapMessage.notification) {
+      console.log('Ignoring group notification:', zapMessage.notification);
+      return new Response(JSON.stringify({ status: 'ignored', reason: 'notification' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Verificar se não é mensagem nossa (fromMe = true)
     if (zapMessage.fromMe) {
       console.log('Ignoring message from me');
@@ -91,14 +103,46 @@ serve(async (req) => {
       });
     }
 
+    // Extrair conteúdo da mensagem
+    const messageContent = extractMessageContent(zapMessage);
+
+    // Não salvar mensagens sem conteúdo real
+    if (!messageContent || messageContent === `[${zapMessage.type}]`) {
+      console.log('Ignoring message without real content:', zapMessage.type);
+      return new Response(JSON.stringify({ status: 'ignored', reason: 'no_content' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Se for mensagem editada, atualizar a existente
+    if (zapMessage.isEdit && zapMessage.editMessageId) {
+      const { error: updateError } = await supabase
+        .from('messages')
+        .update({
+          conteudo_mensagem: messageContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('message_id', zapMessage.editMessageId);
+      
+      if (updateError) {
+        console.error('Error updating edited message:', updateError);
+      } else {
+        console.log('Updated edited message:', zapMessage.editMessageId);
+        return new Response(JSON.stringify({ status: 'updated' }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // Preparar dados da mensagem
-    // Z-API sends timestamp in milliseconds already, no need to multiply
     const messageData = {
       message_id: zapMessage.messageId,
       contact_id: zapMessage.phone,
       nome_membro: zapMessage.senderName || zapMessage.chatName,
       telefone_membro: zapMessage.phone,
-      conteudo_mensagem: extractMessageContent(zapMessage),
+      conteudo_mensagem: messageContent,
       tipo_mensagem: zapMessage.type,
       data_hora: new Date(zapMessage.momment).toISOString(),
       fromme: false,
@@ -173,24 +217,32 @@ serve(async (req) => {
 });
 
 function extractMessageContent(zapMessage: ZAPIMessage): string {
-  switch (zapMessage.type) {
-    case 'text':
-      return zapMessage.text?.message || '';
-    case 'image':
-      return zapMessage.image?.caption || '[Imagem]';
-    case 'video':
-      return zapMessage.video?.caption || '[Vídeo]';
-    case 'audio':
-      return '[Áudio]';
-    case 'document':
-      return `[Documento: ${zapMessage.document?.title}]`;
-    case 'location':
-      return `[Localização: ${zapMessage.location?.address}]`;
-    case 'contact':
-      return `[Contato: ${zapMessage.contact?.displayName}]`;
-    default:
-      return `[${zapMessage.type}]`;
+  // Verificar campos de conteúdo independente do type
+  if (zapMessage.text?.message) {
+    return zapMessage.text.message;
   }
+  if (zapMessage.image) {
+    return zapMessage.image.caption || '[Imagem]';
+  }
+  if (zapMessage.document) {
+    return `[Documento: ${zapMessage.document.title}]`;
+  }
+  if (zapMessage.video) {
+    return zapMessage.video.caption || '[Vídeo]';
+  }
+  if (zapMessage.audio) {
+    return '[Áudio]';
+  }
+  if (zapMessage.location) {
+    return `[Localização: ${zapMessage.location.address}]`;
+  }
+  if (zapMessage.contact) {
+    return `[Contato: ${zapMessage.contact.displayName}]`;
+  }
+  
+  // Se não encontrou conteúdo, logar e retornar tipo
+  console.log('No content found for message type:', zapMessage.type);
+  return `[${zapMessage.type}]`;
 }
 
 function extractFileUrl(zapMessage: ZAPIMessage): string | null {
