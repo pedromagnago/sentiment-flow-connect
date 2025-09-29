@@ -28,9 +28,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useInvoices } from '@/hooks/useInvoices';
-import { CheckCircle, Clock, XCircle, Calendar, FileText, Trash2, Send } from 'lucide-react';
+import { ActionOriginBadge } from '@/components/common/ActionOriginBadge';
+import { CheckCircle, Clock, XCircle, Calendar, FileText, Trash2, Send, MessageSquare, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 const STATUS_CONFIG = {
   pendente: {
@@ -61,6 +63,7 @@ const STATUS_CONFIG = {
 };
 
 export default function InvoicesPage() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
@@ -202,6 +205,7 @@ export default function InvoicesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Origem</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Destinatário</TableHead>
               <TableHead>Descrição</TableHead>
@@ -215,13 +219,13 @@ export default function InvoicesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : invoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                   Nenhuma fatura encontrada
                 </TableCell>
               </TableRow>
@@ -232,6 +236,12 @@ export default function InvoicesPage() {
 
                 return (
                   <TableRow key={invoice.id}>
+                    <TableCell>
+                      <ActionOriginBadge
+                        suggestedActionId={invoice.suggested_action_id}
+                        contactId={invoice.contact_id}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusConfig.color}>
                         <StatusIcon className="h-3 w-3 mr-1" />
@@ -261,6 +271,29 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        {/* Rastreabilidade */}
+                        {invoice.contact_id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => navigate(`/whatsapp/chats?contact=${invoice.contact_id}`)}
+                            title="Ver Contato"
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {invoice.message_id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => navigate(`/whatsapp/chats?contact=${invoice.contact_id}&message=${invoice.message_id}`)}
+                            title="Ver Mensagem"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        )}
+                        
+                        {/* Ações de Status */}
                         {invoice.status === 'pendente' && (
                           <>
                             <Dialog>

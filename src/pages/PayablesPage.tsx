@@ -28,9 +28,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { usePayables } from '@/hooks/usePayables';
-import { CheckCircle, Clock, XCircle, Calendar, DollarSign, Trash2 } from 'lucide-react';
+import { useSuggestedActionDetails } from '@/hooks/useSuggestedActionDetails';
+import { ActionOriginBadge } from '@/components/common/ActionOriginBadge';
+import { CheckCircle, Clock, XCircle, Calendar, DollarSign, Trash2, MessageSquare, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 const STATUS_CONFIG = {
   pendente: {
@@ -56,6 +59,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PayablesPage() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
@@ -197,6 +201,7 @@ export default function PayablesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Origem</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Beneficiário</TableHead>
               <TableHead>Descrição</TableHead>
@@ -209,13 +214,13 @@ export default function PayablesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : payables.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Nenhuma conta encontrada
                 </TableCell>
               </TableRow>
@@ -226,6 +231,12 @@ export default function PayablesPage() {
 
                 return (
                   <TableRow key={payable.id}>
+                    <TableCell>
+                      <ActionOriginBadge
+                        suggestedActionId={payable.suggested_action_id}
+                        contactId={payable.contact_id}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusConfig.color}>
                         <StatusIcon className="h-3 w-3 mr-1" />
@@ -252,6 +263,29 @@ export default function PayablesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        {/* Rastreabilidade */}
+                        {payable.contact_id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => navigate(`/whatsapp/chats?contact=${payable.contact_id}`)}
+                            title="Ver Contato"
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {payable.message_id && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => navigate(`/whatsapp/chats?contact=${payable.contact_id}&message=${payable.message_id}`)}
+                            title="Ver Mensagem"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        )}
+                        
+                        {/* Ações de Status */}
                         {payable.status === 'pendente' && (
                           <>
                             <Dialog>

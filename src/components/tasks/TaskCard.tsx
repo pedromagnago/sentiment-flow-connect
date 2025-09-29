@@ -2,9 +2,11 @@ import { Task } from '@/hooks/useInternalTasks';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Trash2, Clock } from 'lucide-react';
+import { ActionOriginBadge } from '@/components/common/ActionOriginBadge';
+import { Calendar, User, Trash2, Clock, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 interface TaskCardProps {
   task: Task;
@@ -19,6 +21,7 @@ const PRIORITY_CONFIG = {
 };
 
 export const TaskCard = ({ task, onDelete }: TaskCardProps) => {
+  const navigate = useNavigate();
   const priorityConfig = PRIORITY_CONFIG[task.prioridade];
 
   return (
@@ -46,6 +49,13 @@ export const TaskCard = ({ task, onDelete }: TaskCardProps) => {
         )}
 
         <div className="flex flex-wrap gap-2">
+          {task.suggested_action_id && (
+            <ActionOriginBadge
+              suggestedActionId={task.suggested_action_id}
+              contactId={task.contact_id}
+            />
+          )}
+          
           <Badge variant="outline" className={priorityConfig.color}>
             {priorityConfig.label}
           </Badge>
@@ -58,14 +68,39 @@ export const TaskCard = ({ task, onDelete }: TaskCardProps) => {
           )}
         </div>
 
-        {task.contact_id && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <User className="h-3 w-3" />
-            <span>WhatsApp</span>
-          </div>
-        )}
+        {/* Rastreabilidade */}
+        <div className="flex items-center gap-2">
+          {task.contact_id && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/whatsapp/chats?contact=${task.contact_id}`);
+              }}
+              className="h-7 text-xs"
+            >
+              <User className="h-3 w-3 mr-1" />
+              Ver Contato
+            </Button>
+          )}
+          {task.message_id && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/whatsapp/chats?contact=${task.contact_id}&message=${task.message_id}`);
+              }}
+              className="h-7 text-xs"
+            >
+              <MessageSquare className="h-3 w-3 mr-1" />
+              Ver Mensagem
+            </Button>
+          )}
+        </div>
 
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2 border-t">
           <Clock className="h-3 w-3" />
           <span>{format(new Date(task.created_at), 'dd/MM/yy HH:mm', { locale: ptBR })}</span>
         </div>
