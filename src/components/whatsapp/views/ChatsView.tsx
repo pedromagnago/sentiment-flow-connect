@@ -36,6 +36,36 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
   const activeConversationData = conversations.find(c => c.contact.id_contact === activeConversation);
   const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
 
+  // Se não encontrou a conversa, mas temos um contato ativo, cria uma conversa temporária
+  const conversationToDisplay = activeConversationData || (activeConversation ? {
+    contact: { 
+      id_contact: activeConversation, 
+      nome: activeConversation,
+      is_group: false,
+      feedback: true,
+      status: true,
+      empresa_id: null,
+      data_criacao: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    lastMessage: activeContactMessages[activeContactMessages.length - 1] || {
+      id: '',
+      contact_id: activeConversation,
+      conteudo_mensagem: '',
+      nome_membro: '',
+      data_hora: new Date().toISOString(),
+      fromme: false,
+      status_processamento: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    unreadCount: 0,
+    status: 'aguardando' as const,
+    priority: 'media' as const,
+    tags: []
+  } : null);
+
   return (
     <div className="flex h-full bg-background">
       {/* Lista de Conversações */}
@@ -54,9 +84,9 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
       {/* Área Principal de Chat */}
       <div className="flex-1 flex">
         <div className="flex-1">
-          {activeConversation ? (
+          {activeConversation && conversationToDisplay ? (
             <ChatWindow
-              conversation={activeConversationData!}
+              conversation={conversationToDisplay}
               messages={activeContactMessages}
             />
           ) : (
@@ -78,11 +108,11 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
         </div>
 
         {/* Painel de Informações do Contato */}
-        {activeConversationData && (
+        {conversationToDisplay && (
           <div className="w-80 border-l border-border bg-card shadow-sm">
             <ContactInfo
-              contact={activeConversationData.contact}
-              conversation={activeConversationData}
+              contact={conversationToDisplay.contact}
+              conversation={conversationToDisplay}
             />
           </div>
         )}
