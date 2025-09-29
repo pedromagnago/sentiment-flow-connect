@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Phone, Video, MoreVertical, User, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSendMessage } from '@/hooks/useSendMessage';
+import { useSuggestedActions } from '@/hooks/useSuggestedActions';
+import { SuggestedActionCard } from './SuggestedActionCard';
 import type { Conversation, Message } from './WhatsAppInterface';
 
 interface ChatWindowProps {
@@ -15,6 +17,7 @@ interface ChatWindowProps {
 export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { sendMessage, isSending } = useSendMessage();
+  const { actions, processAction, ignoreAction, updateAction } = useSuggestedActions(conversation.contact.id_contact);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,9 +97,27 @@ export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
           </div>
         ) : (
           <div className="p-4 space-y-4">
-            {sortedMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
+            {sortedMessages.map((message) => {
+              // Buscar ações sugeridas para esta mensagem
+              const messageActions = actions.filter(
+                action => action.message_id === message.id && action.status === 'pending'
+              );
+
+              return (
+                <div key={message.id} className="space-y-2">
+                  <MessageBubble message={message} />
+                  {messageActions.map(action => (
+                    <SuggestedActionCard
+                      key={action.id}
+                      action={action}
+                      onProcess={(id, data) => processAction({ id, action_type: action.action_type, extracted_data: data })}
+                      onIgnore={ignoreAction}
+                      onUpdate={(id, data) => updateAction({ id, status: 'pending', extracted_data: data })}
+                    />
+                  ))}
+                </div>
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
         )}

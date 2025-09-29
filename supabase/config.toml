@@ -74,6 +74,12 @@ verify_jwt = true
 [functions.classify-transaction]
 verify_jwt = true
 
+[functions.send-whatsapp-message]
+verify_jwt = true
+
+[functions.analyze-message]
+verify_jwt = false
+
 [edge-runtime]
 policy = "on_demand"
 inspector_port = 8083

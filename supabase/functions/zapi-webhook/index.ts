@@ -76,10 +76,10 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const zapMessage: ZAPIMessage = await req.json();
     
@@ -152,9 +152,11 @@ serve(async (req) => {
     };
 
     // Inserir mensagem no banco
-    const { error: messageError } = await supabase
+    const { data: insertedMessage, error: messageError } = await supabase
       .from('messages')
-      .insert(messageData);
+      .insert(messageData)
+      .select()
+      .single();
 
     if (messageError) {
       console.error('Error inserting message:', messageError);
@@ -193,6 +195,26 @@ serve(async (req) => {
     await handleConversationAssignment(supabase, zapMessage.phone);
 
     console.log('Message processed successfully');
+
+    // Chamar analyze-message de forma assíncrona (não bloqueia resposta)
+    if (insertedMessage?.id) {
+      fetch(`${supabaseUrl}/functions/v1/analyze-message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          message_id: insertedMessage.id,
+          contact_id: zapMessage.phone,
+          content: messageContent,
+          sender_name: zapMessage.senderName || zapMessage.chatName,
+        }),
+      }).catch(err => {
+        console.error('Error calling analyze-message (async):', err);
+        // Não falha o webhook, apenas loga
+      });
+    }
 
     return new Response(JSON.stringify({ 
       status: 'success',

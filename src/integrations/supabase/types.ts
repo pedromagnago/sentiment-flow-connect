@@ -896,6 +896,75 @@ export type Database = {
         }
         Relationships: []
       }
+      suggested_actions: {
+        Row: {
+          action_type: string
+          ai_confidence: number | null
+          ai_suggestion: string | null
+          contact_id: string
+          created_at: string | null
+          executed_at: string | null
+          executed_by: string | null
+          extracted_data: Json | null
+          id: string
+          message_id: string | null
+          notes: string | null
+          priority: string | null
+          result_data: Json | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_type: string
+          ai_confidence?: number | null
+          ai_suggestion?: string | null
+          contact_id: string
+          created_at?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          extracted_data?: Json | null
+          id?: string
+          message_id?: string | null
+          notes?: string | null
+          priority?: string | null
+          result_data?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          ai_confidence?: number | null
+          ai_suggestion?: string | null
+          contact_id?: string
+          created_at?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          extracted_data?: Json | null
+          id?: string
+          message_id?: string | null
+          notes?: string | null
+          priority?: string | null
+          result_data?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggested_actions_executed_by_fkey"
+            columns: ["executed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_actions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taskgrouprevisions: {
         Row: {
           contact_id: string | null
