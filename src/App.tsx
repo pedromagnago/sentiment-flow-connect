@@ -11,6 +11,10 @@ import AuthPage from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import { AuthProvider } from "./contexts/AuthContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
+import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
+import { ChatsPage } from "./pages/whatsapp/ChatsPage";
+import { QueuePage } from "./pages/whatsapp/QueuePage";
+import { ContactsPage } from "./pages/whatsapp/ContactsPage";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +29,11 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
+            <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
+              <Route path="chats" element={<ChatsPage />} />
+              <Route path="fila" element={<QueuePage />} />
+              <Route path="contatos" element={<ContactsPage />} />
+            </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

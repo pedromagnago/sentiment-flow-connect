@@ -11,7 +11,6 @@ import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { ReportsPage } from '../components/reports/ReportsPage';
 import { AuditLogs } from '../components/AuditLogs';
 import { Reconciliation } from '../components/finance/Reconciliation';
-import { WhatsAppInterface } from '../components/whatsapp/WhatsAppInterface';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,8 +25,6 @@ const Index = () => {
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />;
-      case 'whatsapp':
-        return <WhatsAppInterface />;
       case 'sentiment':
         return <SentimentAnalysis />;
       case 'contacts':
