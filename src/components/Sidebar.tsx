@@ -10,7 +10,8 @@ import {
   ClipboardCheck,
   FileText,
   Shield,
-  CreditCard
+  CreditCard,
+  MessageCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ interface SidebarProps {
 export const Sidebar = ({ activeSection, setActiveSection }: SidebarProps) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
     { id: 'sentiment', label: 'Análise de Sentimentos', icon: TrendingUp },
     { id: 'contacts', label: 'Contatos', icon: Users },
     { id: 'companies', label: 'Empresas', icon: Building2 },
