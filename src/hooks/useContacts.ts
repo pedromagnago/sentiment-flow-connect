@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyId } from './useCompanyId';
 
 export interface Contact {
   id_contact: string;
@@ -17,21 +18,30 @@ export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { companyId, loading: companyLoading } = useCompanyId();
 
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching contacts...');
-      const { data, error } = await supabase
+      console.log('Fetching contacts for company:', companyId);
+      
+      let query = supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter by company if user has a company_id
+      if (companyId) {
+        query = query.eq('empresa_id', companyId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching contacts:', error);
         throw error;
       }
-      console.log('Contacts fetched:', data);
+      console.log('Contacts fetched:', data?.length, 'for company', companyId);
       setContacts(data || []);
     } catch (err) {
       console.error('Fetch contacts error:', err);
@@ -162,6 +172,7 @@ export const useContacts = () => {
 
   // Setup realtime subscription
   useEffect(() => {
+    if (companyLoading) return;
     fetchContacts();
 
     const channel = supabase
@@ -183,11 +194,11 @@ export const useContacts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [companyId, companyLoading]);
 
   return { 
     contacts, 
-    loading, 
+    loading: loading || companyLoading, 
     error, 
     refetch: fetchContacts,
     createContact,

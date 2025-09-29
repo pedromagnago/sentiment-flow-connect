@@ -56,7 +56,7 @@ export const WhatsAppInterface = () => {
 
     const conversationsMap = new Map<string, Conversation>();
 
-    // Agrupar mensagens por contato
+    // Agrupar mensagens por contato (só contatos da empresa do usuário)
     messages.forEach(message => {
       const contact = contacts.find(c => c.id_contact === message.contact_id);
       if (!contact) return;
@@ -75,9 +75,13 @@ export const WhatsAppInterface = () => {
       }
     });
 
-    // Calcular mensagens não lidas
+    // Calcular mensagens não lidas (somente mensagens recebidas)
     conversationsMap.forEach((conversation, contactId) => {
-      const contactMessages = messages.filter(m => m.contact_id === contactId && !m.fromme);
+      const contactMessages = messages.filter(m => 
+        m.contact_id === contactId && 
+        !m.fromme &&
+        new Date(m.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24h
+      );
       conversation.unreadCount = contactMessages.length;
     });
 

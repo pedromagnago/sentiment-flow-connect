@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   conversations: Conversation[];
   assignments: ConversationAssignment[];
   onSelectConversation: (contactId: string | null) => void;
+  onAssumeConversation?: (contactId: string) => void;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -19,7 +20,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   color,
   conversations,
   assignments,
-  onSelectConversation
+  onSelectConversation,
+  onAssumeConversation
 }) => {
   return (
     <div className={`rounded-lg border-2 ${color} bg-card`}>
@@ -53,6 +55,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                     conversation={conversation}
                     assignment={assignment}
                     onSelectConversation={onSelectConversation}
+                    onAssumeConversation={onAssumeConversation}
                   />
                 );
               })}

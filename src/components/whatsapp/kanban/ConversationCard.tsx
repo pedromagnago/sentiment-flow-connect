@@ -12,13 +12,15 @@ interface ConversationCardProps {
   conversation: Conversation;
   assignment?: ConversationAssignment;
   onSelectConversation: (contactId: string | null) => void;
+  onAssumeConversation?: (contactId: string) => void;
 }
 
 export const ConversationCard: React.FC<ConversationCardProps> = ({
   index,
   conversation,
   assignment,
-  onSelectConversation
+  onSelectConversation,
+  onAssumeConversation
 }) => {
   const getInitials = (name?: string) => {
     if (!name) return '?';
@@ -94,6 +96,13 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
             <p className="text-xs text-muted-foreground line-clamp-2">
               {conversation.lastMessage.conteudo_mensagem}
             </p>
+            {conversation.contact.empresa_id && (
+              <p className="text-xs text-muted-foreground mt-1">
+                <Badge variant="outline" className="text-xs">
+                  {conversation.contact.empresa_id}
+                </Badge>
+              </p>
+            )}
           </div>
 
           {/* Footer do card */}
@@ -112,6 +121,20 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
                 <Badge variant="secondary" className="text-xs">
                   {conversation.unreadCount}
                 </Badge>
+              )}
+              
+              {onAssumeConversation && !assignment && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAssumeConversation(conversation.contact.id_contact);
+                  }}
+                >
+                  Assumir
+                </Button>
               )}
               
               <Button
