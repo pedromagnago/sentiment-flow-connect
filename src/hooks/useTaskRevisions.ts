@@ -140,8 +140,9 @@ export const useTaskRevisions = () => {
   useEffect(() => {
     fetchRevisions();
 
+    const channelId = `taskrevisions-changes-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('taskrevisions-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {

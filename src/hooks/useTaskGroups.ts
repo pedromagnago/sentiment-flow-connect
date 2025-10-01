@@ -83,8 +83,9 @@ export const useTaskGroups = () => {
   useEffect(() => {
     fetchTaskGroups();
 
+    const channelId = `taskgroups-changes-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('taskgroups-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {

@@ -85,8 +85,9 @@ export const useConversationAssignments = () => {
   useEffect(() => {
     fetchAssignments();
 
+    const channelId = `conversation-assignments-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('conversation_assignments_changes')
+      .channel(channelId)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

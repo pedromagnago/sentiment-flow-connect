@@ -87,8 +87,9 @@ export const useMessages = () => {
   useEffect(() => {
     fetchMessages();
 
+    const channelId = `messages-changes-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('messages-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
