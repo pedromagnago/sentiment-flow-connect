@@ -15,6 +15,8 @@ import TasksPage from "./pages/TasksPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import SuggestedActionsPage from "./pages/SuggestedActionsPage";
 import ReportsPage from "./pages/ReportsPage";
+import ReconciliationPage from "./pages/ReconciliationPage";
+import AuditLogsPage from "./pages/AuditLogsPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
@@ -46,6 +48,8 @@ const App = () => (
               <Route path="/analysis" element={<PrivateRoute><MainLayout><AnalysisPage /></MainLayout></PrivateRoute>} />
               <Route path="/suggested-actions" element={<PrivateRoute><MainLayout><SuggestedActionsPage /></MainLayout></PrivateRoute>} />
               <Route path="/reports" element={<PrivateRoute><MainLayout><ReportsPage /></MainLayout></PrivateRoute>} />
+              <Route path="/reconciliation" element={<PrivateRoute><MainLayout><ReconciliationPage /></MainLayout></PrivateRoute>} />
+              <Route path="/audit" element={<PrivateRoute><MainLayout><AuditLogsPage /></MainLayout></PrivateRoute>} />
               
               {/* WhatsApp routes */}
               <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>

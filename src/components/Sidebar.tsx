@@ -22,7 +22,9 @@ import {
   FileSearch,
   FolderKanban,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Scale,
+  Shield
 } from 'lucide-react';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 
@@ -36,15 +38,19 @@ export const Sidebar = () => {
   const [financialExpanded, setFinancialExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
   const [aiExpanded, setAiExpanded] = useState(false);
+  const [systemExpanded, setSystemExpanded] = useState(false);
 
   // Detectar seções ativas
   const isWhatsAppActive = location.pathname.startsWith('/whatsapp');
   const isFinancialActive = location.pathname.startsWith('/payables') || 
-                            location.pathname.startsWith('/invoices');
+                            location.pathname.startsWith('/invoices') ||
+                            location.pathname.startsWith('/reconciliation');
   const isTasksActive = location.pathname.startsWith('/tasks');
   const isAIActive = location.pathname.startsWith('/suggested-actions') ||
                      location.pathname.startsWith('/reports') ||
                      location.pathname.startsWith('/analysis');
+  const isSystemActive = location.pathname.startsWith('/audit') ||
+                         location.pathname.startsWith('/settings');
 
   // Auto-expansão inteligente
   useEffect(() => {
@@ -53,8 +59,9 @@ export const Sidebar = () => {
       setFinancialExpanded(isFinancialActive);
       setTasksExpanded(isTasksActive);
       setAiExpanded(isAIActive);
+      setSystemExpanded(isSystemActive);
     }
-  }, [location.pathname, isWhatsAppActive, isFinancialActive, isTasksActive, isAIActive, isCollapsed]);
+  }, [location.pathname, isWhatsAppActive, isFinancialActive, isTasksActive, isAIActive, isSystemActive, isCollapsed]);
 
   // Menu items do Core
   const coreMenuItems = [
@@ -66,6 +73,7 @@ export const Sidebar = () => {
   const financialSubmenu = [
     { id: 'payables', label: 'Contas a Pagar', icon: Receipt, path: '/payables' },
     { id: 'invoices', label: 'Faturamento', icon: FileStack, path: '/invoices' },
+    { id: 'reconciliation', label: 'Reconciliação Bancária', icon: Scale, path: '/reconciliation' },
   ];
 
   // Submenu Tarefas
@@ -87,9 +95,10 @@ export const Sidebar = () => {
     { id: 'contatos', label: 'Contatos', icon: UserCircle, path: '/whatsapp/contatos' },
   ];
 
-  // Menu items finais
-  const bottomMenuItems = [
-    { id: 'settings', label: 'Configurações', icon: SettingsIcon, path: '/' },
+  // Submenu Sistema
+  const systemSubmenu = [
+    { id: 'audit', label: 'Logs de Auditoria', icon: Shield, path: '/audit' },
+    { id: 'settings', label: 'Configurações', icon: SettingsIcon, path: '/settings' },
   ];
 
   // Handler de navegação
@@ -277,10 +286,15 @@ export const Sidebar = () => {
             whatsappSubmenu
           )}
 
-          {/* Bottom Menu Items */}
+          {/* Sistema Section */}
           <div className="border-t border-gray-200 pt-4 mt-4">
-            {bottomMenuItems.map((item) => 
-              renderMenuItem(item, false)
+            {renderSection(
+              'Sistema',
+              Shield,
+              systemExpanded,
+              setSystemExpanded,
+              isSystemActive,
+              systemSubmenu
             )}
           </div>
         </nav>
