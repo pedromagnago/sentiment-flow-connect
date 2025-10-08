@@ -290,8 +290,9 @@ export const useCompanies = () => {
     fetchCompanies();
 
     // Subscribe to realtime changes
+    const channelId = `companies-changes-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('companies-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {

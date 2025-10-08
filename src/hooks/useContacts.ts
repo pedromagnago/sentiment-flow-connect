@@ -179,8 +179,9 @@ export const useContacts = () => {
     if (profileLoading) return;
     fetchContacts();
 
+    const channelId = `contacts-changes-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('contacts-changes')
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
