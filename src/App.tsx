@@ -17,6 +17,8 @@ import SuggestedActionsPage from "./pages/SuggestedActionsPage";
 import ReportsPage from "./pages/ReportsPage";
 import ReconciliationPage from "./pages/ReconciliationPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import CompaniesPage from "./pages/CompaniesPage";
+import ContactsPage from "./pages/ContactsPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
@@ -24,7 +26,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
 import { ChatsPage } from "./pages/whatsapp/ChatsPage";
 import { QueuePage } from "./pages/whatsapp/QueuePage";
-import { ContactsPage } from "./pages/whatsapp/ContactsPage";
+import { ContactsPage as WhatsAppContactsPage } from "./pages/whatsapp/ContactsPage";
 
 const queryClient = new QueryClient();
 
@@ -50,12 +52,14 @@ const App = () => (
               <Route path="/reports" element={<PrivateRoute><MainLayout><ReportsPage /></MainLayout></PrivateRoute>} />
               <Route path="/reconciliation" element={<PrivateRoute><MainLayout><ReconciliationPage /></MainLayout></PrivateRoute>} />
               <Route path="/audit" element={<PrivateRoute><MainLayout><AuditLogsPage /></MainLayout></PrivateRoute>} />
+              <Route path="/companies" element={<PrivateRoute><MainLayout><CompaniesPage /></MainLayout></PrivateRoute>} />
+              <Route path="/contacts" element={<PrivateRoute><MainLayout><ContactsPage /></MainLayout></PrivateRoute>} />
               
               {/* WhatsApp routes */}
               <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
                 <Route path="chats" element={<ChatsPage />} />
                 <Route path="fila" element={<QueuePage />} />
-                <Route path="contatos" element={<ContactsPage />} />
+                <Route path="contatos" element={<WhatsAppContactsPage />} />
               </Route>
               
               {/* 404 */}

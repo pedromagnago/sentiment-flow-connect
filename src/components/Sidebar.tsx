@@ -38,7 +38,7 @@ export const Sidebar = () => {
   const [financialExpanded, setFinancialExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
   const [aiExpanded, setAiExpanded] = useState(false);
-  const [systemExpanded, setSystemExpanded] = useState(false);
+  const [configExpanded, setConfigExpanded] = useState(false);
 
   // Detectar seções ativas
   const isWhatsAppActive = location.pathname.startsWith('/whatsapp');
@@ -49,7 +49,9 @@ export const Sidebar = () => {
   const isAIActive = location.pathname.startsWith('/suggested-actions') ||
                      location.pathname.startsWith('/reports') ||
                      location.pathname.startsWith('/analysis');
-  const isSystemActive = location.pathname.startsWith('/audit') ||
+  const isConfigActive = location.pathname.startsWith('/companies') ||
+                         location.pathname.startsWith('/contacts') ||
+                         location.pathname.startsWith('/audit') ||
                          location.pathname.startsWith('/settings');
 
   // Auto-expansão inteligente
@@ -59,14 +61,13 @@ export const Sidebar = () => {
       setFinancialExpanded(isFinancialActive);
       setTasksExpanded(isTasksActive);
       setAiExpanded(isAIActive);
-      setSystemExpanded(isSystemActive);
+      setConfigExpanded(isConfigActive);
     }
-  }, [location.pathname, isWhatsAppActive, isFinancialActive, isTasksActive, isAIActive, isSystemActive, isCollapsed]);
+  }, [location.pathname, isWhatsAppActive, isFinancialActive, isTasksActive, isAIActive, isConfigActive, isCollapsed]);
 
   // Menu items do Core
   const coreMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/' },
-    { id: 'companies', label: 'Empresas', icon: Building2, path: '/' },
   ];
 
   // Submenu Gestão Financeira
@@ -95,8 +96,10 @@ export const Sidebar = () => {
     { id: 'contatos', label: 'Contatos', icon: UserCircle, path: '/whatsapp/contatos' },
   ];
 
-  // Submenu Sistema
-  const systemSubmenu = [
+  // Submenu Configurações
+  const configSubmenu = [
+    { id: 'companies', label: 'Empresas', icon: Building2, path: '/companies' },
+    { id: 'contacts', label: 'Contatos', icon: Users, path: '/contacts' },
     { id: 'audit', label: 'Logs de Auditoria', icon: Shield, path: '/audit' },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon, path: '/settings' },
   ];
@@ -286,15 +289,15 @@ export const Sidebar = () => {
             whatsappSubmenu
           )}
 
-          {/* Sistema Section */}
+          {/* Configurações Section */}
           <div className="border-t border-gray-200 pt-4 mt-4">
             {renderSection(
-              'Sistema',
-              Shield,
-              systemExpanded,
-              setSystemExpanded,
-              isSystemActive,
-              systemSubmenu
+              'Configurações',
+              SettingsIcon,
+              configExpanded,
+              setConfigExpanded,
+              isConfigActive,
+              configSubmenu
             )}
           </div>
         </nav>
