@@ -170,15 +170,29 @@ export type Database = {
           bank_id: string | null
           branch_id: string | null
           category: string | null
+          centro_custo: string | null
           company_id: string
+          cpf_cnpj_origem: string | null
           created_at: string
+          data_competencia: string | null
           date: string
           description: string | null
           fitid: string | null
+          historico_atividades: Json | null
           id: string
           import_id: string | null
+          match_score: number | null
           memo: string | null
+          nome_origem: string | null
+          projeto: string | null
+          rateio: Json | null
           raw: Json | null
+          reconciliado: boolean | null
+          reconciliado_com_id: string | null
+          reconciliado_com_tipo: string | null
+          reconciliado_em: string | null
+          reconciliado_por: string | null
+          subcategoria: string | null
           type: string | null
           updated_at: string
           user_id: string
@@ -191,15 +205,29 @@ export type Database = {
           bank_id?: string | null
           branch_id?: string | null
           category?: string | null
+          centro_custo?: string | null
           company_id: string
+          cpf_cnpj_origem?: string | null
           created_at?: string
+          data_competencia?: string | null
           date: string
           description?: string | null
           fitid?: string | null
+          historico_atividades?: Json | null
           id?: string
           import_id?: string | null
+          match_score?: number | null
           memo?: string | null
+          nome_origem?: string | null
+          projeto?: string | null
+          rateio?: Json | null
           raw?: Json | null
+          reconciliado?: boolean | null
+          reconciliado_com_id?: string | null
+          reconciliado_com_tipo?: string | null
+          reconciliado_em?: string | null
+          reconciliado_por?: string | null
+          subcategoria?: string | null
           type?: string | null
           updated_at?: string
           user_id: string
@@ -212,15 +240,29 @@ export type Database = {
           bank_id?: string | null
           branch_id?: string | null
           category?: string | null
+          centro_custo?: string | null
           company_id?: string
+          cpf_cnpj_origem?: string | null
           created_at?: string
+          data_competencia?: string | null
           date?: string
           description?: string | null
           fitid?: string | null
+          historico_atividades?: Json | null
           id?: string
           import_id?: string | null
+          match_score?: number | null
           memo?: string | null
+          nome_origem?: string | null
+          projeto?: string | null
+          rateio?: Json | null
           raw?: Json | null
+          reconciliado?: boolean | null
+          reconciliado_com_id?: string | null
+          reconciliado_com_tipo?: string | null
+          reconciliado_em?: string | null
+          reconciliado_por?: string | null
+          subcategoria?: string | null
           type?: string | null
           updated_at?: string
           user_id?: string
@@ -497,64 +539,106 @@ export type Database = {
         Row: {
           beneficiario: string
           categoria: string | null
+          centro_custo: string | null
+          chave_nfe: string | null
           company_id: string
           comprovante_url: string | null
           contact_id: string | null
+          cpf_cnpj_beneficiario: string | null
           created_at: string
+          data_competencia: string | null
           descricao: string | null
+          documento_original_url: string | null
           forma_pagamento: string | null
+          historico_atividades: Json | null
           id: string
           message_id: string | null
+          numero_recibo: string | null
           observacoes: string | null
+          pagamentos_parciais: Json | null
           pago_em: string | null
+          projeto: string | null
+          rateio: Json | null
+          saldo_devedor: number | null
           status: string
+          subcategoria: string | null
           suggested_action_id: string | null
           tags: string[] | null
+          tipo_documento: string | null
           updated_at: string
           user_id: string
           valor: number
+          valor_pago: number | null
           vencimento: string
         }
         Insert: {
           beneficiario: string
           categoria?: string | null
+          centro_custo?: string | null
+          chave_nfe?: string | null
           company_id: string
           comprovante_url?: string | null
           contact_id?: string | null
+          cpf_cnpj_beneficiario?: string | null
           created_at?: string
+          data_competencia?: string | null
           descricao?: string | null
+          documento_original_url?: string | null
           forma_pagamento?: string | null
+          historico_atividades?: Json | null
           id?: string
           message_id?: string | null
+          numero_recibo?: string | null
           observacoes?: string | null
+          pagamentos_parciais?: Json | null
           pago_em?: string | null
+          projeto?: string | null
+          rateio?: Json | null
+          saldo_devedor?: number | null
           status?: string
+          subcategoria?: string | null
           suggested_action_id?: string | null
           tags?: string[] | null
+          tipo_documento?: string | null
           updated_at?: string
           user_id: string
           valor: number
+          valor_pago?: number | null
           vencimento: string
         }
         Update: {
           beneficiario?: string
           categoria?: string | null
+          centro_custo?: string | null
+          chave_nfe?: string | null
           company_id?: string
           comprovante_url?: string | null
           contact_id?: string | null
+          cpf_cnpj_beneficiario?: string | null
           created_at?: string
+          data_competencia?: string | null
           descricao?: string | null
+          documento_original_url?: string | null
           forma_pagamento?: string | null
+          historico_atividades?: Json | null
           id?: string
           message_id?: string | null
+          numero_recibo?: string | null
           observacoes?: string | null
+          pagamentos_parciais?: Json | null
           pago_em?: string | null
+          projeto?: string | null
+          rateio?: Json | null
+          saldo_devedor?: number | null
           status?: string
+          subcategoria?: string | null
           suggested_action_id?: string | null
           tags?: string[] | null
+          tipo_documento?: string | null
           updated_at?: string
           user_id?: string
           valor?: number
+          valor_pago?: number | null
           vencimento?: string
         }
         Relationships: [
@@ -567,6 +651,168 @@ export type Database = {
           },
           {
             foreignKeyName: "contas_pagar_suggested_action_id_fkey"
+            columns: ["suggested_action_id"]
+            isOneToOne: false
+            referencedRelation: "suggested_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contas_receber: {
+        Row: {
+          aprovador_id: string | null
+          categoria: string | null
+          centro_custo: string | null
+          chave_nfe: string | null
+          cliente: string
+          company_id: string
+          comprovante_url: string | null
+          contact_id: string | null
+          cpf_cnpj_cliente: string | null
+          created_at: string | null
+          data_aprovacao: string | null
+          data_competencia: string
+          data_emissao: string | null
+          data_vencimento: string
+          descricao: string
+          documento_original_url: string | null
+          fatura_id: string | null
+          forma_recebimento: string | null
+          historico_atividades: Json | null
+          id: string
+          message_id: string | null
+          numero_recibo: string | null
+          observacoes: string | null
+          projeto: string | null
+          rateio: Json | null
+          recebido_em: string | null
+          recebimentos_parciais: Json | null
+          saldo_devedor: number | null
+          status: string
+          status_aprovacao: string | null
+          subcategoria: string | null
+          suggested_action_id: string | null
+          tags: string[] | null
+          tipo_documento: string
+          tipo_titulo: string | null
+          updated_at: string | null
+          user_id: string
+          valor_recebido: number | null
+          valor_total: number
+        }
+        Insert: {
+          aprovador_id?: string | null
+          categoria?: string | null
+          centro_custo?: string | null
+          chave_nfe?: string | null
+          cliente: string
+          company_id: string
+          comprovante_url?: string | null
+          contact_id?: string | null
+          cpf_cnpj_cliente?: string | null
+          created_at?: string | null
+          data_aprovacao?: string | null
+          data_competencia: string
+          data_emissao?: string | null
+          data_vencimento: string
+          descricao: string
+          documento_original_url?: string | null
+          fatura_id?: string | null
+          forma_recebimento?: string | null
+          historico_atividades?: Json | null
+          id?: string
+          message_id?: string | null
+          numero_recibo?: string | null
+          observacoes?: string | null
+          projeto?: string | null
+          rateio?: Json | null
+          recebido_em?: string | null
+          recebimentos_parciais?: Json | null
+          saldo_devedor?: number | null
+          status?: string
+          status_aprovacao?: string | null
+          subcategoria?: string | null
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          tipo_documento?: string
+          tipo_titulo?: string | null
+          updated_at?: string | null
+          user_id: string
+          valor_recebido?: number | null
+          valor_total: number
+        }
+        Update: {
+          aprovador_id?: string | null
+          categoria?: string | null
+          centro_custo?: string | null
+          chave_nfe?: string | null
+          cliente?: string
+          company_id?: string
+          comprovante_url?: string | null
+          contact_id?: string | null
+          cpf_cnpj_cliente?: string | null
+          created_at?: string | null
+          data_aprovacao?: string | null
+          data_competencia?: string
+          data_emissao?: string | null
+          data_vencimento?: string
+          descricao?: string
+          documento_original_url?: string | null
+          fatura_id?: string | null
+          forma_recebimento?: string | null
+          historico_atividades?: Json | null
+          id?: string
+          message_id?: string | null
+          numero_recibo?: string | null
+          observacoes?: string | null
+          projeto?: string | null
+          rateio?: Json | null
+          recebido_em?: string | null
+          recebimentos_parciais?: Json | null
+          saldo_devedor?: number | null
+          status?: string
+          status_aprovacao?: string | null
+          subcategoria?: string | null
+          suggested_action_id?: string | null
+          tags?: string[] | null
+          tipo_documento?: string
+          tipo_titulo?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valor_recebido?: number | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_receber_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id_contact"]
+          },
+          {
+            foreignKeyName: "contas_receber_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_suggested_action_id_fkey"
             columns: ["suggested_action_id"]
             isOneToOne: false
             referencedRelation: "suggested_actions"
@@ -724,24 +970,36 @@ export type Database = {
       }
       faturas: {
         Row: {
+          centro_custo: string | null
           cfop: string | null
+          chave_nfe: string | null
           company_id: string
           contact_id: string | null
+          cpf_cnpj_destinatario: string | null
           created_at: string
+          data_competencia: string | null
           data_emissao: string | null
           data_vencimento: string | null
           descricao: string
           destinatario: string
           emitida_em: string | null
+          historico_atividades: Json | null
           id: string
+          is_recibo_simples: boolean | null
+          itens_fatura: Json | null
           message_id: string | null
           natureza_operacao: string | null
           numero_nota: string | null
+          numero_recibo: string | null
           observacoes: string | null
           pdf_url: string | null
+          projeto: string | null
+          rateio: Json | null
           status: string
+          subcategoria: string | null
           suggested_action_id: string | null
           tags: string[] | null
+          tipo_documento: string | null
           tipo_nota: string | null
           updated_at: string
           user_id: string
@@ -749,24 +1007,36 @@ export type Database = {
           xml_url: string | null
         }
         Insert: {
+          centro_custo?: string | null
           cfop?: string | null
+          chave_nfe?: string | null
           company_id: string
           contact_id?: string | null
+          cpf_cnpj_destinatario?: string | null
           created_at?: string
+          data_competencia?: string | null
           data_emissao?: string | null
           data_vencimento?: string | null
           descricao: string
           destinatario: string
           emitida_em?: string | null
+          historico_atividades?: Json | null
           id?: string
+          is_recibo_simples?: boolean | null
+          itens_fatura?: Json | null
           message_id?: string | null
           natureza_operacao?: string | null
           numero_nota?: string | null
+          numero_recibo?: string | null
           observacoes?: string | null
           pdf_url?: string | null
+          projeto?: string | null
+          rateio?: Json | null
           status?: string
+          subcategoria?: string | null
           suggested_action_id?: string | null
           tags?: string[] | null
+          tipo_documento?: string | null
           tipo_nota?: string | null
           updated_at?: string
           user_id: string
@@ -774,24 +1044,36 @@ export type Database = {
           xml_url?: string | null
         }
         Update: {
+          centro_custo?: string | null
           cfop?: string | null
+          chave_nfe?: string | null
           company_id?: string
           contact_id?: string | null
+          cpf_cnpj_destinatario?: string | null
           created_at?: string
+          data_competencia?: string | null
           data_emissao?: string | null
           data_vencimento?: string | null
           descricao?: string
           destinatario?: string
           emitida_em?: string | null
+          historico_atividades?: Json | null
           id?: string
+          is_recibo_simples?: boolean | null
+          itens_fatura?: Json | null
           message_id?: string | null
           natureza_operacao?: string | null
           numero_nota?: string | null
+          numero_recibo?: string | null
           observacoes?: string | null
           pdf_url?: string | null
+          projeto?: string | null
+          rateio?: Json | null
           status?: string
+          subcategoria?: string | null
           suggested_action_id?: string | null
           tags?: string[] | null
+          tipo_documento?: string | null
           tipo_nota?: string | null
           updated_at?: string
           user_id?: string
