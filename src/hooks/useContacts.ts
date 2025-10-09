@@ -24,7 +24,7 @@ export const useContacts = () => {
     try {
       setLoading(true);
       const companyId = profile?.company_id;
-      console.log('Fetching contacts for user role:', profile?.role, 'company:', companyId);
+      console.log('Fetching contacts - isAdmin:', isAdmin, 'company:', companyId);
       
       let query = supabase
         .from('contacts')
@@ -45,7 +45,7 @@ export const useContacts = () => {
         console.error('Error fetching contacts:', error);
         throw error;
       }
-      console.log('Contacts fetched:', data?.length, 'role:', profile?.role, 'isAdmin:', isAdmin);
+      console.log('Contacts fetched:', data?.length, 'isAdmin:', isAdmin);
       setContacts(data || []);
     } catch (err) {
       console.error('Fetch contacts error:', err);

@@ -1449,6 +1449,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          company_id: string
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1461,6 +1502,13 @@ export type Database = {
       get_current_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_roles: {
+        Args: { _company_id?: string; _user_id: string }
+        Returns: {
+          company_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
       }
       halfvec_avg: {
         Args: { "": number[] }
@@ -1480,6 +1528,14 @@ export type Database = {
       }
       has_company_access: {
         Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _company_id?: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       hnsw_bit_support: {
@@ -1510,6 +1566,10 @@ export type Database = {
           p_user_id?: string
         }
         Returns: string
+      }
+      is_admin_or_owner: {
+        Args: { _company_id?: string; _user_id: string }
+        Returns: boolean
       }
       ivfflat_bit_support: {
         Args: { "": unknown }
@@ -1587,7 +1647,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "supervisor" | "operator" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1714,6 +1774,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "supervisor", "operator", "viewer"],
+    },
   },
 } as const
