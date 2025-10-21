@@ -18,6 +18,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { PaginationControls } from "@/components/common/Pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 interface TxnRow {
   id: string;
   date: string;
@@ -81,6 +83,16 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   // AI Classification for empty items
   const [isClassifyingAI, setIsClassifyingAI] = useState(false);
+  const [showClassifyDialog, setShowClassifyDialog] = useState(false);
+  const [classifyContext, setClassifyContext] = useState("");
+
+  // Load context from localStorage
+  useEffect(() => {
+    const savedContext = localStorage.getItem('classify_context');
+    if (savedContext) {
+      setClassifyContext(savedContext);
+    }
+  }, []);
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
@@ -357,9 +369,14 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   // AI Classification for empty items
-  const classifyEmptyWithAI = async () => {
+  const handleClassifyWithContext = async () => {
     if (!companyId) return;
+    
+    // Save context to localStorage
+    localStorage.setItem('classify_context', classifyContext);
+    setShowClassifyDialog(false);
     setIsClassifyingAI(true);
+    
     try {
       const emptyTransactions = rows.filter(r => !r.category || r.category.trim() === '');
       if (emptyTransactions.length === 0) {
@@ -374,7 +391,8 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
             body: {
               description: transaction.description,
               amount: transaction.amount,
-              memo: transaction.memo
+              memo: transaction.memo,
+              context: classifyContext.trim()
             }
           });
 
@@ -420,6 +438,8 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
       setIsClassifyingAI(false);
     }
   };
+
+  const emptyCount = useMemo(() => rows.filter(r => !r.category || r.category.trim() === '').length, [rows]);
 
   return (
     <div className="space-y-3">
@@ -490,8 +510,8 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
         <Button 
           variant="outline" 
-          onClick={classifyEmptyWithAI} 
-          disabled={isClassifyingAI || !companyId || rows.filter(r => !r.category || r.category.trim() === '').length === 0}
+          onClick={() => setShowClassifyDialog(true)} 
+          disabled={isClassifyingAI || !companyId || emptyCount === 0}
         >
           {isClassifyingAI ? "Classificando..." : "🤖 Classificar Vazios com IA"}
         </Button>
@@ -621,6 +641,66 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         endIndex={endIndex}
         totalItems={totalItems}
       />
+
+      <Dialog open={showClassifyDialog} onOpenChange={setShowClassifyDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Classificar transações com IA</DialogTitle>
+            <DialogDescription>
+              Forneça contexto sobre sua empresa para melhorar a precisão da classificação
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">
+                Contexto de classificação (opcional)
+              </label>
+              <Textarea
+                value={classifyContext}
+                onChange={(e) => setClassifyContext(e.target.value.slice(0, 500))}
+                placeholder="Ex: Somos uma empresa de software B2B. Fornecedores como AWS e Digital Ocean devem ser classificados como 'Tecnologia - Infraestrutura Cloud'. Despesas com freelancers devem ir para 'Serviços Terceirizados'."
+                className="min-h-[120px] mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {classifyContext.length}/500 caracteres
+              </p>
+            </div>
+            
+            <div className="bg-muted p-3 rounded-md">
+              <p className="text-sm font-medium mb-2">💡 Dicas de contexto útil:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• Tipo de negócio e setor de atuação</li>
+                <li>• Fornecedores específicos e suas categorias preferidas</li>
+                <li>• Regras especiais de classificação da sua empresa</li>
+                <li>• Diferenciação entre receitas recorrentes vs. pontuais</li>
+              </ul>
+            </div>
+            
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {emptyCount} {emptyCount === 1 ? 'transação será classificada' : 'transações serão classificadas'}
+              </p>
+              <div className="space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowClassifyDialog(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleClassifyWithContext}
+                  disabled={emptyCount === 0}
+                >
+                  Classificar com IA
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

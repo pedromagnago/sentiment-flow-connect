@@ -12,10 +12,14 @@ serve(async (req) => {
   }
 
   try {
-    const { description, amount, memo } = await req.json();
+    const { description, amount, memo, context } = await req.json();
     
     if (!description && !memo) {
       throw new Error('Description or memo is required for classification');
+    }
+
+    if (context) {
+      console.log('📝 Using classification context:', context.slice(0, 100) + (context.length > 100 ? '...' : ''));
     }
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -29,10 +33,10 @@ serve(async (req) => {
 
     const prompt = `Analise esta transação bancária e classifique-a em uma categoria precisa.
 
-Transação: "${transactionText}"
+${context ? `CONTEXTO DA EMPRESA:\n${context}\n\n` : ''}Transação: "${transactionText}"
 Valor: ${amountValue} (${isCredit ? 'Entrada' : 'Saída'})
 
-IMPORTANTE: Responda APENAS com JSON válido, sem formatação markdown ou blocos de código.
+${context ? 'IMPORTANTE: Considere o contexto fornecido ao classificar. Se o contexto especificar regras para certos fornecedores ou tipos de despesa, siga essas regras prioritariamente.\n\n' : ''}IMPORTANTE: Responda APENAS com JSON válido, sem formatação markdown ou blocos de código.
 
 Categorias específicas disponíveis:
 - Receitas: Vendas, Serviços, Consultorias, Royalties, Juros Recebidos
