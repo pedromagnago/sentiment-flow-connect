@@ -47,16 +47,19 @@ export const Reconciliation: React.FC = () => {
   // Users can click "Aplicar filtros" na tabela para recomputar o resumo.
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
-    if (f && !f.name.toLowerCase().endsWith(".ofx")) {
-      toast({ title: "Arquivo inválido", description: "Envie um arquivo .ofx", variant: "destructive" });
-      return;
+    if (f) {
+      const ext = f.name.toLowerCase();
+      if (!ext.endsWith(".ofx") && !ext.endsWith(".xlsx") && !ext.endsWith(".xls") && !ext.endsWith(".csv")) {
+        toast({ title: "Arquivo inválido", description: "Envie um arquivo .ofx, .xlsx, .xls ou .csv", variant: "destructive" });
+        return;
+      }
     }
     setFile(f);
   };
 
   const handleUpload = async () => {
     if (!file) {
-      toast({ title: "Selecione um arquivo OFX" });
+      toast({ title: "Selecione um arquivo" });
       return;
     }
     if (!companyId) {
@@ -66,12 +69,35 @@ export const Reconciliation: React.FC = () => {
 
     try {
       setLoading(true);
-      const ofxText = await file.text();
-      const { data, error } = await supabase.functions.invoke("ingest-ofx", {
-        body: { ofx: ofxText, fileName: file.name },
-      });
-      if (error) throw error;
-      toast({ title: "OFX importado", description: `Transações: ${data?.imported ?? 0}/${data?.total ?? 0}` });
+      const fileName = file.name.toLowerCase();
+      
+      if (fileName.endsWith(".ofx")) {
+        // Process OFX file
+        const ofxText = await file.text();
+        const { data, error } = await supabase.functions.invoke("ingest-ofx", {
+          body: { ofx: ofxText, fileName: file.name },
+        });
+        if (error) throw error;
+        toast({ title: "OFX importado", description: `Transações: ${data?.imported ?? 0}/${data?.total ?? 0}` });
+      } else {
+        // Process spreadsheet (Excel/CSV)
+        const reader = new FileReader();
+        const fileBase64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const { data, error } = await supabase.functions.invoke("ingest-spreadsheet", {
+          body: { fileBase64, fileName: file.name },
+        });
+        if (error) throw error;
+        toast({ title: "Planilha importada", description: `Transações: ${data?.imported ?? 0}/${data?.total ?? 0}` });
+      }
+
       // refresh imports count after successful upload
       const { count } = await supabase
         .from("transaction_imports")
@@ -79,7 +105,7 @@ export const Reconciliation: React.FC = () => {
         .eq("company_id", companyId);
       setImportsCount(count ?? importsCount);
     } catch (e: any) {
-      toast({ title: "Falha ao importar OFX", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Falha ao importar", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -88,8 +114,8 @@ export const Reconciliation: React.FC = () => {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Reconciliação Financeira (OFX)</h1>
-        <p className="text-muted-foreground">Envie seu extrato OFX para importar transações bancárias.</p>
+        <h1 className="text-2xl font-semibold">Reconciliação Financeira</h1>
+        <p className="text-muted-foreground">Envie seu extrato OFX ou planilha Excel/CSV para importar transações bancárias.</p>
       </header>
 
       {/* Summary Cards */}
@@ -128,12 +154,12 @@ export const Reconciliation: React.FC = () => {
         <section className="flex items-center gap-3">
           <input
             type="file"
-            accept=".ofx"
+            accept=".ofx,.xlsx,.xls,.csv"
             onChange={onFileChange}
-            aria-label="Selecionar arquivo OFX"
+            aria-label="Selecionar arquivo OFX ou planilha"
           />
           <Button onClick={handleUpload} disabled={!file || loading}>
-            {loading ? "Importando..." : "Importar OFX"}
+            {loading ? "Importando..." : "Importar arquivo"}
           </Button>
         </section>
 
