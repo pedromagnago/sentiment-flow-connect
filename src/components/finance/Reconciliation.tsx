@@ -4,7 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TransactionsTable } from "./TransactionsTable";
 import { RulesManager } from "./RulesManager";
-import { ArrowDownCircle, ArrowUpCircle, Scale, Upload } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Scale, Upload, InfoIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Reconciliation: React.FC = () => {
   const { toast } = useToast();
@@ -95,7 +96,15 @@ export const Reconciliation: React.FC = () => {
           body: { fileBase64, fileName: file.name },
         });
         if (error) throw error;
-        toast({ title: "Planilha importada", description: `Transações: ${data?.imported ?? 0}/${data?.total ?? 0}` });
+        
+        const periodText = data?.period 
+          ? ` (${new Date(data.period.start).toLocaleDateString('pt-BR')} a ${new Date(data.period.end).toLocaleDateString('pt-BR')})`
+          : '';
+        
+        toast({ 
+          title: "Planilha importada", 
+          description: `Formato: ${data?.format} | Transações: ${data?.imported ?? 0}/${data?.total ?? 0}${periodText}${data?.ignored > 0 ? ` | Ignoradas: ${data.ignored}` : ''}` 
+        });
       }
 
       // refresh imports count after successful upload
@@ -114,7 +123,26 @@ export const Reconciliation: React.FC = () => {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold">Reconciliação Financeira</h1>
+        <div className="flex items-center gap-2 mb-2">
+          <h1 className="text-2xl font-semibold">Reconciliação Financeira</h1>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <InfoIcon className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="font-semibold mb-2">Formatos suportados:</p>
+                <ul className="space-y-1 text-sm">
+                  <li>✅ Bradesco (extrato PDF → Excel)</li>
+                  <li>✅ Itaú (extrato online)</li>
+                  <li>✅ Santander (CSV/Excel)</li>
+                  <li>✅ Planilhas genéricas (Data, Descrição, Valor)</li>
+                  <li>✅ Arquivos OFX</li>
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-muted-foreground">Envie seu extrato OFX ou planilha Excel/CSV para importar transações bancárias.</p>
       </header>
 
@@ -162,6 +190,11 @@ export const Reconciliation: React.FC = () => {
             {loading ? "Importando..." : "Importar arquivo"}
           </Button>
         </section>
+        {loading && (
+          <p className="text-sm text-muted-foreground">
+            ⏳ Processando arquivo... Isso pode levar alguns segundos.
+          </p>
+        )}
 
         <section className="space-y-4">
           <div>

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
+import { detectParser } from './parsers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,6 +80,10 @@ serve(async (req) => {
       });
     }
 
+    // Detect bank format
+    const parser = detectParser(jsonData);
+    console.log(`✅ Formato detectado: ${parser.name}`);
+
     // Create import record
     const { data: importRecord, error: importError } = await supabase
       .from('transaction_imports')
@@ -107,74 +112,29 @@ serve(async (req) => {
 
     const transactions = [];
     let imported = 0;
+    let ignored = 0;
+    let minDate: Date | null = null;
+    let maxDate: Date | null = null;
 
+    // Process each row using detected parser
     for (const row of jsonData as any[]) {
       try {
-        // Map common column names (flexible mapping)
-        const date = row['Data'] || row['data'] || row['DATE'] || row['Date'];
-        const description = row['Descrição'] || row['Descricao'] || row['descricao'] || row['Description'] || row['DESCRIPTION'];
-        const amount = row['Valor'] || row['valor'] || row['Amount'] || row['AMOUNT'];
-        const type = row['Tipo'] || row['tipo'] || row['Type'] || row['TYPE'];
-        const memo = row['Memo'] || row['memo'] || row['Observação'] || row['observacao'];
-
-        if (!date || !description || amount === undefined) {
-          console.log('Skipping row - missing required fields:', row);
+        const parsed = parser.parse(row);
+        
+        if (!parsed) {
+          ignored++;
           continue;
         }
 
-        // Parse date (supports multiple formats)
-        let parsedDate: Date;
-        if (typeof date === 'string') {
-          // Try DD/MM/YYYY format first
-          const parts = date.split('/');
-          if (parts.length === 3) {
-            parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-          } else {
-            parsedDate = new Date(date);
-          }
-        } else if (typeof date === 'number') {
-          // Excel date number
-          parsedDate = XLSX.SSF.parse_date_code(date);
-        } else {
-          parsedDate = new Date(date);
-        }
-
-        if (isNaN(parsedDate.getTime())) {
-          console.log('Invalid date:', date);
-          continue;
-        }
-
-        // Parse amount
-        let parsedAmount: number;
-        if (typeof amount === 'string') {
-          parsedAmount = parseFloat(amount.replace(/[R$\s.]/g, '').replace(',', '.'));
-        } else {
-          parsedAmount = parseFloat(amount);
-        }
-
-        if (isNaN(parsedAmount)) {
-          console.log('Invalid amount:', amount);
-          continue;
-        }
-
-        // Determine transaction type
-        let transactionType = 'DEBIT';
-        if (type) {
-          const typeStr = String(type).toLowerCase();
-          if (typeStr.includes('credit') || typeStr.includes('crédito') || typeStr.includes('credito') || typeStr.includes('entrada')) {
-            transactionType = 'CREDIT';
-          }
-        } else if (parsedAmount > 0) {
-          transactionType = 'CREDIT';
-        } else {
-          parsedAmount = Math.abs(parsedAmount);
-        }
+        // Track date range
+        if (!minDate || parsed.date < minDate) minDate = parsed.date;
+        if (!maxDate || parsed.date > maxDate) maxDate = parsed.date;
 
         // Apply categorization rules
         let category = null;
         if (rules) {
           for (const rule of rules) {
-            if (description.toLowerCase().includes(rule.pattern.toLowerCase())) {
+            if (parsed.description.toLowerCase().includes(rule.pattern.toLowerCase())) {
               category = rule.category;
               break;
             }
@@ -182,7 +142,7 @@ serve(async (req) => {
         }
 
         // Generate unique fitid from content
-        const fitidSource = `${parsedDate.toISOString()}_${description}_${parsedAmount}`;
+        const fitidSource = `${parsed.date.toISOString()}_${parsed.description}_${parsed.amount}`;
         const fitid = await crypto.subtle.digest(
           'SHA-256',
           new TextEncoder().encode(fitidSource)
@@ -192,11 +152,11 @@ serve(async (req) => {
           user_id: user.id,
           company_id: profile.company_id,
           import_id: importRecord.id,
-          date: parsedDate.toISOString().split('T')[0],
-          amount: parsedAmount,
-          description,
-          type: transactionType,
-          memo: memo || null,
+          date: parsed.date.toISOString().split('T')[0],
+          amount: parsed.amount,
+          description: parsed.description,
+          type: parsed.type,
+          memo: parsed.memo || null,
           fitid,
           category,
           account_id: 'spreadsheet',
@@ -207,6 +167,7 @@ serve(async (req) => {
         imported++;
       } catch (rowError) {
         console.error('Error processing row:', row, rowError);
+        ignored++;
       }
     }
 
@@ -234,13 +195,22 @@ serve(async (req) => {
       })
       .eq('id', importRecord.id);
 
-    console.log(`Successfully imported ${imported} transactions`);
+    console.log(`✅ Importação concluída: ${imported} válidas, ${ignored} ignoradas`);
+    if (minDate && maxDate) {
+      console.log(`📅 Período: ${minDate.toLocaleDateString('pt-BR')} a ${maxDate.toLocaleDateString('pt-BR')}`);
+    }
 
     return new Response(
       JSON.stringify({
         importId: importRecord.id,
         total: jsonData.length,
         imported,
+        ignored,
+        format: parser.name,
+        period: minDate && maxDate ? {
+          start: minDate.toISOString(),
+          end: maxDate.toISOString(),
+        } : null,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
