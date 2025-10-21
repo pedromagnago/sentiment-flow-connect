@@ -36,6 +36,19 @@ export interface BankParser {
  * Utility Functions
  */
 
+/**
+ * Convert Excel serial number to Date
+ * Excel's epoch is Dec 30, 1899 and has a leap year bug for 1900
+ */
+export function excelSerialToDate(serial: number): Date {
+  // Excel's epoch is actually Dec 30, 1899 (not Jan 1, 1900)
+  const excelEpoch = Date.UTC(1899, 11, 30);
+  const msPerDay = 86400 * 1000;
+  // Excel incorrectly treats 1900 as a leap year, so adjust for dates after Feb 28, 1900
+  const adjustedSerial = serial > 60 ? serial - 1 : serial;
+  return new Date(excelEpoch + adjustedSerial * msPerDay);
+}
+
 export function parseBrazilianDate(dateStr: any): Date | null {
   if (!dateStr) return null;
   
@@ -57,8 +70,7 @@ export function parseBrazilianDate(dateStr: any): Date | null {
   
   // Excel date number
   if (typeof dateStr === 'number' && dateStr > 40000 && dateStr < 60000) {
-    const date = new Date((dateStr - 25569) * 86400 * 1000);
-    return date;
+    return excelSerialToDate(dateStr);
   }
   
   // Try standard Date parse as fallback
@@ -169,8 +181,9 @@ export const BradescoParser: BankParser = {
     let date: Date | null = null;
     
     if (typeof dateValue === 'number' && dateValue > 40000 && dateValue < 60000) {
-      // Excel date serial number (e.g., 45870 = 01/08/2025)
-      date = new Date((dateValue - 25569) * 86400 * 1000);
+      // Excel date serial number (e.g., 45505 = 31/07/2025)
+      date = excelSerialToDate(dateValue);
+      console.log(`📅 Excel serial ${dateValue} → ${date.toLocaleDateString('pt-BR')}`);
     } else {
       date = parseBrazilianDate(dateValue);
     }
