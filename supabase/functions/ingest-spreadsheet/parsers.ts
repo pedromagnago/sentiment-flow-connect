@@ -37,16 +37,19 @@ export interface BankParser {
  */
 
 /**
- * Convert Excel serial number to Date
+ * Convert Excel serial number to Date (local time, not UTC)
  * Excel's epoch is Dec 30, 1899 and has a leap year bug for 1900
  */
 export function excelSerialToDate(serial: number): Date {
-  // Excel's epoch is actually Dec 30, 1899 (not Jan 1, 1900)
-  const excelEpoch = Date.UTC(1899, 11, 30);
-  const msPerDay = 86400 * 1000;
-  // Excel incorrectly treats 1900 as a leap year, so adjust for dates after Feb 28, 1900
-  const adjustedSerial = serial > 60 ? serial - 1 : serial;
-  return new Date(excelEpoch + adjustedSerial * msPerDay);
+  // Excel dates are "local" - they don't have timezone
+  // Base date: Dec 30, 1899
+  const daysOffset = serial > 59 ? serial - 1 : serial; // Adjust for Excel's 1900 leap year bug
+  
+  // Create date by adding days directly (avoiding timezone conversion)
+  const date = new Date(1899, 11, 30); // Dec 30, 1899 in local time
+  date.setDate(date.getDate() + daysOffset);
+  
+  return date;
 }
 
 export function parseBrazilianDate(dateStr: any): Date | null {
