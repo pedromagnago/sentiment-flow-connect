@@ -93,6 +93,37 @@ export function findValueByKeys(row: any, keys: string[]): any {
 }
 
 /**
+ * Extract account information from Bradesco statement header
+ * Looks for "Agência: XXXX Conta: XXXXX-X" pattern in first rows
+ */
+export function extractAccountInfo(allRows: any[]): {
+  bank_id: string;
+  branch_id: string;
+  account_id: string;
+  acct_type: string;
+} | null {
+  // Search first 10 rows for account info
+  for (const row of allRows.slice(0, 10)) {
+    const values = Object.values(row).join(' ');
+    
+    // Pattern: "Agência: 3832 Conta: 47578-5" or "Ag: 3832 Cc: 47578-5"
+    const match = values.match(/(?:Agência|Ag(?:ê|e)ncia|Ag)[:.\s]*(\d+).*?(?:Conta|Cc|C\/C)[:.\s]*([\d-]+)/i);
+    
+    if (match) {
+      console.log(`🏦 Conta detectada - Agência: ${match[1]}, Conta: ${match[2]}`);
+      return {
+        bank_id: '237', // Código FEBRABAN do Bradesco
+        branch_id: match[1],
+        account_id: match[2],
+        acct_type: 'checking',
+      };
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Bradesco Parser
  * 
  * Format: PDF to Excel exports that use __EMPTY, __EMPTY_1, etc. as column names
@@ -133,10 +164,21 @@ export const BradescoParser: BankParser = {
       return null;
     }
     
-    // Parse date
+    // Parse date - handle both string format and Excel serial numbers
     const dateValue = findValueByKeys(row, ['__EMPTY', 'Data']);
-    const date = parseBrazilianDate(dateValue);
-    if (!date) return null;
+    let date: Date | null = null;
+    
+    if (typeof dateValue === 'number' && dateValue > 40000 && dateValue < 60000) {
+      // Excel date serial number (e.g., 45870 = 01/08/2025)
+      date = new Date((dateValue - 25569) * 86400 * 1000);
+    } else {
+      date = parseBrazilianDate(dateValue);
+    }
+    
+    if (!date || isNaN(date.getTime())) {
+      console.log('❌ Data inválida:', dateValue);
+      return null;
+    }
     
     // Parse amounts
     const creditValue = findValueByKeys(row, ['__EMPTY_3', 'Crédito (R$)', 'Crédito', 'Credito']);

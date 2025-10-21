@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
-import { detectParser } from './parsers.ts';
+import { detectParser, extractAccountInfo } from './parsers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,6 +84,12 @@ serve(async (req) => {
     const parser = detectParser(jsonData);
     console.log(`✅ Formato detectado: ${parser.name}`);
 
+    // Extract account information for Bradesco
+    const accountInfo = parser.name === 'Bradesco' ? extractAccountInfo(jsonData) : null;
+    if (accountInfo) {
+      console.log(`🏦 Conta identificada: Banco ${accountInfo.bank_id}, Ag ${accountInfo.branch_id}, Conta ${accountInfo.account_id}`);
+    }
+
     // Create import record
     const { data: importRecord, error: importError } = await supabase
       .from('transaction_imports')
@@ -159,8 +165,14 @@ serve(async (req) => {
           memo: parsed.memo || null,
           fitid,
           category,
-          account_id: 'spreadsheet',
-          raw: row,
+          // Use extracted account info if available
+          account_id: accountInfo?.account_id || 'spreadsheet',
+          bank_id: accountInfo?.bank_id || null,
+          branch_id: accountInfo?.branch_id || null,
+          acct_type: accountInfo?.acct_type || null,
+          // Include document number if available
+          ...(parsed.document && { raw: { ...row, document: parsed.document } }),
+          ...(!parsed.document && { raw: row }),
         };
 
         transactions.push(transaction);
@@ -195,9 +207,18 @@ serve(async (req) => {
       })
       .eq('id', importRecord.id);
 
-    console.log(`✅ Importação concluída: ${imported} válidas, ${ignored} ignoradas`);
+    console.log('\n📊 RESUMO DA IMPORTAÇÃO:');
+    console.log(`  ✅ Formato: ${parser.name}`);
+    if (accountInfo) {
+      console.log(`  🏦 Banco: ${accountInfo.bank_id} (Bradesco)`);
+      console.log(`  🏢 Agência: ${accountInfo.branch_id}`);
+      console.log(`  💳 Conta: ${accountInfo.account_id}`);
+    }
+    console.log(`  📄 Total de linhas: ${jsonData.length}`);
+    console.log(`  ✅ Transações válidas: ${imported}`);
+    console.log(`  ⏭️  Linhas ignoradas: ${ignored} (cabeçalhos, totais)`);
     if (minDate && maxDate) {
-      console.log(`📅 Período: ${minDate.toLocaleDateString('pt-BR')} a ${maxDate.toLocaleDateString('pt-BR')}`);
+      console.log(`  📅 Período: ${minDate.toLocaleDateString('pt-BR')} a ${maxDate.toLocaleDateString('pt-BR')}`);
     }
 
     return new Response(
