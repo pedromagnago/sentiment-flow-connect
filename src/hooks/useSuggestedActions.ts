@@ -46,7 +46,7 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
       if (error) throw error;
       return data as SuggestedAction[];
     },
-    enabled: !!contactId || !!messageId,
+    // Remover a restrição enabled para permitir buscar todas as ações
   });
 
   // Atualizar status da ação
