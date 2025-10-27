@@ -24,7 +24,7 @@ export const useCompaniesWithAudit = () => {
       const { data: contacts, error: contactsError } = await supabase
         .from('contacts')
         .select('id_contact, nome')
-        .eq('empresa_id', companyId);
+        .eq('company_id', companyId);
 
       console.log('📞 Contacts query result:', { contacts, contactsError });
       console.log('📞 Number of contacts found:', contacts?.length || 0);

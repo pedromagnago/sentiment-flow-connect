@@ -19,13 +19,13 @@ export const ConversationStats: React.FC<ConversationStatsProps> = ({
   profile,
   isAdmin
 }) => {
-  // Group conversations by empresa_id for admin view
+  // Group conversations by company_id for admin view
   const conversationsByCompany = React.useMemo(() => {
     const groups: Record<string, Conversation[]> = {};
     conversations.forEach(conv => {
-      const empresa_id = conv.contact.empresa_id || 'sem_empresa';
-      if (!groups[empresa_id]) groups[empresa_id] = [];
-      groups[empresa_id].push(conv);
+      const company_id = conv.contact.company_id || 'sem_empresa';
+      if (!groups[company_id]) groups[company_id] = [];
+      groups[company_id].push(conv);
     });
     return groups;
   }, [conversations]);

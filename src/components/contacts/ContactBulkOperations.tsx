@@ -43,7 +43,7 @@ export const ContactBulkOperations = ({
         status: true,
         feedback: true,
         is_group: false,
-        empresa_id: ''
+        company_id: ''
       }
     ];
 
@@ -79,7 +79,7 @@ export const ContactBulkOperations = ({
         status: row.status === true || row.status === 'true' || row.status === 1,
         feedback: row.feedback === true || row.feedback === 'true' || row.feedback === 1,
         is_group: row.is_group === true || row.is_group === 'true' || row.is_group === 1,
-        empresa_id: row.empresa_id || ''
+        company_id: row.company_id || ''
       }));
 
       await onBulkCreate(contactsData);
@@ -114,7 +114,7 @@ export const ContactBulkOperations = ({
       status: contact.status,
       feedback: contact.feedback,
       is_group: contact.is_group,
-      empresa_id: contact.empresa_id,
+      company_id: contact.company_id,
       created_at: contact.created_at,
       updated_at: contact.updated_at
     }));

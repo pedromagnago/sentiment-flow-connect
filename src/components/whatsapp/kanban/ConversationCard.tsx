@@ -85,10 +85,10 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
             </div>
 
             {/* Company badge */}
-            {conversation.contact.empresa_id && (
+            {conversation.contact.company_id && (
               <Badge variant="secondary" className="text-xs flex items-center gap-1">
                 <Building className="h-3 w-3" />
-                {conversation.contact.empresa_id.slice(0, 8)}...
+                {conversation.contact.company_id.slice(0, 8)}...
               </Badge>
             )}
 

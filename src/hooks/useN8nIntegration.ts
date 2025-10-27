@@ -60,7 +60,7 @@ export const useN8nIntegration = () => {
       const { data: contacts } = await supabase
         .from('contacts')
         .select('id_contact')
-        .eq('empresa_id', companyId);
+        .eq('company_id', companyId);
 
       if (contacts && contacts.length > 0) {
         const contactIds = contacts.map(c => c.id_contact);

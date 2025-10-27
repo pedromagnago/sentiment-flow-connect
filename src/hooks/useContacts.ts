@@ -11,7 +11,7 @@ export interface Contact {
   data_criacao: string;
   created_at: string;
   updated_at: string;
-  empresa_id: string;
+  company_id: string;
 }
 
 export const useContacts = () => {
@@ -33,7 +33,7 @@ export const useContacts = () => {
 
       // ADMs/Owners see all conversations, regular users see only their company's
       if (!isAdmin && companyId) {
-        query = query.eq('empresa_id', companyId);
+        query = query.eq('company_id', companyId);
         console.log('Regular user - filtering by company:', companyId);
       } else if (isAdmin) {
         console.log('Admin user - showing all conversations');
@@ -64,10 +64,10 @@ export const useContacts = () => {
         throw new Error('ID do contato é obrigatório');
       }
 
-      // Tratar empresa_id vazio
+      // Tratar company_id vazio
       const processedData = {
         ...contactData,
-        empresa_id: contactData.empresa_id && contactData.empresa_id.trim() !== '' ? contactData.empresa_id : null
+        company_id: contactData.company_id && contactData.company_id.trim() !== '' ? contactData.company_id : null
       };
 
       const { data, error } = await supabase
@@ -94,11 +94,11 @@ export const useContacts = () => {
     try {
       console.log('Updating contact:', id, contactData);
       
-      // Tratar empresa_id vazio e remover campos automáticos
+      // Tratar company_id vazio e remover campos automáticos
       const { updated_at, created_at, ...dataToUpdate } = contactData;
       const processedData = {
         ...dataToUpdate,
-        empresa_id: contactData.empresa_id && contactData.empresa_id.trim() !== '' ? contactData.empresa_id : null
+        company_id: contactData.company_id && contactData.company_id.trim() !== '' ? contactData.company_id : null
       };
 
       const { data, error } = await supabase

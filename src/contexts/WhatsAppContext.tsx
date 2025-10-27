@@ -6,7 +6,7 @@ export interface Contact {
   id_contact: string;
   nome?: string;
   status?: boolean;
-  empresa_id?: string;
+  company_id?: string;
   feedback?: boolean;
   is_group?: boolean;
   data_criacao?: string;

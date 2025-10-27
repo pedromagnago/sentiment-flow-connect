@@ -48,7 +48,7 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
       is_group: false,
       feedback: true,
       status: true,
-      empresa_id: null,
+      company_id: null,
       data_criacao: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

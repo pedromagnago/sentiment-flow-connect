@@ -187,7 +187,7 @@ export const useCompanies = () => {
       const { data: contacts } = await supabase
         .from('contacts')
         .select('id_contact')
-        .eq('empresa_id', companyId);
+        .eq('company_id', companyId);
 
       if (contacts && contacts.length > 0) {
         const contactIds = contacts.map(c => c.id_contact);
@@ -253,7 +253,7 @@ export const useCompanies = () => {
       const { error: contactsError } = await supabase
         .from('contacts')
         .delete()
-        .eq('empresa_id', id);
+        .eq('company_id', id);
 
       if (contactsError) {
         console.log('Warning: Could not delete related contacts:', contactsError);

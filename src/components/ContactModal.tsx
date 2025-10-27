@@ -19,7 +19,7 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
     status: true,
     feedback: true,
     is_group: false,
-    empresa_id: ''
+    company_id: ''
   });
 
   const formatDate = (dateString: string) => {
@@ -45,7 +45,7 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
         status: contact.status ?? true,
         feedback: contact.feedback ?? true,
         is_group: contact.is_group ?? false,
-        empresa_id: contact.empresa_id || ''
+        company_id: contact.company_id || ''
       });
     } else {
       // Reset form para novo contato
@@ -55,7 +55,7 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
         status: true,
         feedback: true,
         is_group: false,
-        empresa_id: ''
+        company_id: ''
       });
     }
   }, [contact, isOpen]);
@@ -63,10 +63,10 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Garantir que empresa_id seja tratado corretamente
+    // Garantir que company_id seja tratado corretamente
     const processedFormData = {
       ...formData,
-      empresa_id: formData.empresa_id && formData.empresa_id.trim() !== '' ? formData.empresa_id : ''
+      company_id: formData.company_id && formData.company_id.trim() !== '' ? formData.company_id : ''
     };
     
     onSave(processedFormData);
@@ -141,8 +141,8 @@ export const ContactModal = ({ isOpen, onClose, onSave, contact }: ContactModalP
               Empresa
             </label>
             <select
-              value={formData.empresa_id}
-              onChange={(e) => handleChange('empresa_id', e.target.value)}
+              value={formData.company_id}
+              onChange={(e) => handleChange('company_id', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Selecione uma empresa</option>

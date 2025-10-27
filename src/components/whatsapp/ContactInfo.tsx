@@ -229,7 +229,7 @@ export const ContactInfo = ({ contact, conversation }: ContactInfoProps) => {
         </div>
 
         {/* Empresa associada */}
-        {contact.empresa_id && (
+        {contact.company_id && (
           <>
             <Separator />
             <div>
@@ -237,7 +237,7 @@ export const ContactInfo = ({ contact, conversation }: ContactInfoProps) => {
                 <Building2 className="w-4 h-4" />
                 Empresa
               </h5>
-              <p className="text-sm">ID: {contact.empresa_id}</p>
+              <p className="text-sm">ID: {contact.company_id}</p>
             </div>
           </>
         )}
