@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,10 @@ const AuthPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  
+  const inviteToken = searchParams.get('invite_token');
+  const prefilledEmail = searchParams.get('email');
 
   useEffect(() => {
     const titles = {
@@ -28,6 +32,13 @@ const AuthPage: React.FC = () => {
       metaDesc.setAttribute("content", "Autenticação segura na plataforma FullBPO OptiCore: login e cadastro por email.");
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (prefilledEmail) {
+      setEmail(prefilledEmail);
+      setMode('signup');
+    }
+  }, [prefilledEmail]);
 
   useEffect(() => {
     // If already authenticated, go to main page
@@ -51,7 +62,7 @@ const AuthPage: React.FC = () => {
   const handleSignup = async () => {
     setLoading(true);
     const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: redirectUrl },
@@ -61,7 +72,58 @@ const AuthPage: React.FC = () => {
       toast({ title: "Cadastro falhou", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Verifique seu email", description: "Enviamos um link de confirmação para concluir o cadastro." });
+    
+    // Se temos um token de convite, processar após confirmação de email
+    if (inviteToken && data.user) {
+      try {
+        const { data: invitation } = await supabase
+          .from('team_invitations')
+          .select('*')
+          .eq('token', inviteToken)
+          .single();
+
+        if (invitation) {
+          // Buscar company_id do profile (será criado pelo trigger após signup)
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_id')
+            .eq('id', data.user.id)
+            .single();
+
+          const companyId = profile?.company_id;
+          if (!companyId) {
+            // Se não tiver company_id, o usuário precisa completar onboarding primeiro
+            toast({ 
+              title: "Verifique seu email", 
+              description: "Complete o onboarding antes de aceitar o convite." 
+            });
+            return;
+          }
+
+          await supabase.from('user_roles').insert({
+            user_id: data.user.id,
+            company_id: companyId,
+            role: invitation.role,
+            granted_by: invitation.invited_by,
+            is_active: true,
+          });
+
+          await supabase
+            .from('team_invitations')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invitation.id);
+
+          toast({ 
+            title: "Conta criada com sucesso!", 
+            description: "Bem-vindo à equipe FullBPO. Verifique seu email para confirmar." 
+          });
+        }
+      } catch (err: any) {
+        console.error('Erro ao processar convite:', err);
+      }
+    } else {
+      toast({ title: "Verifique seu email", description: "Enviamos um link de confirmação para concluir o cadastro." });
+    }
   };
 
   const handleForgotPassword = async () => {

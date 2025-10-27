@@ -98,8 +98,9 @@ export const Sidebar = () => {
 
   // Submenu Configurações
   const configSubmenu = [
+    { id: 'team', label: 'Equipe', icon: Users, path: '/team' },
     { id: 'companies', label: 'Empresas', icon: Building2, path: '/companies' },
-    { id: 'contacts', label: 'Contatos', icon: Users, path: '/contacts' },
+    { id: 'contacts', label: 'Contatos', icon: UserCircle, path: '/contacts' },
     { id: 'audit', label: 'Logs de Auditoria', icon: Shield, path: '/audit' },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon, path: '/settings' },
   ];

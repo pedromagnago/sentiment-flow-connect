@@ -19,6 +19,8 @@ import ReconciliationPage from "./pages/ReconciliationPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import CompaniesPage from "./pages/CompaniesPage";
 import ContactsPage from "./pages/ContactsPage";
+import TeamPage from "./pages/TeamPage";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
@@ -61,6 +63,10 @@ const App = () => (
                 <Route path="fila" element={<QueuePage />} />
                 <Route path="contatos" element={<WhatsAppContactsPage />} />
               </Route>
+              
+              {/* Team Management */}
+              <Route path="/team" element={<PrivateRoute><MainLayout><TeamPage /></MainLayout></PrivateRoute>} />
+              <Route path="/accept-invite" element={<AcceptInvitePage />} />
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
