@@ -46,11 +46,12 @@ export const useTeamManagement = () => {
         .select('id, display_name')
         .in('id', userIds);
       
-      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const authResponse = await supabase.auth.admin.listUsers();
+      const authUsers = authResponse?.data?.users || [];
       
       const members: TeamMember[] = userRoles.map(ur => {
         const profile = profiles?.find(p => p.id === ur.user_id);
-        const user = users?.find(u => u.id === ur.user_id);
+        const user = authUsers.find((u: any) => u.id === ur.user_id);
         return {
           id: ur.user_id,
           display_name: profile?.display_name || null,
