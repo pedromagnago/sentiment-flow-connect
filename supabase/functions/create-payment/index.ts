@@ -65,6 +65,63 @@ Deno.serve(async (req) => {
       company_id: profile.company_id
     })
 
+    // Validate contact belongs to user's company
+    const { data: contact, error: contactError } = await supabase
+      .from('contacts')
+      .select('company_id')
+      .eq('id_contact', contact_id)
+      .maybeSingle()
+
+    if (contactError) {
+      console.error('Error fetching contact:', contactError)
+      throw new Error('Error validating contact access')
+    }
+
+    if (contact && contact.company_id && contact.company_id !== profile.company_id) {
+      console.error('Unauthorized contact access:', { 
+        user_company: profile.company_id, 
+        contact_company: contact.company_id 
+      })
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Contact does not belong to your company' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Validate suggested_action belongs to user's company
+    const { data: suggestedAction, error: actionError } = await supabase
+      .from('suggested_actions')
+      .select('contact_id')
+      .eq('id', suggested_action_id)
+      .single()
+
+    if (actionError) {
+      console.error('Error fetching suggested action:', actionError)
+      throw new Error('Suggested action not found')
+    }
+
+    // Verify the suggested action's contact also belongs to the company
+    const { data: actionContact, error: actionContactError } = await supabase
+      .from('contacts')
+      .select('company_id')
+      .eq('id_contact', suggestedAction.contact_id)
+      .maybeSingle()
+
+    if (actionContactError || 
+        (actionContact && actionContact.company_id && actionContact.company_id !== profile.company_id)) {
+      console.error('Unauthorized suggested action access')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Suggested action does not belong to your company' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     // Parse valor (pode vir como "R$ 1.000,00" ou "1000.00")
     const valorStr = extracted_data.valor
       .replace(/R\$/g, '')

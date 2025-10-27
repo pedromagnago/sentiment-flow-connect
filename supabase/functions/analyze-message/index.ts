@@ -34,6 +34,32 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    // Get user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      throw new Error('Invalid authorization');
+    }
+
+    // Get user's company_id
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.company_id) {
+      throw new Error('User profile not found or company not set');
+    }
+
     const requestData = await req.json() as AnalyzeMessageRequest;
     const { 
       message_id, 
@@ -53,8 +79,35 @@ serve(async (req) => {
       content: content?.substring(0, 100),
       has_media,
       media_type,
-      media_url
+      media_url,
+      user_company_id: profile.company_id
     });
+
+    // Validate contact belongs to user's company
+    const { data: contact, error: contactError } = await supabase
+      .from('contacts')
+      .select('company_id')
+      .eq('id_contact', contact_id)
+      .maybeSingle();
+
+    if (contactError) {
+      console.error('Error fetching contact:', contactError);
+      throw new Error('Error validating contact access');
+    }
+
+    if (contact && contact.company_id && contact.company_id !== profile.company_id) {
+      console.error('Unauthorized access attempt:', { 
+        user_company: profile.company_id, 
+        contact_company: contact.company_id 
+      });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Contact does not belong to your company' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     // Check if auto-processing is enabled for documents
     const { data: settings } = await supabase
