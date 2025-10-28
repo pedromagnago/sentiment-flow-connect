@@ -196,6 +196,30 @@ serve(async (req) => {
 
     console.log('Message processed successfully');
 
+    // Chamar analyze-sentiment após mensagem salva (async, não bloqueia)
+    const { data: contact } = await supabase
+      .from('contacts')
+      .select('feedback')
+      .eq('id_contact', zapMessage.phone)
+      .single();
+
+    if (contact?.feedback) {
+      // Chamar análise de sentimento diária (async)
+      fetch(`${supabaseUrl}/functions/v1/analyze-sentiment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          contact_id: zapMessage.phone,
+          type: 'daily',
+        }),
+      }).catch(err => {
+        console.error('Error calling analyze-sentiment (async):', err);
+      });
+    }
+
     // Chamar analyze-message de forma assíncrona (não bloqueia resposta)
     if (insertedMessage?.id) {
       // Detectar tipo de mídia

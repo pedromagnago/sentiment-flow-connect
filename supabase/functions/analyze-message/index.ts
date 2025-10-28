@@ -295,6 +295,47 @@ Responda APENAS em JSON válido no formato:
 
     console.log('Suggested action created:', suggestedAction.id);
 
+    // HITL: Se confidence < 0.8, enviar para validação humana
+    if (suggestedAction.ai_confidence < 0.8) {
+      console.log('Low confidence, triggering HITL validation');
+      
+      // Buscar operador padrão ou primeiro admin da empresa
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('company_id', profile.company_id)
+        .eq('ativo', true)
+        .limit(1)
+        .single();
+
+      if (profiles) {
+        // TODO: Buscar telefone do operador configurado nas settings
+        // Por enquanto, usar configuração padrão
+        const { data: operatorPhone } = await supabase
+          .from('settings')
+          .select('valor')
+          .eq('nome', 'hitl_operator_phone')
+          .maybeSingle();
+
+        if (operatorPhone?.valor) {
+          // Chamar edge function para enviar validação (async, não bloqueia)
+          fetch(`${supabaseUrl}/functions/v1/send-hitl-validation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              suggested_action_id: suggestedAction.id,
+              operator_phone: operatorPhone.valor,
+            }),
+          }).catch(err => {
+            console.error('Error calling send-hitl-validation (async):', err);
+          });
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, created: true, action: suggestedAction }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
