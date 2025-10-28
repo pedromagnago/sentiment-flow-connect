@@ -8,6 +8,8 @@ import { AISettings } from './settings/AISettings';
 import { ZAPISettings } from './settings/ZAPISettings';
 import { HITLSettings } from './settings/HITLSettings';
 import { CompanySettings } from './settings/CompanySettings';
+import { ClassificationRules } from './settings/ClassificationRules';
+import { RuleApplicationLogs } from './settings/RuleApplicationLogs';
 
 export const Settings = () => {
   return (
@@ -44,7 +46,11 @@ export const Settings = () => {
         </TabsContent>
 
         <TabsContent value="company" className="space-y-6">
-          <CompanySettings />
+          <div className="grid gap-6">
+            <CompanySettings />
+            <ClassificationRules />
+            <RuleApplicationLogs />
+          </div>
         </TabsContent>
 
         <TabsContent value="ai" className="space-y-6">
