@@ -74,15 +74,18 @@ export const RuleApplicationLogs = () => {
       if (error) throw error;
       
       // Transform audit logs into rule logs format
-      const transformedLogs = (data || []).map(log => ({
-        id: log.id,
-        rule_name: log.new_data?.rule_applied || 'Classificação Automática',
-        applied_at: log.created_at,
-        message_id: log.record_id,
-        result: log.new_data?.action_type,
-        matched_conditions: log.new_data?.matched_conditions || {},
-        actions_taken: log.new_data?.extracted_data || {},
-      }));
+      const transformedLogs = (data || []).map(log => {
+        const newData = log.new_data as any;
+        return {
+          id: log.id,
+          rule_name: newData?.rule_applied || 'Classificação Automática',
+          applied_at: log.created_at,
+          message_id: log.record_id || '',
+          result: newData?.action_type || '',
+          matched_conditions: newData?.matched_conditions || {},
+          actions_taken: newData?.extracted_data || {},
+        };
+      });
       
       setLogs(transformedLogs);
     } catch (error: any) {

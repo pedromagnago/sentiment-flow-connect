@@ -133,13 +133,13 @@ export const ClassificationRules = () => {
       if (!profile?.company_id) return;
 
       const { data, error } = await supabase
-        .from('transaction_rules')
+        .from('ai_classification_rules')
         .select('*')
         .eq('company_id', profile.company_id)
         .order('priority', { ascending: false });
       
       if (error) throw error;
-      setRules(data || []);
+      setRules(data as Rule[] || []);
     } catch (error: any) {
       console.error('Error loading rules:', error);
       toast({
@@ -186,6 +186,7 @@ export const ClassificationRules = () => {
 
       const ruleData = {
         company_id: profile.company_id,
+        user_id: user.id,
         rule_name: ruleName,
         rule_type: ruleType,
         conditions: parsedConditions,
@@ -196,7 +197,7 @@ export const ClassificationRules = () => {
 
       if (editingRule) {
         const { error } = await supabase
-          .from('transaction_rules')
+          .from('ai_classification_rules')
           .update(ruleData)
           .eq('id', editingRule.id);
         
@@ -208,7 +209,7 @@ export const ClassificationRules = () => {
         });
       } else {
         const { error } = await supabase
-          .from('transaction_rules')
+          .from('ai_classification_rules')
           .insert([ruleData]);
         
         if (error) throw error;
@@ -237,7 +238,7 @@ export const ClassificationRules = () => {
     
     try {
       const { error } = await supabase
-        .from('transaction_rules')
+        .from('ai_classification_rules')
         .delete()
         .eq('id', id);
       
@@ -262,7 +263,7 @@ export const ClassificationRules = () => {
   const handleToggleActive = async (rule: Rule) => {
     try {
       const { error } = await supabase
-        .from('transaction_rules')
+        .from('ai_classification_rules')
         .update({ active: !rule.active })
         .eq('id', rule.id);
       
@@ -344,13 +345,14 @@ export const ClassificationRules = () => {
         const rulesToImport = importedRules.map((r: any) => ({
           ...r,
           id: undefined,
+          user_id: user.id,
           company_id: profile.company_id,
           created_at: undefined,
           updated_at: undefined,
         }));
 
         const { error } = await supabase
-          .from('transaction_rules')
+          .from('ai_classification_rules')
           .insert(rulesToImport);
         
         if (error) throw error;

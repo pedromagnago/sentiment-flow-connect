@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_classification_rules: {
+        Row: {
+          actions: Json
+          active: boolean
+          company_id: string
+          conditions: Json
+          created_at: string
+          id: string
+          priority: number
+          rule_name: string
+          rule_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          active?: boolean
+          company_id: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          priority?: number
+          rule_name: string
+          rule_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          active?: boolean
+          company_id?: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          priority?: number
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_classification_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analise_sentimento_diario: {
         Row: {
           created_at: string
