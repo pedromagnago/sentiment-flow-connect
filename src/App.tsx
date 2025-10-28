@@ -21,6 +21,7 @@ import CompaniesPage from "./pages/CompaniesPage";
 import ContactsPage from "./pages/ContactsPage";
 import TeamPage from "./pages/TeamPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
@@ -67,6 +68,9 @@ const App = () => (
               {/* Team Management */}
               <Route path="/team" element={<PrivateRoute><MainLayout><TeamPage /></MainLayout></PrivateRoute>} />
               <Route path="/accept-invite" element={<AcceptInvitePage />} />
+              
+              {/* Settings */}
+              <Route path="/settings" element={<PrivateRoute><MainLayout><Settings /></MainLayout></PrivateRoute>} />
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
