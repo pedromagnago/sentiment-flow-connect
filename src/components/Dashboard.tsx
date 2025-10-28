@@ -1,4 +1,3 @@
-
 import { useContacts } from '@/hooks/useContacts';
 import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useMessages } from '@/hooks/useMessages';
@@ -9,6 +8,7 @@ import { RecentContacts } from './RecentContacts';
 import { DashboardWidgets } from './dashboard/DashboardWidgets';
 import { AIMetricsCards } from './dashboard/AIMetricsCards';
 import { AIActionsChart } from './dashboard/AIActionsChart';
+import { EnhancedMetricsCards } from './dashboard/EnhancedMetricsCards';
 
 export const Dashboard = () => {
   const { contacts, loading: contactsLoading } = useContacts();
@@ -24,15 +24,15 @@ export const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Visão geral dos seus dados e métricas</p>
+          <p className="text-gray-600 mt-1">Visão geral dos seus dados e métricas em tempo real</p>
         </div>
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg">
           <span className="text-sm font-medium">Sistema Online</span>
         </div>
       </div>
 
-      {/* AI Metrics Cards */}
-      <AIMetricsCards />
+      {/* Enhanced Metrics Cards */}
+      <EnhancedMetricsCards />
 
       {/* Widgets do Dashboard */}
       {isLoading ? (

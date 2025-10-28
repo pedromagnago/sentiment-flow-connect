@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Database, Link, Shield, Bell, User, Sparkles } from 'lucide-react';
+import { Settings as SettingsIcon, Database, Link, Shield, Bell, User, Sparkles, MessageSquare, UserCheck, Building2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClickUpSettings } from './settings/ClickUpSettings';
 import { UserProfile } from './settings/UserProfile';
 import { AISettings } from './settings/AISettings';
+import { ZAPISettings } from './settings/ZAPISettings';
+import { HITLSettings } from './settings/HITLSettings';
+import { CompanySettings } from './settings/CompanySettings';
 
 export const Settings = () => {
   return (
@@ -17,30 +20,22 @@ export const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Perfil</span>
           </TabsTrigger>
+          <TabsTrigger value="company" className="flex items-center space-x-2">
+            <Building2 className="w-4 h-4" />
+            <span>Empresa</span>
+          </TabsTrigger>
           <TabsTrigger value="ai" className="flex items-center space-x-2">
             <Sparkles className="w-4 h-4" />
-            <span>IA</span>
+            <span>IA & HITL</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center space-x-2">
-            <Link className="w-4 h-4" />
+            <MessageSquare className="w-4 h-4" />
             <span>Integrações</span>
-          </TabsTrigger>
-          <TabsTrigger value="database" className="flex items-center space-x-2">
-            <Database className="w-4 h-4" />
-            <span>Banco de Dados</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center space-x-2">
-            <Shield className="w-4 h-4" />
-            <span>Segurança</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center space-x-2">
-            <Bell className="w-4 h-4" />
-            <span>Notificações</span>
           </TabsTrigger>
         </TabsList>
 
@@ -48,90 +43,22 @@ export const Settings = () => {
           <UserProfile />
         </TabsContent>
 
+        <TabsContent value="company" className="space-y-6">
+          <CompanySettings />
+        </TabsContent>
+
         <TabsContent value="ai" className="space-y-6">
-          <AISettings />
+          <div className="grid gap-6">
+            <AISettings />
+            <HITLSettings />
+          </div>
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6">
           <div className="grid gap-6">
+            <ZAPISettings />
             <ClickUpSettings />
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>ZAPI Integration</CardTitle>
-                <CardDescription>
-                  Configure a integração com ZAPI para WhatsApp
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
-                  Webhook ZAPI configurado em: <code>/functions/v1/zapi-webhook</code>
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>N8N Integration</CardTitle>
-                <CardDescription>
-                  Configure a integração com N8N para automações
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
-                  A integração N8N está ativa e funcionando corretamente.
-                </p>
-              </CardContent>
-            </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="database" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações do Banco de Dados</CardTitle>
-              <CardDescription>
-                Configurações relacionadas ao banco de dados Supabase
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Configurações do banco de dados são gerenciadas automaticamente.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações de Segurança</CardTitle>
-              <CardDescription>
-                Configure políticas de segurança do sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Configurações de segurança em desenvolvimento.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações de Notificações</CardTitle>
-              <CardDescription>
-                Configure as notificações do sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Sistema de notificações em desenvolvimento.
-              </p>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
