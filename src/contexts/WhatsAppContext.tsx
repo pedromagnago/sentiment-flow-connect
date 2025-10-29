@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface Contact {
   id_contact: string;
@@ -55,6 +56,7 @@ const WhatsAppContext = createContext<WhatsAppContextType | undefined>(undefined
 export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
   usePerformanceMonitor('WhatsAppContext', 1000);
   
+  const { activeCompanyId } = useCompanyContext();
   const { messages, loading: messagesLoading, error: messagesError } = useMessages();
   const { contacts, loading: contactsLoading, error: contactsError } = useContacts();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
@@ -77,6 +79,12 @@ export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
 
   // Process conversations with Web Worker or fallback
   useEffect(() => {
+    // If no company is selected, clear conversations
+    if (!activeCompanyId) {
+      setConversations([]);
+      return;
+    }
+
     if (!messages.length || !contacts.length) {
       setConversations([]);
       return;
@@ -124,7 +132,7 @@ export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
 
       setConversations(conversationsArray);
     }
-  }, [messages, contacts, worker]);
+  }, [messages, contacts, worker, activeCompanyId]);
 
   // Cleanup worker on unmount
   useEffect(() => {
@@ -146,7 +154,8 @@ export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
         conversations,
         activeConversation,
         setActiveConversation,
-        loading: messagesLoading || contactsLoading,
+        // Only show loading if we have a company selected AND data is still loading
+        loading: activeCompanyId ? (messagesLoading || contactsLoading) : false,
         error: messagesError || contactsError,
         unreadCount,
         queueCount,
