@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface Invoice {
   id: string;
@@ -36,14 +37,20 @@ export const useInvoices = (filters?: {
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeCompanyId } = useCompanyContext();
 
   // Fetch invoices
   const { data: invoices, isLoading, error } = useQuery({
-    queryKey: ['invoices', filters],
+    queryKey: ['invoices', activeCompanyId, filters],
     queryFn: async () => {
+      if (!activeCompanyId) {
+        return [];
+      }
+
       let query = supabase
         .from('faturas')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .order('data_emissao', { ascending: false });
 
       if (filters?.status) {
@@ -67,6 +74,7 @@ export const useInvoices = (filters?: {
       if (error) throw error;
       return data as Invoice[];
     },
+    enabled: !!activeCompanyId,
   });
 
   // Update invoice

@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface Message {
   id: string;
@@ -18,14 +18,37 @@ export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { activeCompanyId } = useCompanyContext();
 
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      console.log('Fetching messages...');
+      console.log('Fetching messages for company:', activeCompanyId);
+      
+      if (!activeCompanyId) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get contacts for active company first
+      const { data: companyContacts } = await supabase
+        .from('contacts')
+        .select('id_contact')
+        .eq('company_id', activeCompanyId);
+      
+      const contactIds = companyContacts?.map(c => c.id_contact) || [];
+      
+      if (contactIds.length === 0) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
+        .in('contact_id', contactIds)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -85,6 +108,7 @@ export const useMessages = () => {
 
   // Setup realtime subscription
   useEffect(() => {
+    if (!activeCompanyId) return;
     fetchMessages();
 
     const channelId = `messages-changes-${crypto.randomUUID()}`;
@@ -107,7 +131,7 @@ export const useMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [activeCompanyId]);
 
   return { 
     messages, 

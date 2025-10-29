@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 interface DashboardMetrics {
   totalMessages: number;
@@ -18,6 +19,7 @@ interface DashboardMetrics {
 }
 
 export const useDashboardMetrics = () => {
+  const { activeCompanyId } = useCompanyContext();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalMessages: 0,
     messagesLast7Days: 0,
@@ -37,22 +39,43 @@ export const useDashboardMetrics = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMetrics();
-  }, []);
+    if (activeCompanyId) {
+      fetchMetrics();
+    }
+  }, [activeCompanyId]);
 
   const fetchMetrics = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      if (!activeCompanyId) {
+        setLoading(false);
+        return;
+      }
+
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      // Buscar mensagens
+      // Get contacts for active company
+      const { data: companyContacts } = await supabase
+        .from('contacts')
+        .select('id_contact')
+        .eq('company_id', activeCompanyId);
+      
+      const contactIds = companyContacts?.map(c => c.id_contact) || [];
+      
+      if (contactIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Buscar mensagens para contatos da empresa
       const { data: allMessages, error: messagesError } = await supabase
         .from('messages')
-        .select('created_at, data_hora');
+        .select('created_at, data_hora')
+        .in('contact_id', contactIds);
 
       if (messagesError) throw messagesError;
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useUserProfile } from './useUserProfile';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface Contact {
   id_contact: string;
@@ -18,25 +18,28 @@ export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { profile, loading: profileLoading, isAdmin } = useUserProfile();
+  const { activeCompanyId, isAdmin, loading: companyLoading } = useCompanyContext();
 
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const companyId = profile?.company_id;
-      console.log('Fetching contacts - isAdmin:', isAdmin, 'company:', companyId);
+      console.log('Fetching contacts - isAdmin:', isAdmin, 'activeCompany:', activeCompanyId);
       
       let query = supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // ADMs/Owners see all conversations, regular users see only their company's
-      if (!isAdmin && companyId) {
-        query = query.eq('company_id', companyId);
-        console.log('Regular user - filtering by company:', companyId);
-      } else if (isAdmin) {
-        console.log('Admin user - showing all conversations');
+      // Filter by active company if one is selected
+      if (activeCompanyId) {
+        query = query.eq('company_id', activeCompanyId);
+        console.log('Filtering by active company:', activeCompanyId);
+      } else if (!isAdmin) {
+        // Non-admin without company selected sees nothing
+        console.log('No company selected - showing no contacts');
+        setContacts([]);
+        setLoading(false);
+        return;
       }
 
       const { data, error } = await query;
@@ -176,7 +179,7 @@ export const useContacts = () => {
 
   // Setup realtime subscription
   useEffect(() => {
-    if (profileLoading) return;
+    if (companyLoading) return;
     fetchContacts();
 
     const channelId = `contacts-changes-${crypto.randomUUID()}`;
@@ -199,11 +202,11 @@ export const useContacts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.company_id, profileLoading, isAdmin]);
+  }, [activeCompanyId, companyLoading, isAdmin]);
 
   return { 
     contacts, 
-    loading: loading || profileLoading, 
+    loading: loading || companyLoading, 
     error, 
     refetch: fetchContacts,
     createContact,

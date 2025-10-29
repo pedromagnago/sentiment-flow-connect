@@ -24,6 +24,7 @@ import AcceptInvitePage from "./pages/AcceptInvitePage";
 import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
+import { CompanyProvider } from "./contexts/CompanyContext";
 import { PrivateRoute } from "./components/common/PrivateRoute";
 import { MainLayout } from "./components/layout/MainLayout";
 import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
@@ -40,8 +41,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <SidebarProvider>
-            <Routes>
+          <CompanyProvider>
+            <SidebarProvider>
+              <Routes>
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
               
@@ -74,8 +76,9 @@ const App = () => (
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </SidebarProvider>
+              </Routes>
+            </SidebarProvider>
+          </CompanyProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

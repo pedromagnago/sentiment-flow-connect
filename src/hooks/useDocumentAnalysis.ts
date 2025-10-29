@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface DocumentAnalysis {
   id: string;
@@ -23,19 +24,26 @@ export interface DocumentAnalysis {
 export const useDocumentAnalysis = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeCompanyId } = useCompanyContext();
 
   // Fetch all document analyses
   const { data: analyses, isLoading, error } = useQuery({
-    queryKey: ['document-analysis'],
+    queryKey: ['document-analysis', activeCompanyId],
     queryFn: async () => {
+      if (!activeCompanyId) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('document_analysis')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as DocumentAnalysis[];
     },
+    enabled: !!activeCompanyId,
   });
 
   // Process document

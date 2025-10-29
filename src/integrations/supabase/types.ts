@@ -1377,51 +1377,37 @@ export type Database = {
         Row: {
           ativo: boolean | null
           cargo: string | null
-          company_id: string | null
           created_at: string
           display_name: string | null
           especialidade: string[] | null
           horario_atendimento: Json | null
           id: string
           max_atendimentos_simultaneos: number | null
-          role: string | null
           updated_at: string
         }
         Insert: {
           ativo?: boolean | null
           cargo?: string | null
-          company_id?: string | null
           created_at?: string
           display_name?: string | null
           especialidade?: string[] | null
           horario_atendimento?: Json | null
           id: string
           max_atendimentos_simultaneos?: number | null
-          role?: string | null
           updated_at?: string
         }
         Update: {
           ativo?: boolean | null
           cargo?: string | null
-          company_id?: string | null
           created_at?: string
           display_name?: string | null
           especialidade?: string[] | null
           horario_atendimento?: Json | null
           id?: string
           max_atendimentos_simultaneos?: number | null
-          role?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       reconciliation_logs: {
         Row: {
@@ -1877,17 +1863,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_company_id: { Args: never; Returns: string }
       get_user_roles: {
         Args: { _company_id?: string; _user_id: string }
         Returns: {
           company_id: string
           role: Database["public"]["Enums"]["app_role"]
         }[]
-      }
-      has_company_access: {
-        Args: { _company_id: string; _user_id: string }
-        Returns: boolean
       }
       has_role: {
         Args: {

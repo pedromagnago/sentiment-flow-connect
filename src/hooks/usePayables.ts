@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface Payable {
   id: string;
@@ -32,14 +33,20 @@ export const usePayables = (filters?: {
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeCompanyId } = useCompanyContext();
 
   // Fetch payables
   const { data: payables, isLoading, error } = useQuery({
-    queryKey: ['payables', filters],
+    queryKey: ['payables', activeCompanyId, filters],
     queryFn: async () => {
+      if (!activeCompanyId) {
+        return [];
+      }
+
       let query = supabase
         .from('contas_pagar')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .order('vencimento', { ascending: true });
 
       if (filters?.status) {
@@ -63,6 +70,7 @@ export const usePayables = (filters?: {
       if (error) throw error;
       return data as Payable[];
     },
+    enabled: !!activeCompanyId,
   });
 
   // Update payable

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyContext } from '@/contexts/CompanyContext';
 
 export interface SuggestedAction {
   id: string;
@@ -23,14 +24,32 @@ export interface SuggestedAction {
 export const useSuggestedActions = (contactId?: string, messageId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { activeCompanyId } = useCompanyContext();
 
   // Buscar ações sugeridas
   const { data: actions, isLoading, error } = useQuery({
-    queryKey: ['suggested-actions', contactId, messageId],
+    queryKey: ['suggested-actions', activeCompanyId, contactId, messageId],
     queryFn: async () => {
+      if (!activeCompanyId) {
+        return [];
+      }
+
+      // Get contacts for active company
+      const { data: companyContacts } = await supabase
+        .from('contacts')
+        .select('id_contact')
+        .eq('company_id', activeCompanyId);
+      
+      const contactIds = companyContacts?.map(c => c.id_contact) || [];
+      
+      if (contactIds.length === 0) {
+        return [];
+      }
+
       let query = supabase
         .from('suggested_actions')
         .select('*')
+        .in('contact_id', contactIds)
         .order('created_at', { ascending: false });
 
       if (contactId) {
@@ -46,7 +65,7 @@ export const useSuggestedActions = (contactId?: string, messageId?: string) => {
       if (error) throw error;
       return data as SuggestedAction[];
     },
-    // Remover a restrição enabled para permitir buscar todas as ações
+    enabled: !!activeCompanyId,
   });
 
   // Atualizar status da ação
