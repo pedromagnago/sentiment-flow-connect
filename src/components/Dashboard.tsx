@@ -3,16 +3,17 @@ import { useSentimentAnalysis } from '@/hooks/useSentimentAnalysis';
 import { useMessages } from '@/hooks/useMessages';
 import { useTaskGroups } from '@/hooks/useTaskGroups';
 import { useCompanies } from '@/hooks/useCompanies';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 import { SentimentChart } from './SentimentChart';
 import { RecentContacts } from './RecentContacts';
 import { DashboardWidgets } from './dashboard/DashboardWidgets';
 import { AIMetricsCards } from './dashboard/AIMetricsCards';
 import { AIActionsChart } from './dashboard/AIActionsChart';
 import { EnhancedMetricsCards } from './dashboard/EnhancedMetricsCards';
+import { ConsolidatedMetrics } from './dashboard/ConsolidatedMetrics';
 
 export const Dashboard = () => {
-  const { activeCompanyId } = useCompanyContext();
+  const { hasCompanyFilter, isMultiCompany } = useCompanyFilter();
   const { contacts, loading: contactsLoading } = useContacts();
   const { companies, loading: companiesLoading } = useCompanies();
   const { sentimentStats, loading: sentimentLoading } = useSentimentAnalysis();
@@ -22,7 +23,7 @@ export const Dashboard = () => {
   const isLoading = contactsLoading || sentimentLoading || messagesLoading || tasksLoading || companiesLoading;
 
   // Show message if no company is selected
-  if (!isLoading && !activeCompanyId) {
+  if (!isLoading && !hasCompanyFilter) {
     return (
       <div className="flex items-center justify-center h-full bg-muted/30">
         <div className="text-center space-y-4 p-8">
@@ -32,6 +33,15 @@ export const Dashboard = () => {
             Para visualizar o dashboard, você precisa primeiro selecionar uma empresa no menu superior.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // If multiple companies selected, show consolidated view
+  if (isMultiCompany) {
+    return (
+      <div className="space-y-6 animate-fade-in p-6">
+        <ConsolidatedMetrics />
       </div>
     );
   }

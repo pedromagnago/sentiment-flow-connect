@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebarContext } from '@/contexts/SidebarContext';
-import { CompanySwitcher } from '@/components/layout/CompanySwitcher';
+import { CompanyMultiSelect } from '@/components/layout/CompanyMultiSelect';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -43,7 +43,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="p-6">
           {/* Top bar */}
           <div className="flex items-center justify-between mb-4">
-            <CompanySwitcher />
+            <CompanyMultiSelect />
             <Button 
               variant="ghost" 
               size="sm" 

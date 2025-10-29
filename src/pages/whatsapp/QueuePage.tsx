@@ -2,12 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QueueView } from '@/components/whatsapp/views/QueueView';
 import { useWhatsApp } from '@/contexts/WhatsAppContext';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 
 export const QueuePage = () => {
   const navigate = useNavigate();
   const { conversations, loading } = useWhatsApp();
-  const { activeCompanyId } = useCompanyContext();
+  const { hasCompanyFilter } = useCompanyFilter();
 
   const handleSelectConversation = (contactId: string | null) => {
     if (contactId) {
@@ -16,7 +16,7 @@ export const QueuePage = () => {
   };
 
   // Show message if no company is selected
-  if (!loading && !activeCompanyId) {
+  if (!loading && !hasCompanyFilter) {
     return (
       <div className="flex items-center justify-center h-full bg-muted/30">
         <div className="text-center space-y-4 p-8">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from './useCompanyFilter';
 
 export interface Message {
   id: string;
@@ -18,25 +18,32 @@ export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { activeCompanyId } = useCompanyContext();
+  const { getCompanyFilter, hasCompanyFilter, selectedCompanyIds } = useCompanyFilter();
 
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      console.log('Fetching messages for company:', activeCompanyId);
+      console.log('Fetching messages for companies:', selectedCompanyIds);
       
-      if (!activeCompanyId) {
+      if (!hasCompanyFilter) {
         setMessages([]);
         setLoading(false);
         return;
       }
 
-      // Get contacts for active company first
-      const { data: companyContacts } = await supabase
+      // Get contacts for selected companies
+      let contactsQuery = supabase
         .from('contacts')
-        .select('id_contact')
-        .eq('company_id', activeCompanyId);
+        .select('id_contact');
       
+      const filter = getCompanyFilter();
+      if (filter?.operator === 'eq') {
+        contactsQuery = contactsQuery.eq('company_id', filter.value as string);
+      } else if (filter?.operator === 'in') {
+        contactsQuery = contactsQuery.in('company_id', filter.value as string[]);
+      }
+      
+      const { data: companyContacts } = await contactsQuery;
       const contactIds = companyContacts?.map(c => c.id_contact) || [];
       
       if (contactIds.length === 0) {
@@ -50,7 +57,7 @@ export const useMessages = () => {
         .select('*')
         .in('contact_id', contactIds)
         .order('created_at', { ascending: false })
-        .limit(200); // Increased limit for better conversation history
+        .limit(500); // Increased limit for multi-company
 
       if (error) {
         console.error('Error fetching messages:', error);
@@ -108,7 +115,7 @@ export const useMessages = () => {
 
   // Setup realtime subscription
   useEffect(() => {
-    if (!activeCompanyId) return;
+    if (!hasCompanyFilter) return;
     fetchMessages();
 
     const channelId = `messages-changes-${crypto.randomUUID()}`;
@@ -131,7 +138,7 @@ export const useMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeCompanyId]);
+  }, [selectedCompanyIds, hasCompanyFilter]);
 
   return { 
     messages, 

@@ -1,14 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContactsView } from '@/components/whatsapp/views/ContactsView';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 
 export const ContactsPage = () => {
   const navigate = useNavigate();
-  const { activeCompanyId } = useCompanyContext();
+  const { hasCompanyFilter } = useCompanyFilter();
 
   // Show message if no company is selected
-  if (!activeCompanyId) {
+  if (!hasCompanyFilter) {
     return (
       <div className="flex items-center justify-center h-full bg-muted/30">
         <div className="text-center space-y-4 p-8">

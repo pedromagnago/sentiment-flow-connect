@@ -2,12 +2,12 @@ import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChatsView } from '@/components/whatsapp/views/ChatsView';
 import { useWhatsApp } from '@/contexts/WhatsAppContext';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 
 export const ChatsPage = () => {
   const [searchParams] = useSearchParams();
   const { conversations, activeConversation, setActiveConversation, loading } = useWhatsApp();
-  const { activeCompanyId } = useCompanyContext();
+  const { hasCompanyFilter } = useCompanyFilter();
   
   useEffect(() => {
     const contactId = searchParams.get('contact');
@@ -17,7 +17,7 @@ export const ChatsPage = () => {
   }, [searchParams, activeConversation, setActiveConversation]);
 
   // Show message if no company is selected
-  if (!loading && !activeCompanyId) {
+  if (!loading && !hasCompanyFilter) {
     return (
       <div className="flex items-center justify-center h-full bg-muted/30">
         <div className="text-center space-y-4 p-8">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from './useCompanyFilter';
 
 export interface Contact {
   id_contact: string;
@@ -18,24 +18,28 @@ export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { activeCompanyId, isAdmin, loading: companyLoading } = useCompanyContext();
+  const { getCompanyFilter, hasCompanyFilter, isAdmin, selectedCompanyIds } = useCompanyFilter();
 
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching contacts - isAdmin:', isAdmin, 'activeCompany:', activeCompanyId);
+      console.log('Fetching contacts - selectedCompanyIds:', selectedCompanyIds);
       
       let query = supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100); // Limit for performance
+        .limit(500); // Increased limit for multi-company
 
-      // Filter by active company if one is selected
-      if (activeCompanyId) {
-        query = query.eq('company_id', activeCompanyId);
-        console.log('Filtering by active company:', activeCompanyId);
-      } else if (!isAdmin) {
+      // Apply company filter
+      const filter = getCompanyFilter();
+      if (filter?.operator === 'eq') {
+        query = query.eq('company_id', filter.value as string);
+        console.log('Filtering by company:', filter.value);
+      } else if (filter?.operator === 'in') {
+        query = query.in('company_id', filter.value as string[]);
+        console.log('Filtering by companies:', filter.value);
+      } else if (!hasCompanyFilter && !isAdmin) {
         // Non-admin without company selected sees nothing
         console.log('No company selected - showing no contacts');
         setContacts([]);
@@ -49,7 +53,7 @@ export const useContacts = () => {
         console.error('Error fetching contacts:', error);
         throw error;
       }
-      console.log('Contacts fetched:', data?.length, 'isAdmin:', isAdmin);
+      console.log('Contacts fetched:', data?.length);
       setContacts(data || []);
     } catch (err) {
       console.error('Fetch contacts error:', err);
@@ -180,7 +184,7 @@ export const useContacts = () => {
 
   // Setup realtime subscription
   useEffect(() => {
-    if (companyLoading) return;
+    if (selectedCompanyIds.length === 0 && !isAdmin) return;
     fetchContacts();
 
     const channelId = `contacts-changes-${crypto.randomUUID()}`;
@@ -203,11 +207,11 @@ export const useContacts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeCompanyId, companyLoading, isAdmin]);
+  }, [selectedCompanyIds, isAdmin]);
 
   return { 
     contacts, 
-    loading: loading || companyLoading, 
+    loading, 
     error, 
     refetch: fetchContacts,
     createContact,
