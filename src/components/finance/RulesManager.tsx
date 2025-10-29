@@ -3,13 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompanyId } from "@/hooks/useCompanyId";
+import { useCompanyContext } from "@/contexts/CompanyContext";
 
 interface Rule { id: string; pattern: string; category: string }
 
 export const RulesManager: React.FC = () => {
   const { toast } = useToast();
-  const { companyId } = useCompanyId();
+  const { activeCompanyId } = useCompanyContext();
   const [userId, setUserId] = useState<string | null>(null);
   const [rules, setRules] = useState<Rule[]>([]);
   const [pattern, setPattern] = useState("");
@@ -24,12 +24,12 @@ export const RulesManager: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (companyId) {
-      loadRules(companyId);
+    if (activeCompanyId) {
+      loadRules(activeCompanyId);
     } else {
       setRules([]);
     }
-  }, [companyId]);
+  }, [activeCompanyId]);
 
   const loadRules = async (cid: string) => {
     const { data, error } = await supabase
@@ -45,7 +45,7 @@ export const RulesManager: React.FC = () => {
   };
 
   const addRule = async () => {
-    if (!companyId || !userId) return;
+    if (!activeCompanyId || !userId) return;
     if (!pattern.trim() || !category.trim()) {
       toast({ title: "Preencha padrão e categoria", variant: "destructive" });
       return;
@@ -53,20 +53,20 @@ export const RulesManager: React.FC = () => {
     setLoading(true);
     const { error } = await supabase
       .from("transaction_rules")
-      .insert({ user_id: userId, company_id: companyId, pattern: pattern.trim(), category: category.trim() });
+      .insert({ user_id: userId, company_id: activeCompanyId, pattern: pattern.trim(), category: category.trim() });
     if (error) {
       toast({ title: "Erro ao adicionar", description: error.message, variant: "destructive" });
     } else {
       setPattern("");
       setCategory("");
-      loadRules(companyId);
+      loadRules(activeCompanyId);
       toast({ title: "Regra adicionada" });
     }
     setLoading(false);
   };
 
   const removeRule = async (id: string) => {
-    if (!companyId) return;
+    if (!activeCompanyId) return;
     const { error } = await supabase.from("transaction_rules").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
@@ -87,7 +87,7 @@ export const RulesManager: React.FC = () => {
           <label className="text-sm text-muted-foreground">Categoria</label>
           <Input placeholder="ex: Receitas" value={category} onChange={(e) => setCategory(e.target.value)} />
         </div>
-        <Button onClick={addRule} disabled={loading || !companyId}>Adicionar regra</Button>
+        <Button onClick={addRule} disabled={loading || !activeCompanyId}>Adicionar regra</Button>
       </div>
 
       <div className="rounded-md border divide-y">

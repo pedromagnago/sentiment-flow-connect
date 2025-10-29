@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 export interface UserProfile {
   id: string;
   display_name: string | null;
-  company_id: string | null;
   ativo: boolean;
   especialidade: string[];
   max_atendimentos_simultaneos: number;
@@ -41,7 +40,7 @@ export function useUserProfile(): UseUserProfileResult {
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, display_name, company_id, ativo, especialidade, max_atendimentos_simultaneos, horario_atendimento")
+        .select("id, display_name, ativo, especialidade, max_atendimentos_simultaneos, horario_atendimento")
         .maybeSingle();
       
       if (profileError) throw profileError;

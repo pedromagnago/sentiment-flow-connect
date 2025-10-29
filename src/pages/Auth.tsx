@@ -83,14 +83,17 @@ const AuthPage: React.FC = () => {
           .single();
 
         if (invitation) {
-          // Buscar company_id do profile (será criado pelo trigger após signup)
-          const { data: profile } = await supabase
-            .from('profiles')
+          // Buscar company_id dos user_roles (será criado pelo trigger após signup)
+          const { data: roles } = await supabase
+            .from('user_roles')
             .select('company_id')
-            .eq('id', data.user.id)
+            .eq('user_id', data.user.id)
+            .eq('is_active', true)
+            .is('revoked_at', null)
+            .limit(1)
             .single();
 
-          const companyId = profile?.company_id;
+          const companyId = roles?.company_id;
           if (!companyId) {
             // Se não tiver company_id, o usuário precisa completar onboarding primeiro
             toast({ 

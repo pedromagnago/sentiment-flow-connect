@@ -21,6 +21,7 @@ import CompaniesPage from "./pages/CompaniesPage";
 import ContactsPage from "./pages/ContactsPage";
 import TeamPage from "./pages/TeamPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import ReceivablesPage from "./pages/ReceivablesPage";
 import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
@@ -49,8 +50,9 @@ const App = () => (
               
               {/* Main routes with layout */}
               <Route path="/" element={<PrivateRoute><MainLayout><Index /></MainLayout></PrivateRoute>} />
-              <Route path="/payables" element={<PrivateRoute><MainLayout><PayablesPage /></MainLayout></PrivateRoute>} />
-              <Route path="/invoices" element={<PrivateRoute><MainLayout><InvoicesPage /></MainLayout></PrivateRoute>} />
+            <Route path="/payables" element={<PrivateRoute><MainLayout><PayablesPage /></MainLayout></PrivateRoute>} />
+            <Route path="/receivables" element={<PrivateRoute><MainLayout><ReceivablesPage /></MainLayout></PrivateRoute>} />
+            <Route path="/invoices" element={<PrivateRoute><MainLayout><InvoicesPage /></MainLayout></PrivateRoute>} />
               <Route path="/tasks" element={<PrivateRoute><MainLayout><TasksPage /></MainLayout></PrivateRoute>} />
               <Route path="/analysis" element={<PrivateRoute><MainLayout><AnalysisPage /></MainLayout></PrivateRoute>} />
               <Route path="/suggested-actions" element={<PrivateRoute><MainLayout><SuggestedActionsPage /></MainLayout></PrivateRoute>} />

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useCompanyId } from "@/hooks/useCompanyId";
+import { useCompanyContext } from "@/contexts/CompanyContext";
 import {
   Table,
   TableBody,
@@ -53,7 +53,7 @@ interface Account {
 
 export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => void }> = ({ onSummaryChange }) => {
   const { toast } = useToast();
-  const { companyId } = useCompanyId();
+  const { activeCompanyId } = useCompanyContext();
   const [rows, setRows] = useState<TxnRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +105,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   const load = async () => {
-    if (!companyId) return;
+    if (!activeCompanyId) return;
     setLoading(true);
     setError(null);
     let query = supabase
@@ -131,12 +131,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   useEffect(() => {
-    if (!companyId) return;
+    if (!activeCompanyId) return;
     // Fetch accounts
     supabase
       .from("bank_accounts")
       .select("id,display_name,account_id,bank_id,branch_id")
-      .eq("company_id", companyId)
+      .eq("company_id", activeCompanyId)
       .order("display_name", { ascending: true })
       .then(({ data, error }) => {
         if (error) {
@@ -150,7 +150,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     supabase
       .from("bank_transactions")
       .select("category")
-      .eq("company_id", companyId)
+      .eq("company_id", activeCompanyId)
       .not("category", "is", null)
       .then(({ data, error }) => {
         if (!error && data) {
@@ -161,7 +161,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId]);
+  }, [activeCompanyId]);
 
   const currency = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -237,7 +237,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   // Helper to apply current filters to a query
   const applyQueryFilters = (q: any) => {
-    let query = q.eq("company_id", companyId);
+    let query = q.eq("company_id", activeCompanyId);
     if (selectedAccountId !== "all") query = query.eq("bank_account_uuid", selectedAccountId);
     if (dateFilter.from) query = query.gte("date", dateFilter.from);
     if (dateFilter.to) query = query.lte("date", dateFilter.to);
@@ -253,7 +253,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   // Select all matching current filter (across all pages)
   const selectAllMatching = async () => {
-    if (!companyId) return;
+    if (!activeCompanyId) return;
     setLoading(true);
     try {
       let q = supabase.from("bank_transactions").select("id", { count: "exact", head: true });
@@ -370,7 +370,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   // AI Classification for empty items
   const handleClassifyWithContext = async () => {
-    if (!companyId) return;
+    if (!activeCompanyId) return;
     
     // Save context to localStorage
     localStorage.setItem('classify_context', classifyContext);
@@ -503,15 +503,15 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={load} disabled={loading || !companyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
-        <Button variant="secondary" onClick={selectAllMatching} disabled={loading || !companyId}>
+        <Button onClick={load} disabled={loading || !activeCompanyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
+        <Button variant="secondary" onClick={selectAllMatching} disabled={loading || !activeCompanyId}>
           Selecionar todos do filtro
         </Button>
         <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
         <Button 
           variant="outline" 
           onClick={() => setShowClassifyDialog(true)} 
-          disabled={isClassifyingAI || !companyId || emptyCount === 0}
+          disabled={isClassifyingAI || !activeCompanyId || emptyCount === 0}
         >
           {isClassifyingAI ? "Classificando..." : "🤖 Classificar Vazios com IA"}
         </Button>

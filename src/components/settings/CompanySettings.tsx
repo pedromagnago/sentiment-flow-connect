@@ -9,9 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Building2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { useCompanyContext } from '@/contexts/CompanyContext';
+
 export const CompanySettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { activeCompanyId } = useCompanyContext();
   const [companyName, setCompanyName] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [email, setEmail] = useState('');
@@ -19,43 +22,22 @@ export const CompanySettings = () => {
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [companyId, setCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCompanySettings();
   }, [user]);
 
   const loadCompanySettings = async () => {
-    if (!user) return;
+    if (!user || !activeCompanyId) return;
 
     try {
       setIsLoading(true);
-      
-      // Get user profile to get company_id
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      
-      if (!profile?.company_id) {
-        toast({
-          title: 'Empresa não encontrada',
-          description: 'Você não está associado a nenhuma empresa',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setCompanyId(profile.company_id);
 
       // Get company data
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('*')
-        .eq('id', profile.company_id)
+        .eq('id', activeCompanyId)
         .single();
 
       if (companyError) throw companyError;
@@ -80,7 +62,7 @@ export const CompanySettings = () => {
   };
 
   const saveCompanySettings = async () => {
-    if (!companyId) {
+    if (!activeCompanyId) {
       toast({
         title: 'Erro',
         description: 'ID da empresa não encontrado',
@@ -102,7 +84,7 @@ export const CompanySettings = () => {
           endereco: address,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', companyId);
+        .eq('id', activeCompanyId);
 
       if (error) throw error;
 

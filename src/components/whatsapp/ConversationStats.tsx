@@ -87,11 +87,7 @@ export const ConversationStats: React.FC<ConversationStatsProps> = ({
                 <Building className="h-3 w-3" />
                 Visualizando todas as empresas ({Object.keys(conversationsByCompany).length})
               </p>
-            ) : profile?.company_id && (
-              <p className="text-sm text-muted-foreground">
-                Empresa: <Badge variant="outline">{profile.company_id}</Badge>
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
         <Badge variant="secondary">

@@ -25,6 +25,8 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { useCompanyContext } from '@/contexts/CompanyContext';
+
 interface RuleLog {
   id: string;
   rule_name: string;
@@ -38,6 +40,7 @@ interface RuleLog {
 export const RuleApplicationLogs = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { activeCompanyId } = useCompanyContext();
   const [logs, setLogs] = useState<RuleLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,18 +51,10 @@ export const RuleApplicationLogs = () => {
   }, [user]);
 
   const loadLogs = async () => {
-    if (!user) return;
+    if (!user || !activeCompanyId) return;
     
     try {
       setIsLoading(true);
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profile?.company_id) return;
 
       // Get audit logs related to rule applications
       const { data, error } = await supabase

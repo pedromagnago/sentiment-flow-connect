@@ -72,14 +72,17 @@ const AcceptInvitePage: React.FC = () => {
         return;
       }
 
-      // Usuário já logado - buscar company_id do profile
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Usuário já logado - buscar user_roles para obter company_id
+      const { data: roles } = await supabase
+        .from('user_roles')
         .select('company_id')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .is('revoked_at', null)
+        .limit(1)
         .single();
 
-      const companyId = profile?.company_id;
+      const companyId = roles?.company_id;
       if (!companyId) {
         throw new Error('Perfil sem company_id. Complete o onboarding primeiro.');
       }

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompanyContext } from "@/contexts/CompanyContext";
 import { TransactionsTable } from "./TransactionsTable";
 import { RulesManager } from "./RulesManager";
 import { ArrowDownCircle, ArrowUpCircle, Scale, Upload, InfoIcon } from "lucide-react";
@@ -9,9 +10,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 export const Reconciliation: React.FC = () => {
   const { toast } = useToast();
+  const { activeCompanyId } = useCompanyContext();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [companyId, setCompanyId] = useState<string | null>(null);
 
   const [credit, setCredit] = useState(0);
   const [debit, setDebit] = useState(0);
@@ -20,26 +21,18 @@ export const Reconciliation: React.FC = () => {
 
   useEffect(() => {
     document.title = "Reconciliação Financeira OFX | FullBPO";
-    // Fetch company_id from profile
-    supabase
-      .from("profiles")
-      .select("company_id")
-      .maybeSingle()
-      .then(async ({ data, error }) => {
-        if (error) {
-          toast({ title: "Erro ao carregar perfil", description: error.message, variant: "destructive" });
-        } else if (data?.company_id) {
-          const cid = String(data.company_id);
-          setCompanyId(cid);
-          // load imports count
-          const { count } = await supabase
-            .from("transaction_imports")
-            .select("id", { count: "exact", head: true })
-            .eq("company_id", cid);
-          setImportsCount(count ?? 0);
-        }
-      });
-  }, [toast]);
+    
+    const loadImportsCount = async () => {
+      if (!activeCompanyId) return;
+      const { count } = await supabase
+        .from("transaction_imports")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", activeCompanyId);
+      setImportsCount(count ?? 0);
+    };
+    
+    loadImportsCount();
+  }, [activeCompanyId]);
 
   const currency = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -63,7 +56,7 @@ export const Reconciliation: React.FC = () => {
       toast({ title: "Selecione um arquivo" });
       return;
     }
-    if (!companyId) {
+    if (!activeCompanyId) {
       toast({ title: "Perfil sem empresa", description: "Associe-se a uma empresa para continuar.", variant: "destructive" });
       return;
     }
@@ -111,7 +104,7 @@ export const Reconciliation: React.FC = () => {
       const { count } = await supabase
         .from("transaction_imports")
         .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId);
+        .eq("company_id", activeCompanyId);
       setImportsCount(count ?? importsCount);
     } catch (e: any) {
       toast({ title: "Falha ao importar", description: e?.message ?? String(e), variant: "destructive" });

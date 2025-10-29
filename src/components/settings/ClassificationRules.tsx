@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 
+import { useCompanyContext } from '@/contexts/CompanyContext';
+
 interface Rule {
   id: string;
   rule_name: string;
@@ -101,6 +103,7 @@ const RULE_TEMPLATES = {
 export const ClassificationRules = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { activeCompanyId } = useCompanyContext();
   const [rules, setRules] = useState<Rule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -119,23 +122,15 @@ export const ClassificationRules = () => {
   }, [user]);
 
   const loadRules = async () => {
-    if (!user) return;
+    if (!user || !activeCompanyId) return;
     
     try {
       setIsLoading(true);
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profile?.company_id) return;
 
       const { data, error } = await supabase
         .from('ai_classification_rules')
         .select('*')
-        .eq('company_id', profile.company_id)
+        .eq('company_id', activeCompanyId)
         .order('priority', { ascending: false });
       
       if (error) throw error;
@@ -153,24 +148,9 @@ export const ClassificationRules = () => {
   };
 
   const handleSaveRule = async () => {
-    if (!user || !ruleName) return;
+    if (!user || !ruleName || !activeCompanyId) return;
     
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profile?.company_id) {
-        toast({
-          title: 'Erro',
-          description: 'Empresa não encontrada',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       let parsedConditions, parsedActions;
       try {
         parsedConditions = JSON.parse(conditions);
@@ -185,7 +165,7 @@ export const ClassificationRules = () => {
       }
 
       const ruleData = {
-        company_id: profile.company_id,
+        company_id: activeCompanyId,
         user_id: user.id,
         rule_name: ruleName,
         rule_type: ruleType,
@@ -333,20 +313,14 @@ export const ClassificationRules = () => {
       try {
         const importedRules = JSON.parse(e.target?.result as string);
         
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('company_id')
-          .eq('id', user!.id)
-          .single();
-        
-        if (!profile?.company_id) return;
+        if (!activeCompanyId) return;
 
         // Remove id and set company_id
         const rulesToImport = importedRules.map((r: any) => ({
           ...r,
           id: undefined,
           user_id: user.id,
-          company_id: profile.company_id,
+          company_id: activeCompanyId,
           created_at: undefined,
           updated_at: undefined,
         }));
