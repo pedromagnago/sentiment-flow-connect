@@ -1932,6 +1932,11 @@ export type Database = {
           similarity: number
         }[]
       }
+      user_can_access_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "admin" | "supervisor" | "operator" | "viewer"
