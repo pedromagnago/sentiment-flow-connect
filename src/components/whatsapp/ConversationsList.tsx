@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Conversation } from './WhatsAppInterface';
@@ -28,6 +29,8 @@ export const ConversationsList = ({
   statusFilter,
   onStatusFilterChange
 }: ConversationsListProps) => {
+  usePerformanceMonitor('ConversationsList', 500);
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aguardando': return 'bg-red-50 text-red-700 border-red-200';

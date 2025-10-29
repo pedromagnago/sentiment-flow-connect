@@ -6,6 +6,7 @@ import { Phone, Video, MoreVertical, User, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useSuggestedActions } from '@/hooks/useSuggestedActions';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { SuggestedActionCard } from './SuggestedActionCard';
 import { ActionHistoryPanel } from './ActionHistoryPanel';
 import type { Conversation, Message } from './WhatsAppInterface';
@@ -16,6 +17,8 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow = ({ conversation, messages }: ChatWindowProps) => {
+  usePerformanceMonitor('ChatWindow', 500);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { sendMessage, isSending } = useSendMessage();
   const { actions, processAction, ignoreAction, updateAction, isProcessing } = useSuggestedActions(conversation.contact.id_contact);

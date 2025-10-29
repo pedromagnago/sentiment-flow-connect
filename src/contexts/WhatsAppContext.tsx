@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 
 export interface Contact {
   id_contact: string;
@@ -52,50 +53,87 @@ interface WhatsAppContextType {
 const WhatsAppContext = createContext<WhatsAppContextType | undefined>(undefined);
 
 export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
+  usePerformanceMonitor('WhatsAppContext', 1000);
+  
   const { messages, loading: messagesLoading, error: messagesError } = useMessages();
   const { contacts, loading: contactsLoading, error: contactsError } = useContacts();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
-  useEffect(() => {
-    if (!messages.length || !contacts.length) return;
-
-    // Create a Map for O(1) contact lookup
-    const contactsMap = new Map(contacts.map(c => [c.id_contact, c]));
-    const conversationsMap = new Map<string, Conversation>();
-    const now = Date.now();
-    const dayAgo = now - 24 * 60 * 60 * 1000;
-
-    messages.forEach(message => {
-      const contact = contactsMap.get(message.contact_id);
-      if (!contact) return;
-
-      const existing = conversationsMap.get(message.contact_id);
-      const messageTime = new Date(message.created_at).getTime();
-      
-      if (!existing || messageTime > new Date(existing.lastMessage.created_at).getTime()) {
-        conversationsMap.set(message.contact_id, {
-          contact,
-          lastMessage: message,
-          unreadCount: existing?.unreadCount || 0,
-          status: existing?.status || 'aguardando',
-          priority: existing?.priority || 'media',
-          tags: existing?.tags || []
+  // Web Worker setup
+  const worker = useMemo(() => {
+    if (typeof Worker !== 'undefined') {
+      try {
+        return new Worker(new URL('../workers/conversationProcessor.worker.ts', import.meta.url), {
+          type: 'module'
         });
+      } catch (error) {
+        console.warn('Web Worker not available, using synchronous processing:', error);
+        return null;
       }
+    }
+    return null;
+  }, []);
 
-      // Count unread messages inline
-      if (!message.fromme && messageTime > dayAgo) {
-        const conv = conversationsMap.get(message.contact_id)!;
-        conv.unreadCount++;
+  // Process conversations with Web Worker or fallback
+  useEffect(() => {
+    if (!messages.length || !contacts.length) {
+      setConversations([]);
+      return;
+    }
+
+    if (worker) {
+      // Use Web Worker for heavy processing
+      worker.postMessage({ messages, contacts });
+      worker.onmessage = (e) => {
+        setConversations(e.data);
+      };
+    } else {
+      // Fallback to synchronous processing
+      const contactsMap = new Map(contacts.map(c => [c.id_contact, c]));
+      const conversationsMap = new Map<string, Conversation>();
+      const now = Date.now();
+      const dayAgo = now - 24 * 60 * 60 * 1000;
+
+      messages.forEach(message => {
+        const contact = contactsMap.get(message.contact_id);
+        if (!contact) return;
+
+        const existing = conversationsMap.get(message.contact_id);
+        const messageTime = new Date(message.created_at).getTime();
+        
+        if (!existing || messageTime > new Date(existing.lastMessage.created_at).getTime()) {
+          conversationsMap.set(message.contact_id, {
+            contact,
+            lastMessage: message,
+            unreadCount: existing?.unreadCount || 0,
+            status: existing?.status || 'aguardando',
+            priority: existing?.priority || 'media',
+            tags: existing?.tags || []
+          });
+        }
+
+        if (!message.fromme && messageTime > dayAgo) {
+          const conv = conversationsMap.get(message.contact_id)!;
+          conv.unreadCount++;
+        }
+      });
+
+      const conversationsArray = Array.from(conversationsMap.values())
+        .sort((a, b) => new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime());
+
+      setConversations(conversationsArray);
+    }
+  }, [messages, contacts, worker]);
+
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      if (worker) {
+        worker.terminate();
       }
-    });
-
-    const conversationsArray = Array.from(conversationsMap.values())
-      .sort((a, b) => new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime());
-
-    setConversations(conversationsArray);
-  }, [messages, contacts]);
+    };
+  }, [worker]);
 
   const unreadCount = conversations.reduce((acc, conv) => acc + conv.unreadCount, 0);
   const queueCount = conversations.filter(conv => conv.status === 'aguardando').length;

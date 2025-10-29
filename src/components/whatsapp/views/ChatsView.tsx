@@ -5,6 +5,8 @@ import { ChatWindow } from '../ChatWindow';
 import { ContactInfo } from '../ContactInfo';
 import { useMessages } from '@/hooks/useMessages';
 import { useContacts } from '@/hooks/useContacts';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import type { Conversation } from '../WhatsAppInterface';
 
 interface ChatsViewProps {
@@ -18,22 +20,25 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
   activeConversation,
   onSelectConversation
 }) => {
+  usePerformanceMonitor('ChatsView', 500);
+  
   const { messages } = useMessages();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'aguardando' | 'em_atendimento' | 'finalizado' | 'aguardando_retorno'>('todos');
 
-  // Memoize filtered conversations for performance
+  // Memoize filtered conversations for performance with debounced search
   const filteredConversations = useMemo(() => {
     return conversations.filter(conv => {
-      const matchesSearch = !searchTerm || 
-        conv.contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        conv.lastMessage.conteudo_mensagem?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = !debouncedSearch || 
+        conv.contact.nome?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        conv.lastMessage.conteudo_mensagem?.toLowerCase().includes(debouncedSearch.toLowerCase());
       
       const matchesStatus = statusFilter === 'todos' || conv.status === statusFilter;
       
       return matchesSearch && matchesStatus;
     });
-  }, [conversations, searchTerm, statusFilter]);
+  }, [conversations, debouncedSearch, statusFilter]);
 
   const activeConversationData = useMemo(() => 
     conversations.find(c => c.contact.id_contact === activeConversation),
