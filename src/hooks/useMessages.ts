@@ -50,7 +50,7 @@ export const useMessages = () => {
         .select('*')
         .in('contact_id', contactIds)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200); // Increased limit for better conversation history
 
       if (error) {
         console.error('Error fetching messages:', error);

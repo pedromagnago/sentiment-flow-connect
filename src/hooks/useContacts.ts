@@ -28,7 +28,8 @@ export const useContacts = () => {
       let query = supabase
         .from('contacts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100); // Limit for performance
 
       // Filter by active company if one is selected
       if (activeCompanyId) {

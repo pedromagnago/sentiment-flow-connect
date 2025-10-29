@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { ConversationsList } from '../ConversationsList';
 import { ChatWindow } from '../ChatWindow';
@@ -22,23 +22,28 @@ export const ChatsView: React.FC<ChatsViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'aguardando' | 'em_atendimento' | 'finalizado' | 'aguardando_retorno'>('todos');
 
-  // Filtrar conversações
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = !searchTerm || 
-      conv.contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.lastMessage.conteudo_mensagem?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'todos' || conv.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // Memoize filtered conversations for performance
+  const filteredConversations = useMemo(() => {
+    return conversations.filter(conv => {
+      const matchesSearch = !searchTerm || 
+        conv.contact.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conv.lastMessage.conteudo_mensagem?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'todos' || conv.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [conversations, searchTerm, statusFilter]);
 
-  const activeConversationData = conversations.find(c => c.contact.id_contact === activeConversation);
-  const activeContactMessages = messages.filter(m => m.contact_id === activeConversation);
+  const activeConversationData = useMemo(() => 
+    conversations.find(c => c.contact.id_contact === activeConversation),
+    [conversations, activeConversation]
+  );
   
-  console.log('ChatsView - Active conversation:', activeConversation);
-  console.log('ChatsView - Messages for active contact:', activeContactMessages.length);
-  console.log('ChatsView - Total messages available:', messages.length);
+  const activeContactMessages = useMemo(() => 
+    messages.filter(m => m.contact_id === activeConversation),
+    [messages, activeConversation]
+  );
 
   // Se não encontrou a conversa, mas temos um contato ativo, cria uma conversa temporária
   const conversationToDisplay = activeConversationData || (activeConversation ? {

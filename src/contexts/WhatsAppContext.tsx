@@ -60,15 +60,20 @@ export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!messages.length || !contacts.length) return;
 
+    // Create a Map for O(1) contact lookup
+    const contactsMap = new Map(contacts.map(c => [c.id_contact, c]));
     const conversationsMap = new Map<string, Conversation>();
+    const now = Date.now();
+    const dayAgo = now - 24 * 60 * 60 * 1000;
 
     messages.forEach(message => {
-      const contact = contacts.find(c => c.id_contact === message.contact_id);
+      const contact = contactsMap.get(message.contact_id);
       if (!contact) return;
 
       const existing = conversationsMap.get(message.contact_id);
+      const messageTime = new Date(message.created_at).getTime();
       
-      if (!existing || new Date(message.created_at) > new Date(existing.lastMessage.created_at)) {
+      if (!existing || messageTime > new Date(existing.lastMessage.created_at).getTime()) {
         conversationsMap.set(message.contact_id, {
           contact,
           lastMessage: message,
@@ -78,15 +83,12 @@ export const WhatsAppProvider = ({ children }: { children: ReactNode }) => {
           tags: existing?.tags || []
         });
       }
-    });
 
-    conversationsMap.forEach((conversation, contactId) => {
-      const contactMessages = messages.filter(m => 
-        m.contact_id === contactId && 
-        !m.fromme &&
-        new Date(m.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-      );
-      conversation.unreadCount = contactMessages.length;
+      // Count unread messages inline
+      if (!message.fromme && messageTime > dayAgo) {
+        const conv = conversationsMap.get(message.contact_id)!;
+        conv.unreadCount++;
+      }
     });
 
     const conversationsArray = Array.from(conversationsMap.values())
