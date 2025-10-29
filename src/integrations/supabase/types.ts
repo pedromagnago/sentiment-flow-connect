@@ -237,6 +237,9 @@ export type Database = {
           projeto: string | null
           rateio: Json | null
           raw: Json | null
+          reconciled: boolean | null
+          reconciled_at: string | null
+          reconciled_by: string | null
           reconciliado: boolean | null
           reconciliado_com_id: string | null
           reconciliado_com_tipo: string | null
@@ -272,6 +275,9 @@ export type Database = {
           projeto?: string | null
           rateio?: Json | null
           raw?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           reconciliado?: boolean | null
           reconciliado_com_id?: string | null
           reconciliado_com_tipo?: string | null
@@ -307,6 +313,9 @@ export type Database = {
           projeto?: string | null
           rateio?: Json | null
           raw?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           reconciliado?: boolean | null
           reconciliado_com_id?: string | null
           reconciliado_com_tipo?: string | null
@@ -520,6 +529,92 @@ export type Database = {
         }
         Relationships: []
       }
+      company_group_members: {
+        Row: {
+          company_id: string
+          consolidation_weight: number | null
+          group_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string | null
+          left_at: string | null
+          member_type: string
+        }
+        Insert: {
+          company_id: string
+          consolidation_weight?: number | null
+          group_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          member_type?: string
+        }
+        Update: {
+          company_id?: string
+          consolidation_weight?: number | null
+          group_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string | null
+          left_at?: string | null
+          member_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_group_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "company_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_groups: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          parent_company_id: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          parent_company_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          parent_company_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_groups_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           company_id: string | null
@@ -605,6 +700,7 @@ export type Database = {
           created_at: string
           data_competencia: string | null
           descricao: string | null
+          document_analysis: Json | null
           documento_original_url: string | null
           forma_pagamento: string | null
           historico_atividades: Json | null
@@ -616,6 +712,9 @@ export type Database = {
           pago_em: string | null
           projeto: string | null
           rateio: Json | null
+          reconciled: boolean | null
+          reconciled_at: string | null
+          reconciled_by: string | null
           saldo_devedor: number | null
           status: string
           subcategoria: string | null
@@ -627,6 +726,7 @@ export type Database = {
           valor: number
           valor_pago: number | null
           vencimento: string
+          whatsapp_document_url: string | null
         }
         Insert: {
           beneficiario: string
@@ -640,6 +740,7 @@ export type Database = {
           created_at?: string
           data_competencia?: string | null
           descricao?: string | null
+          document_analysis?: Json | null
           documento_original_url?: string | null
           forma_pagamento?: string | null
           historico_atividades?: Json | null
@@ -651,6 +752,9 @@ export type Database = {
           pago_em?: string | null
           projeto?: string | null
           rateio?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           saldo_devedor?: number | null
           status?: string
           subcategoria?: string | null
@@ -662,6 +766,7 @@ export type Database = {
           valor: number
           valor_pago?: number | null
           vencimento: string
+          whatsapp_document_url?: string | null
         }
         Update: {
           beneficiario?: string
@@ -675,6 +780,7 @@ export type Database = {
           created_at?: string
           data_competencia?: string | null
           descricao?: string | null
+          document_analysis?: Json | null
           documento_original_url?: string | null
           forma_pagamento?: string | null
           historico_atividades?: Json | null
@@ -686,6 +792,9 @@ export type Database = {
           pago_em?: string | null
           projeto?: string | null
           rateio?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           saldo_devedor?: number | null
           status?: string
           subcategoria?: string | null
@@ -697,6 +806,7 @@ export type Database = {
           valor?: number
           valor_pago?: number | null
           vencimento?: string
+          whatsapp_document_url?: string | null
         }
         Relationships: [
           {
@@ -732,6 +842,7 @@ export type Database = {
           data_emissao: string | null
           data_vencimento: string
           descricao: string
+          document_analysis: Json | null
           documento_original_url: string | null
           fatura_id: string | null
           forma_recebimento: string | null
@@ -744,6 +855,9 @@ export type Database = {
           rateio: Json | null
           recebido_em: string | null
           recebimentos_parciais: Json | null
+          reconciled: boolean | null
+          reconciled_at: string | null
+          reconciled_by: string | null
           saldo_devedor: number | null
           status: string
           status_aprovacao: string | null
@@ -756,6 +870,7 @@ export type Database = {
           user_id: string
           valor_recebido: number | null
           valor_total: number
+          whatsapp_document_url: string | null
         }
         Insert: {
           aprovador_id?: string | null
@@ -773,6 +888,7 @@ export type Database = {
           data_emissao?: string | null
           data_vencimento: string
           descricao: string
+          document_analysis?: Json | null
           documento_original_url?: string | null
           fatura_id?: string | null
           forma_recebimento?: string | null
@@ -785,6 +901,9 @@ export type Database = {
           rateio?: Json | null
           recebido_em?: string | null
           recebimentos_parciais?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           saldo_devedor?: number | null
           status?: string
           status_aprovacao?: string | null
@@ -797,6 +916,7 @@ export type Database = {
           user_id: string
           valor_recebido?: number | null
           valor_total: number
+          whatsapp_document_url?: string | null
         }
         Update: {
           aprovador_id?: string | null
@@ -814,6 +934,7 @@ export type Database = {
           data_emissao?: string | null
           data_vencimento?: string
           descricao?: string
+          document_analysis?: Json | null
           documento_original_url?: string | null
           fatura_id?: string | null
           forma_recebimento?: string | null
@@ -826,6 +947,9 @@ export type Database = {
           rateio?: Json | null
           recebido_em?: string | null
           recebimentos_parciais?: Json | null
+          reconciled?: boolean | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           saldo_devedor?: number | null
           status?: string
           status_aprovacao?: string | null
@@ -838,6 +962,7 @@ export type Database = {
           user_id?: string
           valor_recebido?: number | null
           valor_total?: number
+          whatsapp_document_url?: string | null
         }
         Relationships: [
           {
@@ -1450,6 +1575,79 @@ export type Database = {
           },
         ]
       }
+      reconciliation_matches: {
+        Row: {
+          company_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          id: string
+          match_details: Json | null
+          match_score: number | null
+          match_type: string
+          payable_id: string | null
+          receivable_id: string | null
+          status: string
+          transaction_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          id?: string
+          match_details?: Json | null
+          match_score?: number | null
+          match_type: string
+          payable_id?: string | null
+          receivable_id?: string | null
+          status?: string
+          transaction_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          id?: string
+          match_details?: Json | null
+          match_score?: number | null
+          match_type?: string
+          payable_id?: string | null
+          receivable_id?: string | null
+          status?: string
+          transaction_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_matches_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "contas_pagar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_matches_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_matches_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           created_at: string
@@ -1484,7 +1682,9 @@ export type Database = {
           id: string
           message_id: string | null
           notes: string | null
+          payable_id: string | null
           priority: string | null
+          receivable_id: string | null
           result_data: Json | null
           status: string | null
           updated_at: string | null
@@ -1501,7 +1701,9 @@ export type Database = {
           id?: string
           message_id?: string | null
           notes?: string | null
+          payable_id?: string | null
           priority?: string | null
+          receivable_id?: string | null
           result_data?: Json | null
           status?: string | null
           updated_at?: string | null
@@ -1518,7 +1720,9 @@ export type Database = {
           id?: string
           message_id?: string | null
           notes?: string | null
+          payable_id?: string | null
           priority?: string | null
+          receivable_id?: string | null
           result_data?: Json | null
           status?: string | null
           updated_at?: string | null
@@ -1536,6 +1740,20 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_actions_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "contas_pagar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggested_actions_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
             referencedColumns: ["id"]
           },
         ]
