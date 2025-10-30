@@ -1,11 +1,13 @@
 import React from 'react';
-import { Search, Filter, Clock, MessageCircle, AlertCircle, User, Users as UsersIcon, ChevronDown } from 'lucide-react';
+import { Search, Filter, Clock, MessageCircle, AlertCircle, User, Users as UsersIcon, ChevronDown, Building2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Conversation } from './WhatsAppInterface';
@@ -30,6 +32,15 @@ export const ConversationsList = ({
   onStatusFilterChange
 }: ConversationsListProps) => {
   usePerformanceMonitor('ConversationsList', 500);
+  
+  const { availableCompanies } = useCompanyContext();
+  const { isMultiCompany } = useCompanyFilter();
+  
+  const getCompanyName = (companyId?: string) => {
+    if (!companyId) return null;
+    const company = availableCompanies.find(c => c.id === companyId);
+    return company?.nome || companyId.slice(0, 8);
+  };
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -173,13 +184,19 @@ export const ConversationsList = ({
                   <div className="flex-1 min-w-0">
                     {/* Header da conversa */}
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         <h3 className="font-medium text-sm truncate">
                           {conversation.contact.nome || conversation.contact.id_contact}
                         </h3>
                         {conversation.contact.is_group && (
                           <Badge variant="outline" className="text-xs">
                             Grupo
+                          </Badge>
+                        )}
+                        {isMultiCompany && conversation.contact.company_id && (
+                          <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
+                            <Building2 className="h-3 w-3" />
+                            {getCompanyName(conversation.contact.company_id)}
                           </Badge>
                         )}
                       </div>

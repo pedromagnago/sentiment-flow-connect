@@ -1,9 +1,11 @@
 import React from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import { Clock, AlertTriangle, User, MessageCircle, Building } from 'lucide-react';
+import { Clock, AlertTriangle, User, MessageCircle, Building2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useCompanyContext } from '@/contexts/CompanyContext';
+import { useCompanyFilter } from '@/hooks/useCompanyFilter';
 import type { Conversation } from '../WhatsAppInterface';
 import type { ConversationAssignment } from '@/hooks/useConversationAssignments';
 
@@ -22,6 +24,15 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
   onSelectConversation,
   onAssumeConversation
 }) => {
+  const { availableCompanies } = useCompanyContext();
+  const { isMultiCompany } = useCompanyFilter();
+  
+  const getCompanyName = (companyId?: string) => {
+    if (!companyId) return null;
+    const company = availableCompanies.find(c => c.id === companyId);
+    return company?.nome || companyId.slice(0, 8);
+  };
+  
   const getInitials = (name?: string) => {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -84,11 +95,11 @@ export const ConversationCard: React.FC<ConversationCardProps> = ({
               </div>
             </div>
 
-            {/* Company badge */}
-            {conversation.contact.company_id && (
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                <Building className="h-3 w-3" />
-                {conversation.contact.company_id.slice(0, 8)}...
+            {/* Company badge - only show if multiple companies */}
+            {isMultiCompany && conversation.contact.company_id && (
+              <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
+                <Building2 className="h-3 w-3" />
+                {getCompanyName(conversation.contact.company_id)}
               </Badge>
             )}
 

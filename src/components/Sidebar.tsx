@@ -27,18 +27,12 @@ import {
   Shield
 } from 'lucide-react';
 import { useSidebarContext } from '@/contexts/SidebarContext';
-import { useCompanyContext } from '@/contexts/CompanyContext';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CompanyMultiSelect } from '@/components/layout/CompanyMultiSelect';
 
 export const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isCollapsed, toggleSidebar } = useSidebarContext();
-  const { activeCompanyId, availableCompanies } = useCompanyContext();
-  
-  // Find active company
-  const activeCompany = availableCompanies.find(c => c.id === activeCompanyId);
   
   // Estados para controlar expansão das seções
   const [whatsappExpanded, setWhatsappExpanded] = useState(false);
@@ -232,37 +226,10 @@ export const Sidebar = () => {
           )}
         </div>
         
-        {/* Active Company Badge */}
+        {/* Company Multi-Select */}
         {!isCollapsed && (
           <div className="mb-4">
-            {activeCompanyId === null ? (
-              <Badge variant="secondary" className="w-full justify-center py-2">
-                <Building2 className="h-3 w-3 mr-2" />
-                Todas as Empresas ({availableCompanies.length})
-              </Badge>
-            ) : activeCompany ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="default" className="w-full justify-start py-2 cursor-help">
-                      <Building2 className="h-3 w-3 mr-2 flex-shrink-0" />
-                      <span className="truncate">{activeCompany.nome}</span>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-xs">
-                    <div className="space-y-1">
-                      <p className="font-semibold">{activeCompany.nome}</p>
-                      {activeCompany.cnpj && (
-                        <p className="text-xs text-muted-foreground">CNPJ: {activeCompany.cnpj}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {availableCompanies.length} {availableCompanies.length === 1 ? 'empresa disponível' : 'empresas disponíveis'}
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : null}
+            <CompanyMultiSelect />
           </div>
         )}
         
