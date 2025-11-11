@@ -1652,19 +1652,19 @@ export type Database = {
         Row: {
           created_at: string
           id: number
-          nome: string | null
+          nome: string
           valor: string | null
         }
         Insert: {
           created_at?: string
           id?: number
-          nome?: string | null
+          nome: string
           valor?: string | null
         }
         Update: {
           created_at?: string
           id?: number
-          nome?: string | null
+          nome?: string
           valor?: string | null
         }
         Relationships: []
