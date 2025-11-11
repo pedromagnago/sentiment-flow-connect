@@ -16,16 +16,40 @@ import {
   User, 
   Building2,
   CheckSquare,
-  Square
+  Square,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const UnclassifiedView = () => {
-  const { contacts, loading, error, messageCount, classifyContact, bulkClassify } = useUnclassifiedContacts();
+  const { contacts, loading, error, messageCount, classifyContact, bulkClassify, refetch } = useUnclassifiedContacts();
   const { companies, loading: loadingCompanies } = useCompanies();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
   const [bulkCompanyId, setBulkCompanyId] = useState<string>('');
+  const [syncing, setSyncing] = useState(false);
+
+  const syncMissingContacts = async () => {
+    try {
+      setSyncing(true);
+      const { data, error } = await supabase.rpc('sync_missing_contacts');
+      if (error) throw error;
+      
+      const count = data || 0;
+      if (count > 0) {
+        toast.success(`${count} contatos criados com sucesso!`);
+        refetch();
+      } else {
+        toast.info('Nenhum contato novo encontrado');
+      }
+    } catch (error) {
+      console.error('Error syncing contacts:', error);
+      toast.error('Erro ao sincronizar contatos');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleSelectAll = () => {
     if (selectedContacts.size === contacts.length) {
@@ -71,7 +95,18 @@ export const UnclassifiedView = () => {
   }
 
   if (error) {
-    return <ErrorState message={error} />;
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-16 h-16 text-destructive mx-auto" />
+          <h3 className="text-xl font-semibold">Erro ao Carregar</h3>
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Recarregar Página
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (contacts.length === 0) {
@@ -87,6 +122,10 @@ export const UnclassifiedView = () => {
           <p className="text-muted-foreground max-w-md">
             Não há contatos sem empresa no momento. Todos os contatos estão devidamente organizados.
           </p>
+          <Button onClick={syncMissingContacts} disabled={syncing} variant="outline" className="mt-4">
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            Sincronizar Contatos Faltantes
+          </Button>
         </div>
       </div>
     );
@@ -106,9 +145,20 @@ export const UnclassifiedView = () => {
               {contacts.length} {contacts.length === 1 ? 'contato precisa' : 'contatos precisam'} ser atribuído a uma empresa
             </p>
           </div>
-          <Badge variant="destructive" className="text-base px-3 py-1">
-            {contacts.length}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={syncMissingContacts} 
+              disabled={syncing} 
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </Button>
+            <Badge variant="destructive" className="text-base px-3 py-1">
+              {contacts.length}
+            </Badge>
+          </div>
         </div>
 
         {/* Bulk Actions */}

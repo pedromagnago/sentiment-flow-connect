@@ -12,6 +12,13 @@ export const useUnclassifiedContacts = () => {
     try {
       setLoading(true);
       
+      // LOG 1: Verificar sessão
+      const { data: session } = await supabase.auth.getSession();
+      console.log('🔐 Sessão atual:', session?.session?.user?.id);
+      
+      // LOG 2: Query com detalhes
+      console.log('🔍 Buscando contatos com company_id NULL...');
+      
       // Buscar contatos sem company_id
       const { data, error: fetchError } = await supabase
         .from('contacts')
@@ -19,8 +26,12 @@ export const useUnclassifiedContacts = () => {
         .is('company_id', null)
         .order('created_at', { ascending: false });
 
+      // LOG 3: Resultado
+      console.log('✅ Contatos encontrados:', data?.length);
+      console.log('📋 Primeiros 5:', data?.slice(0, 5));
+
       if (fetchError) {
-        console.error('Error fetching unclassified contacts:', fetchError);
+        console.error('❌ Erro RLS ou permissão:', fetchError);
         throw fetchError;
       }
 
