@@ -131,10 +131,33 @@ export const UnclassifiedView = () => {
     );
   }
 
+  // 🆕 Ordenar contatos por número de mensagens (priorizar mais ativos)
+  const sortedContacts = [...contacts].sort((a, b) => {
+    const countA = messageCount[a.id_contact] || 0;
+    const countB = messageCount[b.id_contact] || 0;
+    return countB - countA; // Mais mensagens primeiro
+  });
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="border-b bg-card px-6 py-4">
+        {/* 🆕 Instruções do Sistema Manual */}
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                📋 Sistema de Classificação Manual
+              </h4>
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                Todos os contatos abaixo aguardam classificação manual. 
+                Após classificar, eles aparecerão na aba <strong>"Chats"</strong> da empresa correspondente.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
@@ -202,7 +225,7 @@ export const UnclassifiedView = () => {
       {/* List */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid gap-4 max-w-4xl mx-auto">
-          {contacts.map((contact) => (
+          {sortedContacts.map((contact) => (
             <Card key={contact.id_contact} className="hover:border-primary/50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">

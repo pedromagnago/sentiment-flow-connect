@@ -163,58 +163,36 @@ serve(async (req) => {
       throw messageError;
     }
 
-    // Verificar/criar contato
-    const { data: existingContact } = await supabase
+    // ✅ SISTEMA DE CLASSIFICAÇÃO MANUAL
+    // SEMPRE cria contato SEM empresa (company_id = NULL)
+    // Usa upsert para atualizar se já existir
+    const contactData = {
+      id_contact: zapMessage.phone,
+      nome: zapMessage.senderName || zapMessage.chatName,
+      is_group: zapMessage.isGroup,
+      status: true,
+      feedback: true,
+      data_criacao: new Date().toISOString(),
+      company_id: null,  // 🎯 SEMPRE NULL - Classificação 100% manual
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: contactError } = await supabase
       .from('contacts')
-      .select('id_contact')
-      .eq('id_contact', zapMessage.phone)
-      .single();
+      .upsert(contactData, {
+        onConflict: 'id_contact',
+        ignoreDuplicates: false  // Atualiza se já existir
+      });
 
-    if (!existingContact) {
-      const contactData = {
-        id_contact: zapMessage.phone,
-        nome: zapMessage.senderName || zapMessage.chatName,
-        is_group: zapMessage.isGroup,
-        status: true,
-        feedback: true,
-        data_criacao: new Date().toISOString(),
-        company_id: null // Novo contato sem empresa - precisa classificação
-      };
-
-      const { error: contactError } = await supabase
-        .from('contacts')
-        .insert(contactData);
-
-      if (contactError) {
-        console.error('Error inserting contact:', contactError);
-      } else {
-        console.log('New contact created (unclassified):', zapMessage.phone);
-      }
+    if (contactError) {
+      console.error('❌ Error upserting contact:', contactError);
     } else {
-      // Log se contato existente não tem company_id
-      const { data: contactInfo } = await supabase
-        .from('contacts')
-        .select('company_id')
-        .eq('id_contact', zapMessage.phone)
-        .single();
-      
-      if (contactInfo && !contactInfo.company_id) {
-        console.log('⚠️ Message from unclassified contact:', zapMessage.phone);
-      }
+      console.log('✅ Contato criado/atualizado SEM empresa (aguarda classificação manual):', zapMessage.phone);
     }
 
-    // Verificar se precisa criar/atualizar assignment (só se tiver company_id)
-    const { data: finalContact } = await supabase
-      .from('contacts')
-      .select('company_id')
-      .eq('id_contact', zapMessage.phone)
-      .single();
-
-    if (finalContact?.company_id) {
-      await handleConversationAssignment(supabase, zapMessage.phone);
-    } else {
-      console.log('⏸️ Skipping assignment creation - contact needs classification');
-    }
+    // ⏸️ NÃO cria conversation_assignment automaticamente
+    // Apenas após classificação manual o contato terá assignment
+    console.log('⏸️ Contato aguarda classificação manual antes de criar assignment');
 
     console.log('Message processed successfully');
 

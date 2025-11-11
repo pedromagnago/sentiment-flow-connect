@@ -23,15 +23,29 @@ export const useMessages = () => {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      console.log('Fetching messages for companies:', selectedCompanyIds);
+      console.log('🔍 Fetching messages for companies:', selectedCompanyIds);
       
+      // 🆕 Se não tem filtro de empresa (modo "Todos"), busca TUDO
       if (!hasCompanyFilter) {
-        setMessages([]);
+        console.log('📊 Buscando TODAS as mensagens (sem filtro de empresa)');
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1000);
+        
+        if (error) {
+          console.error('Error fetching all messages:', error);
+          throw error;
+        }
+        console.log('✅ All messages fetched:', data?.length);
+        setMessages(data || []);
         setLoading(false);
         return;
       }
 
-      // Get contacts for selected companies
+      // Busca contatos da(s) empresa(s) selecionada(s)
+      console.log('🏢 Buscando contatos das empresas selecionadas...');
       let contactsQuery = supabase
         .from('contacts')
         .select('id_contact');
@@ -46,24 +60,30 @@ export const useMessages = () => {
       const { data: companyContacts } = await contactsQuery;
       const contactIds = companyContacts?.map(c => c.id_contact) || [];
       
+      // 🆕 Se empresa selecionada não tem contatos classificados, retorna vazio
+      // (contatos não classificados ficam na aba "Não Classificados")
       if (contactIds.length === 0) {
+        console.log('⚠️ Nenhum contato classificado para esta(s) empresa(s)');
         setMessages([]);
         setLoading(false);
         return;
       }
 
+      console.log(`✅ Encontrados ${contactIds.length} contatos classificados`);
+
+      // Busca mensagens dos contatos da empresa
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .in('contact_id', contactIds)
         .order('created_at', { ascending: false })
-        .limit(500); // Increased limit for multi-company
+        .limit(500);
 
       if (error) {
         console.error('Error fetching messages:', error);
         throw error;
       }
-      console.log('Messages fetched:', data?.length, 'messages');
+      console.log(`📨 ${data?.length || 0} mensagens carregadas`);
       setMessages(data || []);
     } catch (err) {
       console.error('Fetch messages error:', err);
