@@ -177,7 +177,8 @@ serve(async (req) => {
         is_group: zapMessage.isGroup,
         status: true,
         feedback: true,
-        data_criacao: new Date().toISOString()
+        data_criacao: new Date().toISOString(),
+        company_id: null // Novo contato sem empresa - precisa classificação
       };
 
       const { error: contactError } = await supabase
@@ -187,12 +188,33 @@ serve(async (req) => {
       if (contactError) {
         console.error('Error inserting contact:', contactError);
       } else {
-        console.log('New contact created:', zapMessage.phone);
+        console.log('New contact created (unclassified):', zapMessage.phone);
+      }
+    } else {
+      // Log se contato existente não tem company_id
+      const { data: contactInfo } = await supabase
+        .from('contacts')
+        .select('company_id')
+        .eq('id_contact', zapMessage.phone)
+        .single();
+      
+      if (contactInfo && !contactInfo.company_id) {
+        console.log('⚠️ Message from unclassified contact:', zapMessage.phone);
       }
     }
 
-    // Verificar se precisa criar/atualizar assignment
-    await handleConversationAssignment(supabase, zapMessage.phone);
+    // Verificar se precisa criar/atualizar assignment (só se tiver company_id)
+    const { data: finalContact } = await supabase
+      .from('contacts')
+      .select('company_id')
+      .eq('id_contact', zapMessage.phone)
+      .single();
+
+    if (finalContact?.company_id) {
+      await handleConversationAssignment(supabase, zapMessage.phone);
+    } else {
+      console.log('⏸️ Skipping assignment creation - contact needs classification');
+    }
 
     console.log('Message processed successfully');
 

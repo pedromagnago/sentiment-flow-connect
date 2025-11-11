@@ -32,6 +32,7 @@ import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
 import { ChatsPage } from "./pages/whatsapp/ChatsPage";
 import { QueuePage } from "./pages/whatsapp/QueuePage";
 import { ContactsPage as WhatsAppContactsPage } from "./pages/whatsapp/ContactsPage";
+import UnclassifiedPage from "./pages/whatsapp/UnclassifiedPage";
 
 const queryClient = new QueryClient();
 
@@ -64,9 +65,11 @@ const App = () => (
               
               {/* WhatsApp routes */}
               <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
+                <Route index element={<ChatsPage />} />
                 <Route path="chats" element={<ChatsPage />} />
                 <Route path="fila" element={<QueuePage />} />
                 <Route path="contatos" element={<WhatsAppContactsPage />} />
+                <Route path="nao-classificados" element={<UnclassifiedPage />} />
               </Route>
               
               {/* Team Management */}

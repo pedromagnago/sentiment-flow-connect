@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { MessageCircle, ListTodo, Users } from 'lucide-react';
+import { MessageCircle, ListTodo, Users, AlertCircle } from 'lucide-react';
 import { WhatsAppProvider, useWhatsApp } from '@/contexts/WhatsAppContext';
+import { useUnclassifiedContacts } from '@/hooks/useUnclassifiedContacts';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import { useSidebarContext } from '@/contexts/SidebarContext';
 
 const WhatsAppLayoutContent = () => {
   const { unreadCount, queueCount, loading, error } = useWhatsApp();
+  const { contacts: unclassifiedContacts } = useUnclassifiedContacts();
   const { isCollapsed } = useSidebarContext();
 
   if (loading) return (
@@ -100,6 +102,25 @@ const WhatsAppLayoutContent = () => {
               >
                 <Users className="w-4 h-4" />
                 <span className="font-medium">Contatos</span>
+              </NavLink>
+
+              <NavLink
+                to="/whatsapp/nao-classificados"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  }`
+                }
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span className="font-medium">Não Classificados</span>
+                {unclassifiedContacts.length > 0 && (
+                  <Badge variant="destructive" className="ml-1">
+                    {unclassifiedContacts.length}
+                  </Badge>
+                )}
               </NavLink>
             </nav>
           </div>
