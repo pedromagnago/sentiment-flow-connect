@@ -41,8 +41,9 @@ export const ClassificationModal = ({
       toast.success('Contato classificado com sucesso!');
       onOpenChange(false);
     } catch (error) {
-      toast.error('Erro ao classificar contato');
-      console.error(error);
+      console.error('❌ Erro no modal ao classificar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao classificar contato';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

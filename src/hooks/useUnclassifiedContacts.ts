@@ -64,25 +64,37 @@ export const useUnclassifiedContacts = () => {
 
   const classifyContact = async (contactId: string, companyId: string, newName?: string) => {
     try {
+      console.log('🏷️ Iniciando classificação...', { contactId, companyId, newName });
+      
       const updateData: any = { company_id: companyId };
       if (newName) {
         updateData.nome = newName;
       }
 
-      const { error } = await supabase
+      console.log('📝 Dados para update:', updateData);
+
+      const { data, error } = await supabase
         .from('contacts')
         .update(updateData)
-        .eq('id_contact', contactId);
+        .eq('id_contact', contactId)
+        .select();
+
+      console.log('📊 Resultado do update:', { data, error });
 
       if (error) {
-        console.error('Error classifying contact:', error);
+        console.error('❌ Erro RLS/Permissão ao classificar:', error);
         throw error;
       }
 
-      console.log('Contact classified successfully:', contactId);
+      if (!data || data.length === 0) {
+        console.error('⚠️ Nenhum registro atualizado. Contato não encontrado?');
+        throw new Error('Contato não encontrado para atualização');
+      }
+
+      console.log('✅ Contato classificado:', data[0]);
       await fetchUnclassifiedContacts();
     } catch (err) {
-      console.error('Classify contact error:', err);
+      console.error('💥 Erro ao classificar contato:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao classificar contato');
     }
   };
