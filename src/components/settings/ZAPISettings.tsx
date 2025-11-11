@@ -103,7 +103,7 @@ export const ZAPISettings = () => {
 
       // Call edge function to test connection (avoids CORS issues)
       const { data, error } = await supabase.functions.invoke('test-zapi-connection', {
-        body: { instanceId, token }
+        body: { instanceId, token, clientToken }
       });
 
       console.log('📥 Edge function response:', { data, error });

@@ -12,23 +12,34 @@ serve(async (req) => {
   }
 
   try {
-    const { instanceId, token } = await req.json();
+    const { instanceId, token, clientToken } = await req.json();
 
-    console.log('🔍 Testing ZAPI connection:', { instanceId: instanceId?.slice(0, 8) + '***' });
+    console.log('🔍 Testing ZAPI connection:', { 
+      instanceId: instanceId?.slice(0, 8) + '***',
+      hasClientToken: !!clientToken 
+    });
 
     if (!instanceId || !token) {
       throw new Error('Missing required parameters: instanceId or token');
     }
 
+    // Build headers with client-token if provided
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (clientToken) {
+      headers['Client-Token'] = clientToken;
+    }
+
     // Test connection by fetching status
     const statusUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/status`;
     console.log('📡 Testing ZAPI status endpoint:', statusUrl);
+    console.log('📋 Headers:', { ...headers, 'Client-Token': clientToken ? '***' : 'not provided' });
 
     const statusResponse = await fetch(statusUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers
     });
 
     const responseText = await statusResponse.text();
@@ -67,9 +78,7 @@ serve(async (req) => {
     const meUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/me`;
     const meResponse = await fetch(meUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers
     });
 
     let meData = null;
