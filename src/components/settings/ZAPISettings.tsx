@@ -99,34 +99,57 @@ export const ZAPISettings = () => {
     try {
       setIsTesting(true);
       setConnectionStatus('unknown');
+      console.log('🔍 Testing ZAPI connection via edge function...');
 
-      // Testar conexão com ZAPI
-      const response = await fetch(
-        `https://api.z-api.io/instances/${instanceId}/token/${token}/status`,
-        { method: 'GET' }
-      );
+      // Call edge function to test connection (avoids CORS issues)
+      const { data, error } = await supabase.functions.invoke('test-zapi-connection', {
+        body: { instanceId, token }
+      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setConnectionStatus('connected');
-        toast({
-          title: '✅ Conexão estabelecida',
-          description: `Status: ${data.connected ? 'Conectado' : 'Desconectado'} | Bateria: ${data.battery || 'N/A'}%`,
-        });
-      } else {
+      console.log('📥 Edge function response:', { data, error });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
         setConnectionStatus('disconnected');
         toast({
           title: '❌ Erro na conexão',
-          description: 'Não foi possível conectar ao ZAPI. Verifique suas credenciais.',
+          description: error.message || 'Erro ao testar conexão',
           variant: 'destructive',
         });
+        return;
       }
+
+      if (data?.error) {
+        console.error('❌ ZAPI error:', data);
+        setConnectionStatus('disconnected');
+        toast({
+          title: '❌ Erro na conexão',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Success
+      setConnectionStatus('connected');
+      const details = [
+        data.connected ? '✅ Conectado' : '❌ Desconectado',
+        data.battery ? `🔋 ${data.battery}%` : null,
+        data.phone ? `📱 ${data.phone}` : null,
+        data.waName ? `👤 ${data.waName}` : null
+      ].filter(Boolean).join(' | ');
+
+      toast({
+        title: '✅ Conexão estabelecida',
+        description: details || 'Conexão com ZAPI verificada com sucesso',
+      });
+
     } catch (error: any) {
-      console.error('Error testing ZAPI connection:', error);
+      console.error('💥 Unexpected error testing ZAPI connection:', error);
       setConnectionStatus('disconnected');
       toast({
         title: 'Erro ao testar conexão',
-        description: error.message,
+        description: error.message || 'Erro inesperado ao testar conexão',
         variant: 'destructive',
       });
     } finally {
