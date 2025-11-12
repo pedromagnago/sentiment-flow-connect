@@ -168,7 +168,7 @@ serve(async (req) => {
     // Usa upsert para atualizar se já existir
     const contactData = {
       id_contact: zapMessage.phone,
-      nome: zapMessage.senderName || zapMessage.chatName,
+      nome: zapMessage.isGroup ? zapMessage.chatName : (zapMessage.senderName || zapMessage.chatName),
       is_group: zapMessage.isGroup,
       status: true,
       feedback: true,
