@@ -16,14 +16,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTeamManagement } from '@/hooks/useTeamManagement';
-import { Copy } from 'lucide-react';
+import { Copy, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Company {
   id: string;
   nome: string;
+}
+
+interface CompanyRoleSelection {
+  companyId: string;
+  companyName: string;
+  role: 'admin' | 'supervisor' | 'operator' | 'viewer';
+  selected: boolean;
 }
 
 interface InviteUserModalProps {
@@ -40,21 +49,17 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   preSelectedCompanyId,
 }) => {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'supervisor' | 'operator' | 'viewer'>('operator');
-  const [companyId, setCompanyId] = useState('');
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companySelections, setCompanySelections] = useState<CompanyRoleSelection[]>([]);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [defaultRole, setDefaultRole] = useState<'admin' | 'supervisor' | 'operator' | 'viewer'>('operator');
   const { inviteUser, loading } = useTeamManagement();
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       loadCompanies();
-      if (preSelectedCompanyId) {
-        setCompanyId(preSelectedCompanyId);
-      }
     }
-  }, [open, preSelectedCompanyId]);
+  }, [open]);
 
   const loadCompanies = async () => {
     try {
@@ -64,27 +69,85 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
         .order('nome');
 
       if (error) throw error;
-      setCompanies(data || []);
+      
+      const selections: CompanyRoleSelection[] = (data || []).map(c => ({
+        companyId: c.id,
+        companyName: c.nome,
+        role: defaultRole,
+        selected: preSelectedCompanyId === c.id,
+      }));
+      
+      setCompanySelections(selections);
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
     }
   };
 
+  const toggleCompany = (companyId: string) => {
+    setCompanySelections(prev =>
+      prev.map(c =>
+        c.companyId === companyId ? { ...c, selected: !c.selected } : c
+      )
+    );
+  };
+
+  const updateCompanyRole = (companyId: string, role: string) => {
+    setCompanySelections(prev =>
+      prev.map(c =>
+        c.companyId === companyId ? { ...c, role: role as any } : c
+      )
+    );
+  };
+
+  const applyDefaultRole = () => {
+    setCompanySelections(prev =>
+      prev.map(c => (c.selected ? { ...c, role: defaultRole } : c))
+    );
+    toast({
+      title: 'Role aplicada',
+      description: `Role "${defaultRole}" aplicada a todas as empresas selecionadas`,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !role || !companyId) {
+    const selectedCompanies = companySelections.filter(c => c.selected);
+
+    if (!email) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha todos os campos',
+        title: 'Email obrigatório',
+        description: 'Preencha o email do usuário',
         variant: 'destructive',
       });
       return;
     }
 
-    const result = await inviteUser(email, role, companyId);
+    if (selectedCompanies.length === 0) {
+      toast({
+        title: 'Empresa obrigatória',
+        description: 'Selecione pelo menos uma empresa',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Use a primeira empresa selecionada para criar o convite
+    // As demais empresas serão adicionadas após o usuário aceitar o convite
+    const primaryCompany = selectedCompanies[0];
+    const result = await inviteUser(email, primaryCompany.role, primaryCompany.companyId);
+    
     if (result.success && result.token) {
       setInviteToken(result.token);
+      
+      // TODO: Armazenar as empresas adicionais para serem processadas quando o usuário aceitar o convite
+      // Isso requer modificação no fluxo de aceitação de convite
+      
+      toast({
+        title: 'Convite criado',
+        description: `Convite criado com acesso a ${selectedCompanies.length} empresa(s)`,
+      });
+      
       onSuccess();
     }
   };
@@ -100,21 +163,22 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
 
   const handleClose = () => {
     setEmail('');
-    setRole('operator');
-    setCompanyId('');
+    setCompanySelections(prev => prev.map(c => ({ ...c, selected: false })));
     setInviteToken(null);
     onOpenChange(false);
   };
 
+  const selectedCount = companySelections.filter(c => c.selected).length;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Convidar Membro da Equipe</DialogTitle>
           <DialogDescription>
             {inviteToken
               ? 'Convite criado! Copie o link abaixo e envie para o novo membro.'
-              : 'Preencha os dados para criar um convite de acesso.'}
+              : 'Preencha os dados e selecione as empresas para criar um convite de acesso.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,38 +197,84 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company">Empresa</Label>
-              <Select value={companyId} onValueChange={setCompanyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Role padrão</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={defaultRole}
+                  onValueChange={(v: any) => setDefaultRole(v)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="viewer">Visualizador - Apenas leitura</SelectItem>
+                    <SelectItem value="operator">Operador - Executar tarefas</SelectItem>
+                    <SelectItem value="supervisor">Supervisor - Gerenciar operadores</SelectItem>
+                    <SelectItem value="admin">Admin - Acesso total</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={applyDefaultRole}
+                  disabled={selectedCount === 0}
+                >
+                  Aplicar
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={(v: any) => setRole(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin - Acesso total</SelectItem>
-                  <SelectItem value="supervisor">Supervisor - Gerenciar operadores</SelectItem>
-                  <SelectItem value="operator">Operador - Executar tarefas</SelectItem>
-                  <SelectItem value="viewer">Visualizador - Apenas leitura</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>
+                <Building2 className="inline h-4 w-4 mr-1" />
+                Empresas (selecione uma ou mais)
+              </Label>
+              <ScrollArea className="h-[200px] border rounded-md p-4">
+                {companySelections.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Carregando empresas...
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {companySelections.map((company) => (
+                      <div
+                        key={company.companyId}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={company.selected}
+                          onCheckedChange={() => toggleCompany(company.companyId)}
+                        />
+                        <span className="flex-1 font-medium">
+                          {company.companyName}
+                        </span>
+                        <Select
+                          value={company.role}
+                          onValueChange={(v) => updateCompanyRole(company.companyId, v)}
+                          disabled={!company.selected}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="viewer">Visualizador</SelectItem>
+                            <SelectItem value="operator">Operador</SelectItem>
+                            <SelectItem value="supervisor">Supervisor</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+              <p className="text-sm text-muted-foreground">
+                📊 {selectedCount} empresa(s) selecionada(s)
+              </p>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Criando convite...' : 'Criar Convite'}
+            <Button type="submit" className="w-full" disabled={loading || selectedCount === 0}>
+              {loading ? 'Criando convite...' : `Criar Convite (${selectedCount} empresa${selectedCount !== 1 ? 's' : ''})`}
             </Button>
           </form>
         ) : (

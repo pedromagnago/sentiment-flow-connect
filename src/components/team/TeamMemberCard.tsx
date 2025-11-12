@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MoreVertical, Shield, UserCog, Eye, Users, Crown, Building2, Plus, X } from 'lucide-react';
 import type { TeamMember } from '@/hooks/useTeamManagement';
 import { AddCompanyAccessModal } from './AddCompanyAccessModal';
+import { BulkAddCompanyAccessModal } from './BulkAddCompanyAccessModal';
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -53,6 +54,7 @@ export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
   onAddToCompany,
 }) => {
   const [showAddCompanyModal, setShowAddCompanyModal] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   
   const initials = member.display_name
     ?.split(' ')
@@ -79,14 +81,23 @@ export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddCompanyModal(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Empresa
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBulkAddModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Múltiplas
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddCompanyModal(true)}
+                >
+                  Adicionar Uma
+                </Button>
+              </div>
             </div>
 
             {/* Lista de empresas */}
@@ -164,6 +175,15 @@ export const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
       <AddCompanyAccessModal
         open={showAddCompanyModal}
         onOpenChange={setShowAddCompanyModal}
+        userId={member.id}
+        userName={member.display_name || member.email}
+        userCompanies={member.companies.map(c => c.company_id)}
+        onSuccess={onAddToCompany}
+      />
+
+      <BulkAddCompanyAccessModal
+        open={showBulkAddModal}
+        onOpenChange={setShowBulkAddModal}
         userId={member.id}
         userName={member.display_name || member.email}
         userCompanies={member.companies.map(c => c.company_id)}

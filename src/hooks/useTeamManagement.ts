@@ -336,6 +336,53 @@ export const useTeamManagement = () => {
     }
   };
 
+  const addUserToMultipleCompanies = async (
+    userId: string,
+    companyRoles: Array<{ companyId: string; role: 'owner' | 'admin' | 'supervisor' | 'operator' | 'viewer' }>
+  ): Promise<{ success: boolean; errors: string[] }> => {
+    setLoading(true);
+    const errors: string[] = [];
+
+    try {
+      const results = await Promise.allSettled(
+        companyRoles.map(({ companyId, role }) =>
+          addUserToCompany(userId, companyId, role)
+        )
+      );
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected' || !result.value) {
+          errors.push(`Erro ao adicionar à empresa ${companyRoles[index].companyId}`);
+        }
+      });
+
+      if (errors.length === 0) {
+        toast({
+          title: 'Sucesso',
+          description: `Usuário adicionado a ${companyRoles.length} empresa(s)`,
+        });
+      }
+
+      return {
+        success: errors.length === 0,
+        errors,
+      };
+    } catch (error) {
+      console.error('Erro ao adicionar usuário a múltiplas empresas:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao adicionar usuário às empresas',
+        variant: 'destructive',
+      });
+      return {
+        success: false,
+        errors: ['Erro geral ao processar solicitação'],
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     listMembers,
@@ -346,5 +393,6 @@ export const useTeamManagement = () => {
     removeUserFromCompany,
     getUserCompanies,
     revokeInvitation,
+    addUserToMultipleCompanies,
   };
 };
