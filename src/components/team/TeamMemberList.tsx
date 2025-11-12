@@ -7,36 +7,42 @@ import { Users } from 'lucide-react';
 
 interface TeamMemberListProps {
   refresh: number;
+  companyFilter?: string;
 }
 
-export const TeamMemberList: React.FC<TeamMemberListProps> = ({ refresh }) => {
+export const TeamMemberList: React.FC<TeamMemberListProps> = ({ refresh, companyFilter }) => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const { listMembers, updateRole, deactivateUser } = useTeamManagement();
+  const { listMembers, updateRole, removeUserFromCompany } = useTeamManagement();
 
   useEffect(() => {
     loadMembers();
-  }, [refresh]);
+  }, [refresh, companyFilter]);
 
   const loadMembers = async () => {
     setLoading(true);
-    const data = await listMembers();
+    const filterCompanyId = companyFilter === 'all' ? undefined : companyFilter;
+    const data = await listMembers(filterCompanyId);
     setMembers(data);
     setLoading(false);
   };
 
-  const handleUpdateRole = async (userId: string, newRole: string) => {
-    const success = await updateRole(userId, newRole as any);
+  const handleUpdateRole = async (userId: string, companyId: string, newRole: string) => {
+    const success = await updateRole(userId, companyId, newRole as any);
     if (success) {
       loadMembers();
     }
   };
 
-  const handleDeactivate = async (userId: string) => {
-    const success = await deactivateUser(userId);
+  const handleRemoveFromCompany = async (userId: string, companyId: string) => {
+    const success = await removeUserFromCompany(userId, companyId);
     if (success) {
       loadMembers();
     }
+  };
+
+  const handleAddToCompany = () => {
+    loadMembers();
   };
 
   if (loading) {
@@ -65,7 +71,8 @@ export const TeamMemberList: React.FC<TeamMemberListProps> = ({ refresh }) => {
           key={member.id}
           member={member}
           onUpdateRole={handleUpdateRole}
-          onDeactivate={handleDeactivate}
+          onRemoveFromCompany={handleRemoveFromCompany}
+          onAddToCompany={handleAddToCompany}
         />
       ))}
     </div>

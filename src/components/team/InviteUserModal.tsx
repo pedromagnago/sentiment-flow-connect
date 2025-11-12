@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,37 +19,70 @@ import {
 import { useTeamManagement } from '@/hooks/useTeamManagement';
 import { Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Company {
+  id: string;
+  nome: string;
+}
 
 interface InviteUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  preSelectedCompanyId?: string;
 }
 
 export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   open,
   onOpenChange,
   onSuccess,
+  preSelectedCompanyId,
 }) => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'supervisor' | 'operator' | 'viewer'>('operator');
+  const [companyId, setCompanyId] = useState('');
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const { inviteUser, loading } = useTeamManagement();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (open) {
+      loadCompanies();
+      if (preSelectedCompanyId) {
+        setCompanyId(preSelectedCompanyId);
+      }
+    }
+  }, [open, preSelectedCompanyId]);
+
+  const loadCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, nome')
+        .order('nome');
+
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar empresas:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !role) {
+    if (!email || !role || !companyId) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha email e role',
+        description: 'Preencha todos os campos',
         variant: 'destructive',
       });
       return;
     }
 
-    const result = await inviteUser(email, role);
+    const result = await inviteUser(email, role, companyId);
     if (result.success && result.token) {
       setInviteToken(result.token);
       onSuccess();
@@ -68,6 +101,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const handleClose = () => {
     setEmail('');
     setRole('operator');
+    setCompanyId('');
     setInviteToken(null);
     onOpenChange(false);
   };
@@ -99,24 +133,34 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="company">Empresa</Label>
+              <Select value={companyId} onValueChange={setCompanyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select value={role} onValueChange={(v: any) => setRole(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="operator">Operador</SelectItem>
-                  <SelectItem value="viewer">Visualizador</SelectItem>
+                  <SelectItem value="admin">Admin - Acesso total</SelectItem>
+                  <SelectItem value="supervisor">Supervisor - Gerenciar operadores</SelectItem>
+                  <SelectItem value="operator">Operador - Executar tarefas</SelectItem>
+                  <SelectItem value="viewer">Visualizador - Apenas leitura</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
-                {role === 'admin' && 'Acesso total ao sistema'}
-                {role === 'supervisor' && 'Pode gerenciar operadores e visualizar relatórios'}
-                {role === 'operator' && 'Pode executar tarefas diárias'}
-                {role === 'viewer' && 'Apenas visualização, sem edições'}
-              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

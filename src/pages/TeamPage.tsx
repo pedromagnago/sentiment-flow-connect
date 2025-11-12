@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Users, Mail } from 'lucide-react';
+import { UserPlus, Users, Mail, Filter } from 'lucide-react';
 import { InviteUserModal } from '@/components/team/InviteUserModal';
 import { TeamMemberList } from '@/components/team/TeamMemberList';
+import { CompanySelector } from '@/components/team/CompanySelector';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield } from 'lucide-react';
@@ -12,6 +13,7 @@ import { Shield } from 'lucide-react';
 const TeamPage: React.FC = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [companyFilter, setCompanyFilter] = useState('all');
   const { isAdmin, isOwner, loading } = useUserProfile();
 
   const handleInviteSuccess = () => {
@@ -54,22 +56,31 @@ const TeamPage: React.FC = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Gestão de Equipe</h1>
           <p className="text-muted-foreground">
-            Gerencie os membros da sua equipe e seus acessos ao sistema
+            Gerencie os membros da sua equipe e seus acessos às empresas
           </p>
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Membros da Equipe</CardTitle>
-              <CardDescription>
-                Visualize e gerencie todos os membros com acesso ao sistema
-              </CardDescription>
+          <CardHeader>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <CardTitle>Membros da Equipe</CardTitle>
+                <CardDescription>
+                  Visualize e gerencie todos os membros e suas permissões por empresa
+                </CardDescription>
+              </div>
+              <Button onClick={() => setInviteModalOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Convidar Membro
+              </Button>
             </div>
-            <Button onClick={() => setInviteModalOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Convidar Membro
-            </Button>
+
+            {/* Filtro de empresa */}
+            <div className="flex items-center gap-2 pt-4 border-t">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground mr-2">Filtrar por empresa:</span>
+              <CompanySelector value={companyFilter} onValueChange={setCompanyFilter} />
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="members" className="w-full">
@@ -85,7 +96,7 @@ const TeamPage: React.FC = () => {
               </TabsList>
 
               <TabsContent value="members" className="mt-6">
-                <TeamMemberList refresh={refreshKey} />
+                <TeamMemberList refresh={refreshKey} companyFilter={companyFilter} />
               </TabsContent>
 
               <TabsContent value="invites" className="mt-6">
@@ -104,6 +115,7 @@ const TeamPage: React.FC = () => {
           open={inviteModalOpen}
           onOpenChange={setInviteModalOpen}
           onSuccess={handleInviteSuccess}
+          preSelectedCompanyId={companyFilter !== 'all' ? companyFilter : undefined}
         />
       </div>
     </div>
