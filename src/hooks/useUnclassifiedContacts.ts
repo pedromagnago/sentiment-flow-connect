@@ -64,34 +64,23 @@ export const useUnclassifiedContacts = () => {
 
   const classifyContact = async (contactId: string, companyId: string, newName?: string) => {
     try {
-      console.log('🏷️ Iniciando classificação...', { contactId, companyId, newName });
+      console.log('🏷️ Iniciando classificação via RPC...', { contactId, companyId, newName });
       
-      const updateData: any = { company_id: companyId };
-      if (newName) {
-        updateData.nome = newName;
-      }
+      // Usar RPC ao invés de UPDATE direto
+      const { data, error } = await supabase.rpc('classify_contact', {
+        p_contact_id: contactId,
+        p_company_id: companyId,
+        p_new_name: newName || null
+      });
 
-      console.log('📝 Dados para update:', updateData);
-
-      const { data, error } = await supabase
-        .from('contacts')
-        .update(updateData)
-        .eq('id_contact', contactId)
-        .select();
-
-      console.log('📊 Resultado do update:', { data, error });
+      console.log('📊 Resultado do RPC:', { data, error });
 
       if (error) {
-        console.error('❌ Erro RLS/Permissão ao classificar:', error);
+        console.error('❌ Erro na função classify_contact:', error);
         throw error;
       }
 
-      if (!data || data.length === 0) {
-        console.error('⚠️ Nenhum registro atualizado. Contato não encontrado?');
-        throw new Error('Contato não encontrado para atualização');
-      }
-
-      console.log('✅ Contato classificado:', data[0]);
+      console.log('✅ Contato classificado:', data);
       await fetchUnclassifiedContacts();
     } catch (err) {
       console.error('💥 Erro ao classificar contato:', err);
@@ -101,21 +90,28 @@ export const useUnclassifiedContacts = () => {
 
   const bulkClassify = async (contactIds: string[], companyId: string) => {
     try {
-      const { error } = await supabase
-        .from('contacts')
-        .update({ company_id: companyId })
-        .in('id_contact', contactIds);
+      // Executar classificações em paralelo
+      const promises = contactIds.map(contactId =>
+        supabase.rpc('classify_contact', {
+          p_contact_id: contactId,
+          p_company_id: companyId,
+          p_new_name: null
+        })
+      );
 
-      if (error) {
-        console.error('Error bulk classifying contacts:', error);
-        throw error;
+      const results = await Promise.all(promises);
+      
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        console.error('Errors in bulk classify:', errors);
+        throw new Error(`${errors.length} contatos falharam na classificação`);
       }
 
       console.log('Contacts classified successfully:', contactIds.length);
       await fetchUnclassifiedContacts();
     } catch (err) {
       console.error('Bulk classify error:', err);
-      throw new Error(err instanceof Error ? err.message : 'Erro ao classificar contatos');
+      throw new Error(err instanceof Error ? err.message : 'Erro ao classificar contato');
     }
   };
 

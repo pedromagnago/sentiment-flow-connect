@@ -2081,6 +2081,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      classify_contact: {
+        Args: {
+          p_company_id: string
+          p_contact_id: string
+          p_new_name?: string
+        }
+        Returns: Json
+      }
       get_user_roles: {
         Args: { _company_id?: string; _user_id: string }
         Returns: {
