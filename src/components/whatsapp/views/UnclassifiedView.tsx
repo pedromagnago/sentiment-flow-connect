@@ -1,34 +1,31 @@
 import { useState } from 'react';
 import { useUnclassifiedContacts } from '@/hooks/useUnclassifiedContacts';
+import { useUnclassifiedFilters } from '@/hooks/useUnclassifiedFilters';
+import { useSmartClassification } from '@/hooks/useSmartClassification';
 import { ClassificationModal } from '../ClassificationModal';
 import { Contact } from '@/hooks/useContacts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCompanies } from '@/hooks/useCompanies';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { ErrorState } from '@/components/common/ErrorState';
-import { 
-  AlertCircle, 
-  MessageSquare, 
-  User, 
-  Building2,
-  CheckSquare,
-  Square,
-  RefreshCw
-} from 'lucide-react';
+import { AlertCircle, RefreshCw, CheckSquare, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { UnclassifiedStats } from '../unclassified/UnclassifiedStats';
+import { UnclassifiedFilters } from '../unclassified/UnclassifiedFilters';
+import { UnclassifiedBulkActions } from '../unclassified/UnclassifiedBulkActions';
+import { ContactCard } from '../unclassified/ContactCard';
 
 export const UnclassifiedView = () => {
   const { contacts, loading, error, messageCount, classifyContact, bulkClassify, refetch } = useUnclassifiedContacts();
   const { companies, loading: loadingCompanies } = useCompanies();
+  const { filters, updateFilter, resetFilters, filteredContacts, activeFiltersCount } = useUnclassifiedFilters(contacts, messageCount);
+  const { suggestions } = useSmartClassification(filteredContacts, companies);
+  
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
   const [bulkCompanyId, setBulkCompanyId] = useState<string>('');
   const [syncing, setSyncing] = useState(false);
+  const [classifying, setClassifying] = useState(false);
 
   const syncMissingContacts = async () => {
     try {
@@ -52,11 +49,26 @@ export const UnclassifiedView = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedContacts.size === contacts.length) {
+    if (selectedContacts.size === filteredContacts.length) {
       setSelectedContacts(new Set());
     } else {
-      setSelectedContacts(new Set(contacts.map(c => c.id_contact)));
+      setSelectedContacts(new Set(filteredContacts.map(c => c.id_contact)));
     }
+  };
+
+  const handleSelectByType = (type: 'groups' | 'individuals') => {
+    const filtered = filteredContacts.filter(c => 
+      type === 'groups' ? c.is_group : !c.is_group
+    );
+    setSelectedContacts(new Set(filtered.map(c => c.id_contact)));
+  };
+
+  const handleSelectByActivity = (type: 'active' | 'inactive') => {
+    const filtered = filteredContacts.filter(c => {
+      const count = messageCount[c.id_contact] || 0;
+      return type === 'active' ? count >= 5 : count === 0;
+    });
+    setSelectedContacts(new Set(filtered.map(c => c.id_contact)));
   };
 
   const handleToggleContact = (contactId: string) => {
@@ -81,13 +93,54 @@ export const UnclassifiedView = () => {
     }
 
     try {
+      setClassifying(true);
+      const total = selectedContacts.size;
+      let completed = 0;
+
+      toast.loading(`Classificando 0/${total} contatos...`, { id: 'bulk-classify' });
+
       await bulkClassify(Array.from(selectedContacts), bulkCompanyId);
-      toast.success(`${selectedContacts.size} contatos classificados!`);
+      completed = total;
+
+      toast.success(`${completed} contatos classificados!`, { id: 'bulk-classify' });
       setSelectedContacts(new Set());
       setBulkCompanyId('');
     } catch (error) {
-      toast.error('Erro ao classificar contatos');
+      toast.error('Erro ao classificar contatos', { id: 'bulk-classify' });
+    } finally {
+      setClassifying(false);
     }
+  };
+
+  const handleAutoClassify = async (contactId: string, companyId: string) => {
+    try {
+      await classifyContact(contactId, companyId);
+      toast.success('Contato classificado automaticamente!');
+    } catch (error) {
+      toast.error('Erro ao classificar contato');
+    }
+  };
+
+  const handleExport = () => {
+    const selected = filteredContacts.filter(c => selectedContacts.has(c.id_contact));
+    const csv = [
+      ['Nome', 'Telefone', 'Tipo', 'Mensagens'].join(','),
+      ...selected.map(c => [
+        c.nome || 'Sem nome',
+        c.id_contact,
+        c.is_group ? 'Grupo' : 'Individual',
+        messageCount[c.id_contact] || 0
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `contatos-nao-classificados-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Arquivo exportado com sucesso!');
   };
 
   if (loading) {
@@ -131,141 +184,92 @@ export const UnclassifiedView = () => {
     );
   }
 
-  // 🆕 Ordenar contatos por número de mensagens (priorizar mais ativos)
-  const sortedContacts = [...contacts].sort((a, b) => {
-    const countA = messageCount[a.id_contact] || 0;
-    const countB = messageCount[b.id_contact] || 0;
-    return countB - countA; // Mais mensagens primeiro
-  });
-
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
-        {/* 🆕 Instruções do Sistema Manual */}
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
-                📋 Sistema de Classificação Manual
-              </h4>
-              <p className="text-sm text-amber-800 dark:text-amber-200">
-                Todos os contatos abaixo aguardam classificação manual. 
-                Após classificar, eles aparecerão na aba <strong>"Chats"</strong> da empresa correspondente.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
+      <div className="border-b bg-card px-6 py-4 space-y-4">
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-orange-500" />
               Contatos Não Classificados
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {contacts.length} {contacts.length === 1 ? 'contato precisa' : 'contatos precisam'} ser atribuído a uma empresa
+              {filteredContacts.length} de {contacts.length} {contacts.length === 1 ? 'contato' : 'contatos'}
+              {activeFiltersCount > 0 && ' (filtrados)'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={syncMissingContacts} 
-              disabled={syncing} 
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-              Sincronizar
-            </Button>
-            <Badge variant="destructive" className="text-base px-3 py-1">
-              {contacts.length}
-            </Badge>
-          </div>
+          <Button 
+            onClick={syncMissingContacts} 
+            disabled={syncing} 
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            Sincronizar
+          </Button>
         </div>
 
-        {/* Bulk Actions */}
-        {selectedContacts.size > 0 && (
-          <div className="bg-muted/50 rounded-lg p-4 flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={selectedContacts.size === contacts.length}
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm font-medium">
-                {selectedContacts.size} selecionado{selectedContacts.size !== 1 && 's'}
-              </span>
-            </div>
-
-            <div className="flex-1 flex items-center gap-2">
-              <Select value={bulkCompanyId} onValueChange={setBulkCompanyId}>
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Atribuir à empresa..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.nome || company.cnpj || 'Empresa sem nome'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button
-                onClick={handleBulkClassify}
-                disabled={!bulkCompanyId || loadingCompanies}
-              >
-                Classificar Selecionados
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Stats */}
+        <UnclassifiedStats contacts={filteredContacts} messageCount={messageCount} />
       </div>
 
-      {/* List */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid gap-4 max-w-4xl mx-auto">
-          {sortedContacts.map((contact) => (
-            <Card key={contact.id_contact} className="hover:border-primary/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={selectedContacts.has(contact.id_contact)}
-                    onCheckedChange={() => handleToggleContact(contact.id_contact)}
-                  />
+        <div className="max-w-5xl mx-auto space-y-4">
+          {/* Filters */}
+          <UnclassifiedFilters
+            filters={filters}
+            onFilterChange={updateFilter}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+          />
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium text-foreground truncate">
-                        {contact.nome || 'Sem nome'}
-                      </span>
-                      {contact.is_group && (
-                        <Badge variant="outline" className="text-xs">Grupo</Badge>
-                      )}
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <div>Telefone: {contact.id_contact}</div>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />
-                        {messageCount[contact.id_contact] || 0} mensagens
-                      </div>
-                    </div>
-                  </div>
+          {/* Bulk Actions */}
+          {selectedContacts.size > 0 && (
+            <UnclassifiedBulkActions
+              selectedContacts={selectedContacts}
+              contacts={filteredContacts}
+              messageCount={messageCount}
+              companies={companies}
+              bulkCompanyId={bulkCompanyId}
+              onSelectAll={handleSelectAll}
+              onSelectByType={handleSelectByType}
+              onSelectByActivity={handleSelectByActivity}
+              onClearSelection={() => setSelectedContacts(new Set())}
+              onCompanyChange={setBulkCompanyId}
+              onBulkClassify={handleBulkClassify}
+              onExport={handleExport}
+              loadingCompanies={loadingCompanies || classifying}
+            />
+          )}
 
-                  <Button
-                    onClick={() => setSelectedContact(contact)}
-                    size="sm"
-                    className="flex-shrink-0"
-                  >
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Classificar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Contact List */}
+          {filteredContacts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                Nenhum contato encontrado com os filtros aplicados
+              </p>
+              <Button variant="link" onClick={resetFilters} className="mt-2">
+                Limpar filtros
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredContacts.map((contact) => (
+                <ContactCard
+                  key={contact.id_contact}
+                  contact={contact}
+                  messageCount={messageCount[contact.id_contact] || 0}
+                  isSelected={selectedContacts.has(contact.id_contact)}
+                  suggestion={suggestions[contact.id_contact]}
+                  onToggleSelect={() => handleToggleContact(contact.id_contact)}
+                  onClassify={() => setSelectedContact(contact)}
+                  onAutoClassify={(companyId) => handleAutoClassify(contact.id_contact, companyId)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
