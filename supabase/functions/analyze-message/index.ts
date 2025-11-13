@@ -35,31 +35,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Get auth header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
-
-    // Get user from JWT
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      throw new Error('Invalid authorization');
-    }
-
-    // Get user's company_id
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile?.company_id) {
-      throw new Error('User profile not found or company not set');
-    }
-
     const requestData = await req.json() as AnalyzeMessageRequest;
     const { 
       message_id, 
@@ -79,14 +54,13 @@ serve(async (req) => {
       content: content?.substring(0, 100),
       has_media,
       media_type,
-      media_url,
-      user_company_id: profile.company_id
+      media_url
     });
 
-    // Validate contact belongs to user's company
+    // Get contact's company_id
     const { data: contact, error: contactError } = await supabase
       .from('contacts')
-      .select('company_id')
+      .select('company_id, nome')
       .eq('id_contact', contact_id)
       .maybeSingle();
 
@@ -95,19 +69,20 @@ serve(async (req) => {
       throw new Error('Error validating contact access');
     }
 
-    if (contact && contact.company_id && contact.company_id !== profile.company_id) {
-      console.error('Unauthorized access attempt:', { 
-        user_company: profile.company_id, 
-        contact_company: contact.company_id 
-      });
+    // If contact is not classified (no company_id), skip analysis
+    if (!contact || !contact.company_id) {
+      console.log('Contact not classified, skipping analysis');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized: Contact does not belong to your company' }),
-        { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ 
+          success: true, 
+          created: false, 
+          reason: 'contact_not_classified' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Contact company:', contact.company_id);
 
     // Check if auto-processing is enabled for documents
     const { data: settings } = await supabase
@@ -135,6 +110,7 @@ serve(async (req) => {
         .insert({
           message_id,
           contact_id,
+          company_id: contact.company_id,
           action_type: 'document_analysis',
           extracted_data: extractedData,
           ai_confidence: 0.95,
@@ -278,6 +254,7 @@ Responda APENAS em JSON válido no formato:
       .insert({
         message_id,
         contact_id,
+        company_id: contact.company_id,
         action_type: analysis.action_type,
         extracted_data: analysis.extracted_data || {},
         ai_confidence: analysis.confidence || 0.5,
@@ -303,7 +280,7 @@ Responda APENAS em JSON válido no formato:
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id')
-        .eq('company_id', profile.company_id)
+        .eq('company_id', contact.company_id)
         .eq('ativo', true)
         .limit(1)
         .single();
