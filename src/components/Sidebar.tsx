@@ -25,7 +25,8 @@ import {
   PanelLeftOpen,
   Scale,
   Shield,
-  TrendingUp
+  TrendingUp,
+  ClipboardCheck
 } from 'lucide-react';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { CompanyMultiSelect } from '@/components/layout/CompanyMultiSelect';
@@ -48,7 +49,8 @@ export const Sidebar = () => {
                             location.pathname.startsWith('/receivables') ||
                             location.pathname.startsWith('/invoices') ||
                             location.pathname.startsWith('/reconciliation') ||
-                            location.pathname.startsWith('/dre');
+                            location.pathname.startsWith('/dre') ||
+                            location.pathname.startsWith('/bpo-audit');
   const isTasksActive = location.pathname.startsWith('/tasks');
   const isAIActive = location.pathname.startsWith('/suggested-actions') ||
                      location.pathname.startsWith('/reports') ||
@@ -81,6 +83,7 @@ export const Sidebar = () => {
     { id: 'invoices', label: 'Faturamento', icon: FileStack, path: '/invoices' },
     { id: 'reconciliation', label: 'Reconciliação Bancária', icon: Scale, path: '/reconciliation' },
     { id: 'dre', label: 'DRE Gerencial', icon: TrendingUp, path: '/dre' },
+    { id: 'bpo-audit', label: 'Auditoria BPO', icon: ClipboardCheck, path: '/bpo-audit' },
   ];
 
   // Submenu Tarefas
