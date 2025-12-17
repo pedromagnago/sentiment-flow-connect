@@ -25,11 +25,13 @@ import ReceivablesPage from "./pages/ReceivablesPage";
 import DREDashboardPage from "./pages/DREDashboardPage";
 import BPOAuditPage from "./pages/BPOAuditPage";
 import ImportPage from "./pages/ImportPage";
+import BPODashboardPage from "./pages/BPODashboardPage";
+import HelpPage from "./pages/HelpPage";
 import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
-import { PrivateRoute } from "./components/common/PrivateRoute";
+import { ProtectedRoute } from "./components/common/ProtectedRoute";
 import { MainLayout } from "./components/layout/MainLayout";
 import { WhatsAppLayout } from "./pages/whatsapp/WhatsAppLayout";
 import { ChatsPage } from "./pages/whatsapp/ChatsPage";
@@ -50,25 +52,25 @@ const App = () => (
             <SidebarProvider>
               <Routes>
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               
               {/* Main routes with layout */}
-              <Route path="/" element={<PrivateRoute><MainLayout><Index /></MainLayout></PrivateRoute>} />
-            <Route path="/payables" element={<PrivateRoute><MainLayout><PayablesPage /></MainLayout></PrivateRoute>} />
-            <Route path="/receivables" element={<PrivateRoute><MainLayout><ReceivablesPage /></MainLayout></PrivateRoute>} />
-            <Route path="/invoices" element={<PrivateRoute><MainLayout><InvoicesPage /></MainLayout></PrivateRoute>} />
-              <Route path="/tasks" element={<PrivateRoute><MainLayout><TasksPage /></MainLayout></PrivateRoute>} />
-              <Route path="/analysis" element={<PrivateRoute><MainLayout><AnalysisPage /></MainLayout></PrivateRoute>} />
-              <Route path="/suggested-actions" element={<PrivateRoute><MainLayout><SuggestedActionsPage /></MainLayout></PrivateRoute>} />
-              <Route path="/reports" element={<PrivateRoute><MainLayout><ReportsPage /></MainLayout></PrivateRoute>} />
-              <Route path="/dre" element={<PrivateRoute><MainLayout><DREDashboardPage /></MainLayout></PrivateRoute>} />
-              <Route path="/reconciliation" element={<PrivateRoute><MainLayout><ReconciliationPage /></MainLayout></PrivateRoute>} />
-              <Route path="/audit" element={<PrivateRoute><MainLayout><AuditLogsPage /></MainLayout></PrivateRoute>} />
-              <Route path="/companies" element={<PrivateRoute><MainLayout><CompaniesPage /></MainLayout></PrivateRoute>} />
-              <Route path="/contacts" element={<PrivateRoute><MainLayout><ContactsPage /></MainLayout></PrivateRoute>} />
+              <Route path="/" element={<ProtectedRoute><MainLayout><Index /></MainLayout></ProtectedRoute>} />
+              <Route path="/payables" element={<ProtectedRoute><MainLayout><PayablesPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/receivables" element={<ProtectedRoute><MainLayout><ReceivablesPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/invoices" element={<ProtectedRoute><MainLayout><InvoicesPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute><MainLayout><TasksPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/analysis" element={<ProtectedRoute><MainLayout><AnalysisPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/suggested-actions" element={<ProtectedRoute><MainLayout><SuggestedActionsPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><MainLayout><ReportsPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/dre" element={<ProtectedRoute><MainLayout><DREDashboardPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/reconciliation" element={<ProtectedRoute><MainLayout><ReconciliationPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/audit" element={<ProtectedRoute allowedRoles={['admin', 'owner']}><MainLayout><AuditLogsPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/companies" element={<ProtectedRoute allowedRoles={['admin', 'owner']}><MainLayout><CompaniesPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/contacts" element={<ProtectedRoute><MainLayout><ContactsPage /></MainLayout></ProtectedRoute>} />
               
               {/* WhatsApp routes */}
-              <Route path="/whatsapp" element={<PrivateRoute><WhatsAppLayout /></PrivateRoute>}>
+              <Route path="/whatsapp" element={<ProtectedRoute allowedRoles={['operator', 'supervisor', 'admin', 'owner']}><WhatsAppLayout /></ProtectedRoute>}>
                 <Route index element={<ChatsPage />} />
                 <Route path="chats" element={<ChatsPage />} />
                 <Route path="fila" element={<QueuePage />} />
@@ -76,14 +78,16 @@ const App = () => (
                 <Route path="nao-classificados" element={<UnclassifiedPage />} />
               </Route>
               
-              {/* Team Management */}
-              <Route path="/team" element={<PrivateRoute><MainLayout><TeamPage /></MainLayout></PrivateRoute>} />
-              <Route path="/bpo-audit" element={<PrivateRoute><MainLayout><BPOAuditPage /></MainLayout></PrivateRoute>} />
-              <Route path="/import" element={<PrivateRoute><MainLayout><ImportPage /></MainLayout></PrivateRoute>} />
+              {/* Team & BPO */}
+              <Route path="/team" element={<ProtectedRoute allowedRoles={['admin', 'owner']}><MainLayout><TeamPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/bpo-audit" element={<ProtectedRoute allowedRoles={['operator', 'supervisor', 'admin', 'owner']}><MainLayout><BPOAuditPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/bpo-dashboard" element={<ProtectedRoute allowedRoles={['operator', 'supervisor', 'admin', 'owner']}><MainLayout><BPODashboardPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/import" element={<ProtectedRoute allowedRoles={['supervisor', 'admin', 'owner']}><MainLayout><ImportPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><MainLayout><HelpPage /></MainLayout></ProtectedRoute>} />
               <Route path="/accept-invite" element={<AcceptInvitePage />} />
               
               {/* Settings */}
-              <Route path="/settings" element={<PrivateRoute><MainLayout><Settings /></MainLayout></PrivateRoute>} />
+              <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'owner']}><MainLayout><Settings /></MainLayout></ProtectedRoute>} />
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
