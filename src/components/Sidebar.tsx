@@ -24,7 +24,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Scale,
-  Shield
+  Shield,
+  TrendingUp
 } from 'lucide-react';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { CompanyMultiSelect } from '@/components/layout/CompanyMultiSelect';
@@ -44,8 +45,10 @@ export const Sidebar = () => {
   // Detectar seções ativas
   const isWhatsAppActive = location.pathname.startsWith('/whatsapp');
   const isFinancialActive = location.pathname.startsWith('/payables') || 
+                            location.pathname.startsWith('/receivables') ||
                             location.pathname.startsWith('/invoices') ||
-                            location.pathname.startsWith('/reconciliation');
+                            location.pathname.startsWith('/reconciliation') ||
+                            location.pathname.startsWith('/dre');
   const isTasksActive = location.pathname.startsWith('/tasks');
   const isAIActive = location.pathname.startsWith('/suggested-actions') ||
                      location.pathname.startsWith('/reports') ||
@@ -77,6 +80,7 @@ export const Sidebar = () => {
     { id: 'receivables', label: 'Contas a Receber', icon: Receipt, path: '/receivables' },
     { id: 'invoices', label: 'Faturamento', icon: FileStack, path: '/invoices' },
     { id: 'reconciliation', label: 'Reconciliação Bancária', icon: Scale, path: '/reconciliation' },
+    { id: 'dre', label: 'DRE Gerencial', icon: TrendingUp, path: '/dre' },
   ];
 
   // Submenu Tarefas
