@@ -8,13 +8,15 @@ import {
   AlertTriangle,
   History,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Link2
 } from 'lucide-react';
 import { useAuditPeriods } from '@/hooks/useAuditPeriods';
 import { AuditPeriodsList } from '@/components/audit/AuditPeriodsList';
 import { PendingDashboard } from '@/components/audit/PendingDashboard';
 import { AuditActionHistory } from '@/components/audit/AuditActionHistory';
 import { CreatePeriodModal } from '@/components/audit/CreatePeriodModal';
+import { ReconciliationDashboard } from '@/components/audit/ReconciliationDashboard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -48,6 +50,9 @@ const BPOAuditPage: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['audit-periods'] });
     queryClient.invalidateQueries({ queryKey: ['pending-stats'] });
     queryClient.invalidateQueries({ queryKey: ['audit-action-history'] });
+    queryClient.invalidateQueries({ queryKey: ['orphan_transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['unmatched_payables'] });
+    queryClient.invalidateQueries({ queryKey: ['unmatched_receivables'] });
   };
 
   // Summary stats
@@ -156,10 +161,14 @@ const BPOAuditPage: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4">
           <TabsTrigger value="periods" className="gap-2">
             <Calendar className="w-4 h-4" />
             Períodos
+          </TabsTrigger>
+          <TabsTrigger value="reconciliation" className="gap-2">
+            <Link2 className="w-4 h-4" />
+            Reconciliação
           </TabsTrigger>
           <TabsTrigger value="pending" className="gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -179,6 +188,10 @@ const BPOAuditPage: React.FC = () => {
             onApprove={handleApprove}
             isLocking={isLocking}
           />
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="mt-6">
+          <ReconciliationDashboard />
         </TabsContent>
 
         <TabsContent value="pending" className="mt-6">
