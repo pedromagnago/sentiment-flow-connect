@@ -1782,6 +1782,77 @@ export type Database = {
         }
         Relationships: []
       }
+      reconciliation_links: {
+        Row: {
+          bank_transaction_id: string | null
+          company_id: string
+          conta_pagar_id: string | null
+          conta_receber_id: string | null
+          created_at: string | null
+          created_by: string | null
+          group_id: string
+          id: string
+          observacao: string | null
+          user_id: string
+          valor_alocado: number | null
+        }
+        Insert: {
+          bank_transaction_id?: string | null
+          company_id: string
+          conta_pagar_id?: string | null
+          conta_receber_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          group_id?: string
+          id?: string
+          observacao?: string | null
+          user_id: string
+          valor_alocado?: number | null
+        }
+        Update: {
+          bank_transaction_id?: string | null
+          company_id?: string
+          conta_pagar_id?: string | null
+          conta_receber_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          group_id?: string
+          id?: string
+          observacao?: string | null
+          user_id?: string
+          valor_alocado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_links_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_links_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_links_conta_pagar_id_fkey"
+            columns: ["conta_pagar_id"]
+            isOneToOne: false
+            referencedRelation: "contas_pagar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_links_conta_receber_id_fkey"
+            columns: ["conta_receber_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reconciliation_logs: {
         Row: {
           action: string | null
