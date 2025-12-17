@@ -22,6 +22,7 @@ import ContactsPage from "./pages/ContactsPage";
 import TeamPage from "./pages/TeamPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import ReceivablesPage from "./pages/ReceivablesPage";
+import DREDashboardPage from "./pages/DREDashboardPage";
 import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/analysis" element={<PrivateRoute><MainLayout><AnalysisPage /></MainLayout></PrivateRoute>} />
               <Route path="/suggested-actions" element={<PrivateRoute><MainLayout><SuggestedActionsPage /></MainLayout></PrivateRoute>} />
               <Route path="/reports" element={<PrivateRoute><MainLayout><ReportsPage /></MainLayout></PrivateRoute>} />
+              <Route path="/dre" element={<PrivateRoute><MainLayout><DREDashboardPage /></MainLayout></PrivateRoute>} />
               <Route path="/reconciliation" element={<PrivateRoute><MainLayout><ReconciliationPage /></MainLayout></PrivateRoute>} />
               <Route path="/audit" element={<PrivateRoute><MainLayout><AuditLogsPage /></MainLayout></PrivateRoute>} />
               <Route path="/companies" element={<PrivateRoute><MainLayout><CompaniesPage /></MainLayout></PrivateRoute>} />
