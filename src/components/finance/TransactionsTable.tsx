@@ -20,12 +20,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { CategoryPicker } from "./CategoryPicker";
+import { TransactionStatusBadge, TransactionStatusStats, TransactionStatus } from "./TransactionStatusBadge";
+import { AttachmentUploader } from "./AttachmentUploader";
+import { AlertCircle, Filter, Download, Sparkles } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 interface TxnRow {
   id: string;
   date: string;
   description: string | null;
   memo: string | null;
   category: string | null;
+  category_id: string | null;
   type: string | null;
   amount: number;
   fitid: string | null;
@@ -35,11 +42,13 @@ interface TxnRow {
   branch_id?: string | null;
   acct_type?: string | null;
   raw?: any;
+  transaction_status: TransactionStatus;
+  attachment_url: string | null;
 }
 
 interface Summary {
   credit: number;
-  debit: number; // absolute value of negatives
+  debit: number;
   net: number;
 }
 
@@ -66,12 +75,12 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Selection & inline edit
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCategory, setBulkCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingCat, setEditingCat] = useState("");
 
   // Accounts
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -96,6 +105,14 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
   const dateFilter = useMemo(() => ({ from, to }), [from, to]);
 
+  // Status counts
+  const statusCounts = useMemo(() => {
+    return {
+      pending: rows.filter(r => r.transaction_status === 'pending' || !r.transaction_status).length,
+      classified: rows.filter(r => r.transaction_status === 'classified').length,
+      audited: rows.filter(r => r.transaction_status === 'audited').length,
+    };
+  }, [rows]);
 
   const computeSummary = (data: TxnRow[]) => {
     const credit = data.filter((r) => Number(r.amount) > 0).reduce((s, r) => s + Number(r.amount), 0);
@@ -110,7 +127,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     setError(null);
     let query = supabase
       .from("bank_transactions")
-      .select("id,date,description,memo,category,type,amount,fitid,bank_account_uuid,account_id,bank_id,branch_id,acct_type")
+      .select("id,date,description,memo,category,category_id,type,amount,fitid,bank_account_uuid,account_id,bank_id,branch_id,acct_type,raw,transaction_status,attachment_url")
       .order("date", { ascending: false })
       .limit(500);
 
@@ -176,25 +193,26 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   const exportCsv = () => {
-    const header = ["Data", "Descrição", "Conta", "Categoria", "Tipo", "Valor", "FITID"].join(",");
+    const header = ["Data", "Descrição", "Conta", "Categoria", "Status", "Tipo", "Valor", "Anexo"].join(",");
     const lines = rows
       .map((r) => [
         new Date(r.date).toISOString().slice(0, 10),
         (r.description || r.memo || "").replace(/"/g, '""'),
         formatAccount(r),
         r.category || "",
+        r.transaction_status || "pending",
         r.type || "",
         String(r.amount).replace(".", ","),
-        r.fitid || "",
+        r.attachment_url ? "Sim" : "Não",
       ]
-        .map((v) => `"${v}` + `"`)
+        .map((v) => `"${v}"`)
         .join(","));
     const csv = [header, ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `transacoes-ofx-${Date.now()}.csv`;
+    a.download = `transacoes-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -248,6 +266,13 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     if (selectedCategory !== "all") query = query.eq("category", selectedCategory);
     if (typeFilter === "credit") query = query.gt("amount", 0);
     if (typeFilter === "debit") query = query.lt("amount", 0);
+    if (statusFilter !== "all") {
+      if (statusFilter === "pending") {
+        query = query.or("transaction_status.eq.pending,transaction_status.is.null");
+      } else {
+        query = query.eq("transaction_status", statusFilter);
+      }
+    }
     return query;
   };
 
@@ -276,28 +301,38 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
     setSelectedIds(new Set());
   };
 
-  // Inline edit handlers
-  const startEdit = (row: TxnRow) => {
-    setEditingId(row.id);
-    setEditingCat(row.category || "");
-  };
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingCat("");
-  };
-  const saveEdit = async (id: string) => {
-    const newCat = editingCat.trim();
+  // Update category with hierarchy
+  const updateCategory = async (id: string, categoryId: string | null, categoryName: string | null) => {
     const { error } = await supabase
       .from("bank_transactions")
-      .update({ category: newCat || null })
+      .update({ 
+        category_id: categoryId,
+        category: categoryName,
+        transaction_status: categoryId ? 'classified' : 'pending'
+      })
       .eq("id", id);
+    
     if (error) {
-      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao atualizar categoria", description: error.message, variant: "destructive" });
       return;
     }
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, category: newCat || null } : r)));
+
+    setRows((prev) => prev.map((r) => 
+      r.id === id 
+        ? { ...r, category_id: categoryId, category: categoryName, transaction_status: categoryId ? 'classified' : 'pending' } 
+        : r
+    ));
     toast({ title: "Categoria atualizada" });
-    cancelEdit();
+    setEditingId(null);
+  };
+
+  // Update attachment URL locally after upload
+  const handleAttachmentUploaded = (transactionId: string, url: string) => {
+    setRows((prev) => prev.map((r) => 
+      r.id === transactionId 
+        ? { ...r, attachment_url: url }
+        : r
+    ));
   };
 
   // Bulk recategorization
@@ -310,7 +345,10 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
     try {
       if (selectedAllFiltered) {
-        let q = supabase.from("bank_transactions").update({ category: newCat });
+        let q = supabase.from("bank_transactions").update({ 
+          category: newCat,
+          transaction_status: 'classified'
+        });
         q = applyQueryFilters(q);
         const { error } = await q as any;
         if (error) throw error;
@@ -323,10 +361,17 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         if (ids.length === 0) return;
         const { error } = await supabase
           .from("bank_transactions")
-          .update({ category: newCat })
+          .update({ 
+            category: newCat,
+            transaction_status: 'classified'
+          })
           .in("id", ids);
         if (error) throw error;
-        setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, category: newCat } : r)));
+        setRows((prev) => prev.map((r) => 
+          selectedIds.has(r.id) 
+            ? { ...r, category: newCat, transaction_status: 'classified' } 
+            : r
+        ));
         setSelectedIds(new Set());
         setBulkCategory("");
         toast({ title: "Recategorização aplicada" });
@@ -372,7 +417,6 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   const handleClassifyWithContext = async () => {
     if (!activeCompanyId) return;
     
-    // Save context to localStorage
     localStorage.setItem('classify_context', classifyContext);
     setShowClassifyDialog(false);
     setIsClassifyingAI(true);
@@ -405,6 +449,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
                 .from("bank_transactions")
                 .update({ 
                   category: categoria,
+                  transaction_status: 'classified',
                   raw: { 
                     ...transaction.raw, 
                     ai_classified: true 
@@ -414,10 +459,9 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
 
               if (!updateError) {
                 classified++;
-                // Update local state
                 setRows(prev => prev.map(r => 
                   r.id === transaction.id 
-                    ? { ...r, category: categoria, raw: { ...r.raw, ai_classified: true } }
+                    ? { ...r, category: categoria, transaction_status: 'classified', raw: { ...r.raw, ai_classified: true } }
                     : r
                 ));
               }
@@ -440,22 +484,45 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
   };
 
   const emptyCount = useMemo(() => rows.filter(r => !r.category || r.category.trim() === '').length, [rows]);
+  const noAttachmentCount = useMemo(() => rows.filter(r => !r.attachment_url).length, [rows]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Status Overview */}
+      <div className="flex items-center justify-between">
+        <TransactionStatusStats {...statusCounts} />
+        {(emptyCount > 0 || noAttachmentCount > 0) && (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {emptyCount > 0 && (
+              <span className="flex items-center gap-1">
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                {emptyCount} sem categoria
+              </span>
+            )}
+            {noAttachmentCount > 0 && (
+              <span className="flex items-center gap-1">
+                <AlertCircle className="h-4 w-4 text-orange-500" />
+                {noAttachmentCount} sem anexo
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label className="text-sm text-muted-foreground">De</label>
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-36" />
         </div>
         <div>
           <label className="text-sm text-muted-foreground">Até</label>
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-36" />
         </div>
         <div>
           <label className="text-sm text-muted-foreground">Conta</label>
           <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="w-48">
               <SelectValue placeholder="Todas as contas" />
             </SelectTrigger>
             <SelectContent>
@@ -471,16 +538,17 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         <div>
           <label className="text-sm text-muted-foreground">Descrição</label>
           <Input
-            placeholder="Descrição contém..."
+            placeholder="Buscar..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
+            className="w-40"
           />
         </div>
         <div>
           <label className="text-sm text-muted-foreground">Categoria</label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Todas as categorias" />
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
@@ -493,7 +561,7 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         <div>
           <label className="text-sm text-muted-foreground">Tipo</label>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-32">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -503,127 +571,171 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={load} disabled={loading || !activeCompanyId}>{loading ? "Filtrando..." : "Aplicar filtros"}</Button>
-        <Button variant="secondary" onClick={selectAllMatching} disabled={loading || !activeCompanyId}>
-          Selecionar todos do filtro
+        <div>
+          <label className="text-sm text-muted-foreground">Status</label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="classified">Classificado</SelectItem>
+              <SelectItem value="audited">Auditado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={load} disabled={loading || !activeCompanyId} size="sm">
+          <Filter className="h-4 w-4 mr-1" />
+          {loading ? "Filtrando..." : "Aplicar filtros"}
         </Button>
-        <Button variant="outline" onClick={exportCsv} disabled={rows.length === 0}>Exportar CSV</Button>
+        <Button variant="secondary" size="sm" onClick={selectAllMatching} disabled={loading || !activeCompanyId}>
+          Selecionar todos ({rows.length})
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+          <Download className="h-4 w-4 mr-1" />
+          Exportar CSV
+        </Button>
         <Button 
           variant="outline" 
+          size="sm"
           onClick={() => setShowClassifyDialog(true)} 
           disabled={isClassifyingAI || !activeCompanyId || emptyCount === 0}
         >
-          {isClassifyingAI ? "Classificando..." : "🤖 Classificar Vazios com IA"}
+          <Sparkles className="h-4 w-4 mr-1" />
+          {isClassifyingAI ? "Classificando..." : `IA (${emptyCount})`}
         </Button>
       </div>
 
+      {/* Bulk Actions */}
       {(selectedIds.size > 0 || selectedAllFiltered) && (
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-sm text-muted-foreground">
-            Selecionados: {selectedAllFiltered ? allFilteredCount : selectedIds.size}
-            {selectedAllFiltered ? " (todos do filtro)" : ""}
-          </div>
-          <Input
-            placeholder="Nova categoria"
-            value={bulkCategory}
-            onChange={(e) => setBulkCategory(e.target.value)}
-            className="max-w-xs"
-          />
-          <Button onClick={applyBulk} disabled={selectedAllFiltered ? allFilteredCount === 0 : selectedIds.size === 0}>
-            Aplicar categoria
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Excluir selecionados</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Excluir {selectedAllFiltered ? allFilteredCount : selectedIds.size} lançamentos?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação é irreversível. Os lançamentos serão removidos definitivamente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={bulkDelete}>Excluir</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Button variant="outline" onClick={clearSelection}>Limpar seleção</Button>
-        </div>
+        <Alert>
+          <AlertDescription>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium">
+                {selectedAllFiltered ? allFilteredCount : selectedIds.size} selecionados
+                {selectedAllFiltered ? " (todos do filtro)" : ""}
+              </span>
+              <Input
+                placeholder="Nova categoria"
+                value={bulkCategory}
+                onChange={(e) => setBulkCategory(e.target.value)}
+                className="max-w-xs h-8"
+              />
+              <Button size="sm" onClick={applyBulk} disabled={selectedAllFiltered ? allFilteredCount === 0 : selectedIds.size === 0}>
+                Aplicar categoria
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">Excluir</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Excluir {selectedAllFiltered ? allFilteredCount : selectedIds.size} lançamentos?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação é irreversível.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={bulkDelete}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="sm" onClick={clearSelection}>Limpar</Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
+      {/* Table */}
       <div className="rounded-md border">
         <Table>
-          <TableCaption>Últimas transações importadas</TableCaption>
+          <TableCaption>
+            {totalItems} transações encontradas
+          </TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
-                <Checkbox checked={allCurrentSelected} onCheckedChange={toggleSelectAllCurrent} aria-label="Selecionar página" />
+                <Checkbox checked={allCurrentSelected} onCheckedChange={toggleSelectAllCurrent} />
               </TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-24">Data</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Conta</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>FITID</TableHead>
+              <TableHead className="w-64">Categoria</TableHead>
+              <TableHead className="w-28 text-right">Valor</TableHead>
+              <TableHead className="w-16 text-center">Anexo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedData.length === 0 && !loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Nenhuma transação encontrada.
                 </TableCell>
               </TableRow>
             ) : (
               paginatedData.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className={r.transaction_status === 'audited' ? 'bg-green-50/50' : ''}>
                   <TableCell>
                     <Checkbox
                       checked={selectedIds.has(r.id)}
                       onCheckedChange={(v) => toggleRow(r.id, v)}
-                      aria-label="Selecionar transação"
+                      disabled={r.transaction_status === 'audited'}
                     />
                   </TableCell>
-                  <TableCell>{new Date(r.date).toLocaleDateString("pt-BR")}</TableCell>
-                  <TableCell>{r.description || r.memo || "—"}</TableCell>
-                  <TableCell>{formatAccount(r)}</TableCell>
+                  <TableCell>
+                    <TransactionStatusBadge status={r.transaction_status} />
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(r.date).toLocaleDateString("pt-BR")}
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs truncate" title={r.description || r.memo || ""}>
+                      {r.description || r.memo || "—"}
+                    </div>
+                    {r.raw?.ai_classified && (
+                      <span className="text-xs text-blue-600 bg-blue-100 px-1 rounded ml-1">🤖</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {editingId === r.id ? (
-                      <Input
-                        autoFocus
-                        value={editingCat}
-                        onChange={(e) => setEditingCat(e.target.value)}
-                        onBlur={() => saveEdit(r.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEdit(r.id);
-                          if (e.key === "Escape") cancelEdit();
-                        }}
-                        placeholder="Categoria"
-                        className="h-8"
+                      <CategoryPicker
+                        value={r.category_id}
+                        onChange={(catId, catName) => updateCategory(r.id, catId, catName)}
+                        filterType={Number(r.amount) > 0 ? 'receita' : 'despesa'}
+                        className="w-full"
                       />
                     ) : (
                       <button
-                        className="text-left w-full hover:underline"
-                        onClick={() => startEdit(r)}
-                        aria-label="Editar categoria"
+                        className="text-left w-full hover:underline text-sm"
+                        onClick={() => setEditingId(r.id)}
+                        disabled={r.transaction_status === 'audited'}
                       >
-                        <div className="flex items-center gap-2">
-                          <span>{r.category || "—"}</span>
-                          {r.raw?.ai_classified && (
-                            <span className="text-xs text-blue-600 bg-blue-100 px-1 rounded">🤖 IA</span>
-                          )}
-                        </div>
+                        {r.category || (
+                          <span className="text-muted-foreground italic">Sem categoria</span>
+                        )}
                       </button>
                     )}
                   </TableCell>
-                  <TableCell>{r.type || "—"}</TableCell>
-                  <TableCell className="text-right font-medium">{currency(Number(r.amount))}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{r.fitid || "—"}</TableCell>
+                  <TableCell className={`text-right font-medium ${Number(r.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {currency(Number(r.amount))}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <AttachmentUploader
+                      transactionId={r.id}
+                      companyId={activeCompanyId || ''}
+                      currentUrl={r.attachment_url}
+                      onUploadComplete={(url) => handleAttachmentUploaded(r.id, url)}
+                      disabled={r.transaction_status === 'audited' || !activeCompanyId}
+                    />
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -642,58 +754,40 @@ export const TransactionsTable: React.FC<{ onSummaryChange?: (s: Summary) => voi
         totalItems={totalItems}
       />
 
+      {/* AI Classification Dialog */}
       <Dialog open={showClassifyDialog} onOpenChange={setShowClassifyDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Classificar transações com IA</DialogTitle>
             <DialogDescription>
-              Forneça contexto sobre sua empresa para melhorar a precisão da classificação
+              Forneça contexto sobre sua empresa para melhorar a precisão
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">
-                Contexto de classificação (opcional)
-              </label>
+              <label className="text-sm font-medium">Contexto (opcional)</label>
               <Textarea
                 value={classifyContext}
                 onChange={(e) => setClassifyContext(e.target.value.slice(0, 500))}
-                placeholder="Ex: Somos uma empresa de software B2B. Fornecedores como AWS e Digital Ocean devem ser classificados como 'Tecnologia - Infraestrutura Cloud'. Despesas com freelancers devem ir para 'Serviços Terceirizados'."
-                className="min-h-[120px] mt-2"
+                placeholder="Ex: Somos uma empresa de software B2B. AWS e Digital Ocean = 'Tecnologia - Infraestrutura'."
+                className="min-h-[100px] mt-2"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {classifyContext.length}/500 caracteres
               </p>
             </div>
             
-            <div className="bg-muted p-3 rounded-md">
-              <p className="text-sm font-medium mb-2">💡 Dicas de contexto útil:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Tipo de negócio e setor de atuação</li>
-                <li>• Fornecedores específicos e suas categorias preferidas</li>
-                <li>• Regras especiais de classificação da sua empresa</li>
-                <li>• Diferenciação entre receitas recorrentes vs. pontuais</li>
-              </ul>
-            </div>
-            
             <div className="flex items-center justify-between pt-2">
               <p className="text-sm text-muted-foreground">
-                {emptyCount} {emptyCount === 1 ? 'transação será classificada' : 'transações serão classificadas'}
+                {emptyCount} transações serão classificadas
               </p>
               <div className="space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowClassifyDialog(false);
-                  }}
-                >
+                <Button variant="outline" onClick={() => setShowClassifyDialog(false)}>
                   Cancelar
                 </Button>
-                <Button 
-                  onClick={handleClassifyWithContext}
-                  disabled={emptyCount === 0}
-                >
+                <Button onClick={handleClassifyWithContext} disabled={emptyCount === 0}>
+                  <Sparkles className="h-4 w-4 mr-1" />
                   Classificar com IA
                 </Button>
               </div>
