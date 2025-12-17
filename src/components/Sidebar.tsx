@@ -26,7 +26,8 @@ import {
   Scale,
   Shield,
   TrendingUp,
-  ClipboardCheck
+  ClipboardCheck,
+  Upload
 } from 'lucide-react';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { CompanyMultiSelect } from '@/components/layout/CompanyMultiSelect';
@@ -49,6 +50,7 @@ export const Sidebar = () => {
                             location.pathname.startsWith('/receivables') ||
                             location.pathname.startsWith('/invoices') ||
                             location.pathname.startsWith('/reconciliation') ||
+                            location.pathname.startsWith('/import') ||
                             location.pathname.startsWith('/dre') ||
                             location.pathname.startsWith('/bpo-audit');
   const isTasksActive = location.pathname.startsWith('/tasks');
@@ -82,6 +84,7 @@ export const Sidebar = () => {
     { id: 'receivables', label: 'Contas a Receber', icon: Receipt, path: '/receivables' },
     { id: 'invoices', label: 'Faturamento', icon: FileStack, path: '/invoices' },
     { id: 'reconciliation', label: 'Reconciliação Bancária', icon: Scale, path: '/reconciliation' },
+    { id: 'import', label: 'Importar Dados', icon: Upload, path: '/import' },
     { id: 'dre', label: 'DRE Gerencial', icon: TrendingUp, path: '/dre' },
     { id: 'bpo-audit', label: 'Auditoria BPO', icon: ClipboardCheck, path: '/bpo-audit' },
   ];

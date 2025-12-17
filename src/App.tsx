@@ -24,6 +24,7 @@ import AcceptInvitePage from "./pages/AcceptInvitePage";
 import ReceivablesPage from "./pages/ReceivablesPage";
 import DREDashboardPage from "./pages/DREDashboardPage";
 import BPOAuditPage from "./pages/BPOAuditPage";
+import ImportPage from "./pages/ImportPage";
 import { Settings } from "./components/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
@@ -78,6 +79,7 @@ const App = () => (
               {/* Team Management */}
               <Route path="/team" element={<PrivateRoute><MainLayout><TeamPage /></MainLayout></PrivateRoute>} />
               <Route path="/bpo-audit" element={<PrivateRoute><MainLayout><BPOAuditPage /></MainLayout></PrivateRoute>} />
+              <Route path="/import" element={<PrivateRoute><MainLayout><ImportPage /></MainLayout></PrivateRoute>} />
               <Route path="/accept-invite" element={<AcceptInvitePage />} />
               
               {/* Settings */}
