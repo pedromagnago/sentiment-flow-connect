@@ -503,6 +503,130 @@ export const useReconciliation = () => {
     },
   });
 
+  // Criar vinculação múltipla (many-to-many)
+  const createMultiLink = useMutation({
+    mutationFn: async ({ 
+      items,
+      observacao
+    }: { 
+      items: Array<{
+        id: string;
+        type: 'transaction' | 'payable' | 'receivable';
+        amount?: number;
+      }>;
+      observacao?: string;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      const groupId = crypto.randomUUID();
+      
+      // Create links for each item
+      const links = items.map(item => ({
+        company_id: activeCompanyId,
+        user_id: user.user?.id,
+        group_id: groupId,
+        bank_transaction_id: item.type === 'transaction' ? item.id : null,
+        conta_pagar_id: item.type === 'payable' ? item.id : null,
+        conta_receber_id: item.type === 'receivable' ? item.id : null,
+        valor_alocado: item.amount,
+        observacao,
+        created_by: user.user?.id
+      }));
+
+      const { error: linkError } = await supabase
+        .from('reconciliation_links')
+        .insert(links);
+
+      if (linkError) throw linkError;
+
+      // Mark all transactions as reconciled
+      const transactionIds = items.filter(i => i.type === 'transaction').map(i => i.id);
+      if (transactionIds.length > 0) {
+        const { error: transError } = await supabase
+          .from('bank_transactions')
+          .update({
+            reconciled: true,
+            reconciled_at: new Date().toISOString(),
+            reconciled_by: user.user?.id
+          })
+          .in('id', transactionIds);
+        
+        if (transError) throw transError;
+      }
+
+      // Mark all payables as reconciled
+      const payableIds = items.filter(i => i.type === 'payable').map(i => i.id);
+      if (payableIds.length > 0) {
+        const { error: payError } = await supabase
+          .from('contas_pagar')
+          .update({
+            reconciled: true,
+            reconciled_at: new Date().toISOString(),
+            reconciled_by: user.user?.id
+          })
+          .in('id', payableIds);
+        
+        if (payError) throw payError;
+      }
+
+      // Mark all receivables as reconciled
+      const receivableIds = items.filter(i => i.type === 'receivable').map(i => i.id);
+      if (receivableIds.length > 0) {
+        const { error: recError } = await supabase
+          .from('contas_receber')
+          .update({
+            reconciled: true,
+            reconciled_at: new Date().toISOString(),
+            reconciled_by: user.user?.id
+          })
+          .in('id', receivableIds);
+        
+        if (recError) throw recError;
+      }
+
+      return { groupId, count: items.length };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['orphan_transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['unmatched_payables'] });
+      queryClient.invalidateQueries({ queryKey: ['unmatched_receivables'] });
+      queryClient.invalidateQueries({ queryKey: ['unmatched_transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['reconciliation_links'] });
+      queryClient.invalidateQueries({ queryKey: ['bank_transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
+      queryClient.invalidateQueries({ queryKey: ['receivables'] });
+      
+      toast({
+        title: 'Vinculação múltipla criada',
+        description: `${data.count} itens vinculados com sucesso`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao criar vinculação múltipla',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Buscar links de reconciliação
+  const { data: reconciliationLinks } = useQuery({
+    queryKey: ['reconciliation_links', companyIds],
+    queryFn: async () => {
+      if (companyIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('reconciliation_links')
+        .select('*')
+        .in('company_id', companyIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: companyIds.length > 0,
+  });
+
   // Métricas
   const suggestedMatches = matches?.filter(m => m.status === 'suggested') || [];
   const confirmedMatches = matches?.filter(m => m.status === 'confirmed') || [];
@@ -512,6 +636,9 @@ export const useReconciliation = () => {
     ...(unmatchedPayables || []),
     ...(unmatchedReceivables || [])
   ];
+
+  // Contar grupos únicos de links
+  const uniqueLinkGroups = new Set(reconciliationLinks?.map(l => l.group_id) || []).size;
 
   const stats = {
     total_matches: matches?.length || 0,
@@ -524,6 +651,7 @@ export const useReconciliation = () => {
     unmatched_payables: unmatchedPayables?.length || 0,
     unmatched_receivables: unmatchedReceivables?.length || 0,
     total_unmatched_accounts: unmatchedAccounts.length,
+    multi_links: uniqueLinkGroups,
     reconciliation_rate: unmatchedTransactions?.length 
       ? ((confirmedMatches.length / (confirmedMatches.length + (orphanTransactions?.length || 0))) * 100).toFixed(1)
       : '100'
@@ -537,6 +665,7 @@ export const useReconciliation = () => {
     unmatchedPayables,
     unmatchedReceivables,
     unmatchedAccounts,
+    reconciliationLinks,
     stats,
     isLoading: isLoading || isLoadingOrphans || isLoadingPayables || isLoadingReceivables,
     runAutoMatch: runAutoMatch.mutate,
@@ -545,5 +674,6 @@ export const useReconciliation = () => {
     createManualMatch: createManualMatch.mutate,
     classifyTransaction: classifyTransaction.mutate,
     linkTransactionToAccount: linkTransactionToAccount.mutate,
+    createMultiLink: createMultiLink.mutate,
   };
 };

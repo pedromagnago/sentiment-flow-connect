@@ -6,7 +6,7 @@ import {
   CheckCircle2, 
   Link2Off, 
   FileQuestion,
-  TrendingUp
+  Link2
 } from 'lucide-react';
 
 interface ReconciliationStatsProps {
@@ -17,6 +17,7 @@ interface ReconciliationStatsProps {
     ignored_transactions: number;
     reconciliation_rate: string;
     confirmed: number;
+    multi_links?: number;
   };
 }
 
@@ -24,7 +25,7 @@ export const ReconciliationStats: React.FC<ReconciliationStatsProps> = ({ stats 
   const reconciliationRate = parseFloat(stats.reconciliation_rate) || 0;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -34,7 +35,6 @@ export const ReconciliationStats: React.FC<ReconciliationStatsProps> = ({ stats 
             <span className="text-2xl font-bold text-orange-600">{stats.orphan_transactions}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">Transações Órfãs</p>
-          <p className="text-xs text-muted-foreground">Sem conta vinculada</p>
         </CardContent>
       </Card>
 
@@ -47,7 +47,6 @@ export const ReconciliationStats: React.FC<ReconciliationStatsProps> = ({ stats 
             <span className="text-2xl font-bold text-red-600">{stats.unmatched_payables}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">Pagar s/ Transação</p>
-          <p className="text-xs text-muted-foreground">Contas não vinculadas</p>
         </CardContent>
       </Card>
 
@@ -60,7 +59,6 @@ export const ReconciliationStats: React.FC<ReconciliationStatsProps> = ({ stats 
             <span className="text-2xl font-bold text-amber-600">{stats.unmatched_receivables}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">Receber s/ Transação</p>
-          <p className="text-xs text-muted-foreground">Contas não vinculadas</p>
         </CardContent>
       </Card>
 
@@ -73,7 +71,18 @@ export const ReconciliationStats: React.FC<ReconciliationStatsProps> = ({ stats 
             <span className="text-2xl font-bold text-gray-600">{stats.ignored_transactions}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">Exceções</p>
-          <p className="text-xs text-muted-foreground">Tarifas, transf., etc.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Link2 className="w-5 h-5 text-blue-600" />
+            </div>
+            <span className="text-2xl font-bold text-blue-600">{stats.multi_links || 0}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">Vínculos Múltiplos</p>
         </CardContent>
       </Card>
 

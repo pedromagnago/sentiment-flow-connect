@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Play, Loader2 } from 'lucide-react';
+import { Play, Loader2, Link2 } from 'lucide-react';
 import { useReconciliation } from '@/hooks/useReconciliation';
 import { ReconciliationStats } from './ReconciliationStats';
 import { OrphanTransactionsPanel } from './OrphanTransactionsPanel';
 import { UnmatchedAccountsPanel } from './UnmatchedAccountsPanel';
 import { LinkAccountModal } from './LinkAccountModal';
 import { LinkTransactionModal } from './LinkTransactionModal';
+import { MultiLinkModal } from './MultiLinkModal';
 
 export const ReconciliationDashboard: React.FC = () => {
   const {
@@ -18,9 +19,12 @@ export const ReconciliationDashboard: React.FC = () => {
     runAutoMatch,
     classifyTransaction,
     linkTransactionToAccount,
+    createMultiLink,
   } = useReconciliation();
 
   const [isRunningAutoMatch, setIsRunningAutoMatch] = useState(false);
+  const [showMultiLinkModal, setShowMultiLinkModal] = useState(false);
+  
   const [linkAccountModal, setLinkAccountModal] = useState<{
     open: boolean;
     transactionId: string;
@@ -91,6 +95,10 @@ export const ReconciliationDashboard: React.FC = () => {
     });
   };
 
+  const handleMultiLinkConfirm = (items: Array<{ id: string; type: 'transaction' | 'payable' | 'receivable'; amount: number }>, observacao?: string) => {
+    createMultiLink({ items, observacao });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,6 +117,14 @@ export const ReconciliationDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowMultiLinkModal(true)}
+          >
+            <Link2 className="w-4 h-4 mr-2" />
+            Vinculação Múltipla
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -165,6 +181,13 @@ export const ReconciliationDashboard: React.FC = () => {
         accountAmount={linkTransactionModal.amount}
         accountDescription={linkTransactionModal.description}
         onLink={handleLinkTransactionConfirm}
+      />
+
+      {/* Multi Link Modal */}
+      <MultiLinkModal
+        open={showMultiLinkModal}
+        onOpenChange={setShowMultiLinkModal}
+        onConfirm={handleMultiLinkConfirm}
       />
     </div>
   );
