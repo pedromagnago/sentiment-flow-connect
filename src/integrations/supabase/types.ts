@@ -1366,6 +1366,50 @@ export type Database = {
           },
         ]
       }
+      documentos: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          size: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           company_id: string | null
@@ -1667,6 +1711,45 @@ export type Database = {
           id_grupo_mensagens?: string | null
         }
         Relationships: []
+      }
+      invitation_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          invitation_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          invitation_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          invitation_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitation_companies_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "team_invitations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -2252,6 +2335,7 @@ export type Database = {
       team_invitations: {
         Row: {
           accepted_at: string | null
+          company_id: string | null
           email: string
           expires_at: string
           id: string
@@ -2263,6 +2347,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          company_id?: string | null
           email: string
           expires_at?: string
           id?: string
@@ -2274,6 +2359,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          company_id?: string | null
           email?: string
           expires_at?: string
           id?: string
@@ -2283,7 +2369,15 @@ export type Database = {
           status?: string
           token?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transaction_imports: {
         Row: {
