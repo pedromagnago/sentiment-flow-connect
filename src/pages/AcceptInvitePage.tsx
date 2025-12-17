@@ -4,8 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Building2 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Badge } from '@/components/ui/badge';
+
+interface InvitationCompany {
+  company_id: string;
+  role: string;
+  company_name?: string;
+}
 
 const AcceptInvitePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -14,7 +21,9 @@ const AcceptInvitePage: React.FC = () => {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
   const [invitation, setInvitation] = useState<any>(null);
+  const [invitationCompanies, setInvitationCompanies] = useState<InvitationCompany[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,31 +38,62 @@ const AcceptInvitePage: React.FC = () => {
 
   const loadInvitation = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar convite pelo token
+      const { data: inviteData, error: inviteError } = await supabase
         .from('team_invitations')
         .select('*')
         .eq('token', token)
         .single();
 
-      if (error) throw error;
+      if (inviteError) throw inviteError;
 
-      if (!data) {
+      if (!inviteData) {
         setError('Convite não encontrado');
         return;
       }
 
-      if (data.status !== 'pending') {
+      if (inviteData.status !== 'pending') {
         setError('Este convite já foi usado ou está expirado');
         return;
       }
 
-      const expiresAt = new Date(data.expires_at);
+      const expiresAt = new Date(inviteData.expires_at);
       if (expiresAt < new Date()) {
         setError('Este convite expirou');
         return;
       }
 
-      setInvitation(data);
+      setInvitation(inviteData);
+
+      // Buscar empresas vinculadas ao convite
+      const { data: companiesData } = await (supabase as any)
+        .from('invitation_companies')
+        .select('company_id, role, companies(nome)')
+        .eq('invitation_id', inviteData.id);
+
+      if (companiesData && companiesData.length > 0) {
+        // Múltiplas empresas no convite
+        setInvitationCompanies(companiesData.map((ic: any) => ({
+          company_id: ic.company_id,
+          role: ic.role,
+          company_name: ic.companies?.nome || 'Empresa',
+        })));
+      } else if (inviteData.company_id) {
+        // Convite com empresa única (formato antigo)
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('nome')
+          .eq('id', inviteData.company_id)
+          .single();
+
+        setInvitationCompanies([{
+          company_id: inviteData.company_id,
+          role: inviteData.role,
+          company_name: companyData?.nome || 'Empresa',
+        }]);
+      } else {
+        setError('Convite sem empresa associada');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -63,6 +103,8 @@ const AcceptInvitePage: React.FC = () => {
 
   const handleAccept = async () => {
     try {
+      setAccepting(true);
+      
       // Verificar se usuário já está logado
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -72,33 +114,37 @@ const AcceptInvitePage: React.FC = () => {
         return;
       }
 
-      // Usuário já logado - buscar user_roles para obter company_id
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('company_id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .is('revoked_at', null)
-        .limit(1)
-        .single();
+      // Usuário logado - criar user_role para CADA empresa do convite
+      for (const ic of invitationCompanies) {
+        // Verificar se já existe role para esta empresa
+        const { data: existingRole } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('company_id', ic.company_id)
+          .eq('is_active', true)
+          .is('revoked_at', null)
+          .maybeSingle();
 
-      const companyId = roles?.company_id;
-      if (!companyId) {
-        throw new Error('Perfil sem company_id. Complete o onboarding primeiro.');
+        if (existingRole) {
+          console.log(`Usuário já tem acesso à empresa ${ic.company_name}`);
+          continue;
+        }
+
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: user.id,
+            company_id: ic.company_id,
+            role: ic.role as 'admin' | 'supervisor' | 'operator' | 'viewer' | 'owner',
+            granted_by: invitation.invited_by,
+            is_active: true,
+          }]);
+
+        if (roleError) {
+          console.error(`Erro ao criar role para empresa ${ic.company_name}:`, roleError);
+        }
       }
-
-      // Criar user_role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          company_id: companyId,
-          role: invitation.role,
-          granted_by: invitation.invited_by,
-          is_active: true,
-        });
-
-      if (roleError) throw roleError;
 
       // Marcar convite como aceito
       await supabase
@@ -108,7 +154,7 @@ const AcceptInvitePage: React.FC = () => {
 
       toast({
         title: 'Convite aceito!',
-        description: 'Bem-vindo à equipe FullBPO',
+        description: `Bem-vindo! Você agora tem acesso a ${invitationCompanies.length} empresa(s).`,
       });
 
       navigate('/');
@@ -118,6 +164,8 @@ const AcceptInvitePage: React.FC = () => {
         description: err.message,
         variant: 'destructive',
       });
+    } finally {
+      setAccepting(false);
     }
   };
 
@@ -168,14 +216,10 @@ const AcceptInvitePage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-slate-100 p-4 rounded-lg space-y-2">
+          <div className="bg-slate-100 p-4 rounded-lg space-y-3">
             <div className="flex justify-between">
               <span className="font-semibold">Email:</span>
               <span>{invitation?.email}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-semibold">Role:</span>
-              <span className="capitalize">{invitation?.role}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-semibold">Expira em:</span>
@@ -186,13 +230,35 @@ const AcceptInvitePage: React.FC = () => {
             </div>
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleAccept}>
-            Aceitar Convite
+          {/* Lista de empresas do convite */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Building2 className="h-4 w-4" />
+              <span>Acesso às empresas:</span>
+            </div>
+            <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+              {invitationCompanies.map((ic, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm">{ic.company_name}</span>
+                  <Badge variant="secondary" className="capitalize">
+                    {ic.role}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button 
+            className="w-full" 
+            size="lg" 
+            onClick={handleAccept}
+            disabled={accepting}
+          >
+            {accepting ? 'Aceitando...' : 'Aceitar Convite'}
           </Button>
 
           <p className="text-sm text-muted-foreground text-center">
-            Ao aceitar, você terá acesso ao sistema FullBPO com as permissões de{' '}
-            <strong>{invitation?.role}</strong>
+            Ao aceitar, você terá acesso ao sistema FullBPO com as permissões listadas acima.
           </p>
         </CardContent>
       </Card>

@@ -55,62 +55,73 @@ const AuthPage: React.FC = () => {
       toast({ title: "Não foi possível entrar", description: error.message, variant: "destructive" });
       return;
     }
+    
+    // Se login com invite_token, redirecionar para accept-invite
+    if (inviteToken) {
+      navigate(`/accept-invite?token=${inviteToken}`, { replace: true });
+      return;
+    }
+    
     const from = (location.state as any)?.from?.pathname || "/";
     navigate(from, { replace: true });
   };
 
   const handleSignup = async () => {
     setLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
+    
+    // Se temos invite_token, redirecionar para accept-invite após signup
+    const redirectUrl = inviteToken 
+      ? `${window.location.origin}/accept-invite?token=${inviteToken}`
+      : `${window.location.origin}/`;
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: redirectUrl },
     });
     setLoading(false);
+    
     if (error) {
       toast({ title: "Cadastro falhou", description: error.message, variant: "destructive" });
       return;
     }
     
-    // Se temos um token de convite, processar após confirmação de email
+    // Se temos um token de convite e o usuário foi criado, processar convite
     if (inviteToken && data.user) {
       try {
+        // Buscar convite
         const { data: invitation } = await supabase
           .from('team_invitations')
           .select('*')
           .eq('token', inviteToken)
           .single();
 
-        if (invitation) {
-          // Buscar company_id dos user_roles (será criado pelo trigger após signup)
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('company_id')
-            .eq('user_id', data.user.id)
-            .eq('is_active', true)
-            .is('revoked_at', null)
-            .limit(1)
-            .single();
+        if (invitation && invitation.status === 'pending') {
+          // Buscar empresas do convite
+          const { data: invCompanies } = await (supabase as any)
+            .from('invitation_companies')
+            .select('company_id, role')
+            .eq('invitation_id', invitation.id);
 
-          const companyId = roles?.company_id;
-          if (!companyId) {
-            // Se não tiver company_id, o usuário precisa completar onboarding primeiro
-            toast({ 
-              title: "Verifique seu email", 
-              description: "Complete o onboarding antes de aceitar o convite." 
+          // Se não tem invitation_companies, usar company_id do convite
+          const companiesToAdd = invCompanies && invCompanies.length > 0
+            ? invCompanies
+            : invitation.company_id 
+              ? [{ company_id: invitation.company_id, role: invitation.role }]
+              : [];
+
+          // Criar user_role para cada empresa
+          for (const ic of companiesToAdd) {
+            await supabase.from('user_roles').insert({
+              user_id: data.user.id,
+              company_id: ic.company_id,
+              role: ic.role,
+              granted_by: invitation.invited_by,
+              is_active: true,
             });
-            return;
           }
 
-          await supabase.from('user_roles').insert({
-            user_id: data.user.id,
-            company_id: companyId,
-            role: invitation.role,
-            granted_by: invitation.invited_by,
-            is_active: true,
-          });
-
+          // Marcar convite como aceito
           await supabase
             .from('team_invitations')
             .update({ status: 'accepted', accepted_at: new Date().toISOString() })
@@ -118,15 +129,16 @@ const AuthPage: React.FC = () => {
 
           toast({ 
             title: "Conta criada com sucesso!", 
-            description: "Bem-vindo à equipe FullBPO. Verifique seu email para confirmar." 
+            description: `Bem-vindo! Verifique seu email para confirmar. Você tem acesso a ${companiesToAdd.length} empresa(s).`
           });
+          return;
         }
       } catch (err: any) {
         console.error('Erro ao processar convite:', err);
       }
-    } else {
-      toast({ title: "Verifique seu email", description: "Enviamos um link de confirmação para concluir o cadastro." });
     }
+    
+    toast({ title: "Verifique seu email", description: "Enviamos um link de confirmação para concluir o cadastro." });
   };
 
   const handleForgotPassword = async () => {
@@ -157,6 +169,11 @@ const AuthPage: React.FC = () => {
             {mode === "signup" && "Criar sua conta"}
             {mode === "forgot" && "Recuperar senha"}
           </CardTitle>
+          {inviteToken && (
+            <p className="text-sm text-muted-foreground">
+              Você tem um convite pendente. Faça login ou cadastre-se para aceitar.
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

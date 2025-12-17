@@ -24,6 +24,17 @@ export interface TeamInvitation {
   expires_at: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
   token: string;
+  company_id?: string;
+  companies?: Array<{
+    company_id: string;
+    company_name: string;
+    role: string;
+  }>;
+}
+
+interface CompanyRoleInput {
+  companyId: string;
+  role: 'admin' | 'supervisor' | 'operator' | 'viewer';
 }
 
 export const useTeamManagement = () => {
@@ -116,10 +127,28 @@ export const useTeamManagement = () => {
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map((inv: any) => ({
-        ...inv,
-        status: inv.status as 'pending' | 'accepted' | 'expired' | 'revoked',
-      }));
+
+      // Buscar empresas associadas a cada convite
+      const invitations: TeamInvitation[] = [];
+      
+      for (const inv of data || []) {
+        const { data: invCompanies } = await (supabase as any)
+          .from('invitation_companies')
+          .select('company_id, role, companies(nome)')
+          .eq('invitation_id', inv.id);
+
+        invitations.push({
+          ...inv,
+          status: inv.status as 'pending' | 'accepted' | 'expired' | 'revoked',
+          companies: (invCompanies || []).map((ic: any) => ({
+            company_id: ic.company_id,
+            company_name: ic.companies?.nome || 'Sem nome',
+            role: ic.role,
+          })),
+        });
+      }
+
+      return invitations;
     } catch (error: any) {
       toast({
         title: 'Erro ao carregar convites',
@@ -130,10 +159,12 @@ export const useTeamManagement = () => {
     }
   };
 
-  const inviteUser = async (
+  /**
+   * Cria um convite para múltiplas empresas
+   */
+  const inviteUserToMultipleCompanies = async (
     email: string,
-    role: 'admin' | 'supervisor' | 'operator' | 'viewer',
-    companyId: string
+    companyRoles: CompanyRoleInput[]
   ): Promise<{ success: boolean; token?: string }> => {
     try {
       setLoading(true);
@@ -141,25 +172,49 @@ export const useTeamManagement = () => {
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('Usuário não autenticado');
 
-      const { data, error } = await supabase
+      if (companyRoles.length === 0) {
+        throw new Error('Selecione pelo menos uma empresa');
+      }
+
+      // Usar a primeira empresa e role como principal (para compatibilidade)
+      const primaryCompany = companyRoles[0];
+
+      // Criar convite principal
+      const { data: inviteData, error: inviteError } = await supabase
         .from('team_invitations')
         .insert({
           email,
-          role,
-          company_id: companyId,
+          role: primaryCompany.role,
+          company_id: primaryCompany.companyId,
           invited_by: currentUser.user.id,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (inviteError) throw inviteError;
+
+      // Inserir registros em invitation_companies para TODAS as empresas
+      const invitationCompaniesData = companyRoles.map(cr => ({
+        invitation_id: inviteData.id,
+        company_id: cr.companyId,
+        role: cr.role,
+      }));
+
+      const { error: icError } = await (supabase as any)
+        .from('invitation_companies')
+        .insert(invitationCompaniesData);
+
+      if (icError) {
+        console.error('Erro ao inserir invitation_companies:', icError);
+        // Não falha o fluxo - o convite principal já foi criado
+      }
 
       toast({
         title: 'Convite criado',
-        description: `Convite enviado para ${email}`,
+        description: `Convite enviado para ${email} com acesso a ${companyRoles.length} empresa(s)`,
       });
 
-      return { success: true, token: data.token };
+      return { success: true, token: inviteData.token };
     } catch (error: any) {
       toast({
         title: 'Erro ao criar convite',
@@ -170,6 +225,17 @@ export const useTeamManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Cria um convite para uma única empresa (compatibilidade)
+   */
+  const inviteUser = async (
+    email: string,
+    role: 'admin' | 'supervisor' | 'operator' | 'viewer',
+    companyId: string
+  ): Promise<{ success: boolean; token?: string }> => {
+    return inviteUserToMultipleCompanies(email, [{ companyId, role }]);
   };
 
   const updateRole = async (
@@ -388,6 +454,7 @@ export const useTeamManagement = () => {
     listMembers,
     listInvitations,
     inviteUser,
+    inviteUserToMultipleCompanies,
     updateRole,
     addUserToCompany,
     removeUserFromCompany,

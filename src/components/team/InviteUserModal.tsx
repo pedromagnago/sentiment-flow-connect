@@ -52,7 +52,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const [companySelections, setCompanySelections] = useState<CompanyRoleSelection[]>([]);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [defaultRole, setDefaultRole] = useState<'admin' | 'supervisor' | 'operator' | 'viewer'>('operator');
-  const { inviteUser, loading } = useTeamManagement();
+  const { inviteUserToMultipleCompanies, loading } = useTeamManagement();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
       
       const selections: CompanyRoleSelection[] = (data || []).map(c => ({
         companyId: c.id,
-        companyName: c.nome,
+        companyName: c.nome || 'Sem nome',
         role: defaultRole,
         selected: preSelectedCompanyId === c.id,
       }));
@@ -132,22 +132,16 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({
       return;
     }
 
-    // Use a primeira empresa selecionada para criar o convite
-    // As demais empresas serão adicionadas após o usuário aceitar o convite
-    const primaryCompany = selectedCompanies[0];
-    const result = await inviteUser(email, primaryCompany.role, primaryCompany.companyId);
+    // Usar a nova função que suporta múltiplas empresas
+    const companyRoles = selectedCompanies.map(c => ({
+      companyId: c.companyId,
+      role: c.role,
+    }));
+
+    const result = await inviteUserToMultipleCompanies(email, companyRoles);
     
     if (result.success && result.token) {
       setInviteToken(result.token);
-      
-      // TODO: Armazenar as empresas adicionais para serem processadas quando o usuário aceitar o convite
-      // Isso requer modificação no fluxo de aceitação de convite
-      
-      toast({
-        title: 'Convite criado',
-        description: `Convite criado com acesso a ${selectedCompanies.length} empresa(s)`,
-      });
-      
       onSuccess();
     }
   };
