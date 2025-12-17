@@ -1,4 +1,3 @@
-
 project_id = "insncccrxgsvaxxkzjws"
 
 [api]
@@ -102,6 +101,21 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.test-zapi-connection]
+verify_jwt = true
+
+[functions.lock-audit-period]
+verify_jwt = true
+
+[functions.upload-attachment]
+verify_jwt = true
+
+[functions.ingest-spreadsheet]
+verify_jwt = true
+
+[functions.match-transactions]
+verify_jwt = true
+
+[functions.process-whatsapp-payment]
 verify_jwt = true
 
 [edge-runtime]
