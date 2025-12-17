@@ -296,9 +296,11 @@ export type Database = {
           fitid: string | null
           historico_atividades: Json | null
           id: string
+          ignorar_reconciliacao: boolean | null
           import_id: string | null
           match_score: number | null
           memo: string | null
+          motivo_ignorar: string | null
           nome_origem: string | null
           projeto: string | null
           rateio: Json | null
@@ -312,6 +314,7 @@ export type Database = {
           reconciliado_em: string | null
           reconciliado_por: string | null
           subcategoria: string | null
+          tipo_movimento: Database["public"]["Enums"]["movimento_tipo"] | null
           transaction_status: string | null
           type: string | null
           updated_at: string
@@ -339,9 +342,11 @@ export type Database = {
           fitid?: string | null
           historico_atividades?: Json | null
           id?: string
+          ignorar_reconciliacao?: boolean | null
           import_id?: string | null
           match_score?: number | null
           memo?: string | null
+          motivo_ignorar?: string | null
           nome_origem?: string | null
           projeto?: string | null
           rateio?: Json | null
@@ -355,6 +360,7 @@ export type Database = {
           reconciliado_em?: string | null
           reconciliado_por?: string | null
           subcategoria?: string | null
+          tipo_movimento?: Database["public"]["Enums"]["movimento_tipo"] | null
           transaction_status?: string | null
           type?: string | null
           updated_at?: string
@@ -382,9 +388,11 @@ export type Database = {
           fitid?: string | null
           historico_atividades?: Json | null
           id?: string
+          ignorar_reconciliacao?: boolean | null
           import_id?: string | null
           match_score?: number | null
           memo?: string | null
+          motivo_ignorar?: string | null
           nome_origem?: string | null
           projeto?: string | null
           rateio?: Json | null
@@ -398,6 +406,7 @@ export type Database = {
           reconciliado_em?: string | null
           reconciliado_por?: string | null
           subcategoria?: string | null
+          tipo_movimento?: Database["public"]["Enums"]["movimento_tipo"] | null
           transaction_status?: string | null
           type?: string | null
           updated_at?: string
@@ -839,6 +848,7 @@ export type Database = {
       }
       contas_pagar: {
         Row: {
+          bank_transaction_id: string | null
           beneficiario: string
           categoria: string | null
           centro_custo: string | null
@@ -879,6 +889,7 @@ export type Database = {
           whatsapp_document_url: string | null
         }
         Insert: {
+          bank_transaction_id?: string | null
           beneficiario: string
           categoria?: string | null
           centro_custo?: string | null
@@ -919,6 +930,7 @@ export type Database = {
           whatsapp_document_url?: string | null
         }
         Update: {
+          bank_transaction_id?: string | null
           beneficiario?: string
           categoria?: string | null
           centro_custo?: string | null
@@ -960,6 +972,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contas_pagar_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contas_pagar_message_id_fkey"
             columns: ["message_id"]
             isOneToOne: false
@@ -978,6 +997,7 @@ export type Database = {
       contas_receber: {
         Row: {
           aprovador_id: string | null
+          bank_transaction_id: string | null
           categoria: string | null
           centro_custo: string | null
           chave_nfe: string | null
@@ -1024,6 +1044,7 @@ export type Database = {
         }
         Insert: {
           aprovador_id?: string | null
+          bank_transaction_id?: string | null
           categoria?: string | null
           centro_custo?: string | null
           chave_nfe?: string | null
@@ -1070,6 +1091,7 @@ export type Database = {
         }
         Update: {
           aprovador_id?: string | null
+          bank_transaction_id?: string | null
           categoria?: string | null
           centro_custo?: string | null
           chave_nfe?: string | null
@@ -1115,6 +1137,13 @@ export type Database = {
           whatsapp_document_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contas_receber_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contas_receber_company_id_fkey"
             columns: ["company_id"]
@@ -2372,6 +2401,12 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "admin" | "supervisor" | "operator" | "viewer"
+      movimento_tipo:
+        | "operacional"
+        | "transferencia"
+        | "tarifa_bancaria"
+        | "rendimento"
+        | "outro"
       transaction_status: "pending" | "classified" | "audited"
     }
     CompositeTypes: {
@@ -2501,6 +2536,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "supervisor", "operator", "viewer"],
+      movimento_tipo: [
+        "operacional",
+        "transferencia",
+        "tarifa_bancaria",
+        "rendimento",
+        "outro",
+      ],
       transaction_status: ["pending", "classified", "audited"],
     },
   },
