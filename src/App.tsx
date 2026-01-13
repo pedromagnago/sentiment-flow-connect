@@ -38,6 +38,9 @@ import { ChatsPage } from "./pages/whatsapp/ChatsPage";
 import { QueuePage } from "./pages/whatsapp/QueuePage";
 import { ContactsPage as WhatsAppContactsPage } from "./pages/whatsapp/ContactsPage";
 import UnclassifiedPage from "./pages/whatsapp/UnclassifiedPage";
+import StatusPage from "./pages/whatsapp/StatusPage";
+import AllMessagesPage from "./pages/whatsapp/AllMessagesPage";
+import AutoClassifyPage from "./pages/whatsapp/AutoClassifyPage";
 
 const queryClient = new QueryClient();
 
