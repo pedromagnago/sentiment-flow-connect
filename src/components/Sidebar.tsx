@@ -103,9 +103,12 @@ export const Sidebar = () => {
 
   // Submenu WhatsApp
   const whatsappSubmenu = [
+    { id: 'status', label: 'Dashboard Status', icon: BarChart3, path: '/whatsapp/status' },
     { id: 'chats', label: 'Chats', icon: MessageSquare, path: '/whatsapp/chats' },
+    { id: 'mensagens', label: 'Todas Mensagens', icon: MessageCircle, path: '/whatsapp/mensagens' },
     { id: 'fila', label: 'Fila', icon: ListTodo, path: '/whatsapp/fila' },
     { id: 'contatos', label: 'Contatos', icon: UserCircle, path: '/whatsapp/contatos' },
+    { id: 'classificar', label: 'Classificar Auto', icon: Sparkles, path: '/whatsapp/classificar' },
   ];
 
   // Submenu Configurações

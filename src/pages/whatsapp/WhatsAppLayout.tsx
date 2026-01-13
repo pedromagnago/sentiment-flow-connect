@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { MessageCircle, ListTodo, Users, AlertCircle } from 'lucide-react';
+import { MessageCircle, ListTodo, Users, AlertCircle, BarChart3, Inbox, Wand2 } from 'lucide-react';
 import { WhatsAppProvider, useWhatsApp } from '@/contexts/WhatsAppContext';
 import { useUnclassifiedContacts } from '@/hooks/useUnclassifiedContacts';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
@@ -51,7 +51,21 @@ const WhatsAppLayoutContent = () => {
               </div>
             </div>
 
-            <nav className="flex gap-1">
+            <nav className="flex gap-1 flex-wrap">
+              <NavLink
+                to="/whatsapp/status"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  }`
+                }
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="font-medium">Status</span>
+              </NavLink>
+
               <NavLink
                 to="/whatsapp/chats"
                 className={({ isActive }) =>
@@ -69,6 +83,20 @@ const WhatsAppLayoutContent = () => {
                     {unreadCount}
                   </Badge>
                 )}
+              </NavLink>
+
+              <NavLink
+                to="/whatsapp/mensagens"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  }`
+                }
+              >
+                <Inbox className="w-4 h-4" />
+                <span className="font-medium">Mensagens</span>
               </NavLink>
 
               <NavLink
@@ -121,6 +149,20 @@ const WhatsAppLayoutContent = () => {
                     {unclassifiedContacts.length}
                   </Badge>
                 )}
+              </NavLink>
+
+              <NavLink
+                to="/whatsapp/classificar"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  }`
+                }
+              >
+                <Wand2 className="w-4 h-4" />
+                <span className="font-medium">Classificar</span>
               </NavLink>
             </nav>
           </div>
