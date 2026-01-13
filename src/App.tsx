@@ -76,6 +76,9 @@ const App = () => (
                 <Route path="fila" element={<QueuePage />} />
                 <Route path="contatos" element={<WhatsAppContactsPage />} />
                 <Route path="nao-classificados" element={<UnclassifiedPage />} />
+                <Route path="status" element={<StatusPage />} />
+                <Route path="mensagens" element={<AllMessagesPage />} />
+                <Route path="classificar" element={<AutoClassifyPage />} />
               </Route>
               
               {/* Team & BPO */}
